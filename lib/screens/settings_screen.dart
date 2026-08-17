@@ -312,6 +312,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             );
                           }).toList(),
                         ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            NotificationService.showTestNotification();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('🔔 Sent test notification! Check your phone status bar.'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.notifications_active_rounded, size: 16, color: Color(0xFF00E5FF)),
+                          label: Text(
+                            'Test Alarm Notification',
+                            style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF00E5FF)),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF00E5FF)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
                       ],
                     ),
                   ),

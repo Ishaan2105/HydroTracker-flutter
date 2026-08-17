@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/water_log.dart';
 import '../services/db_helper.dart';
 import '../services/pref_service.dart';
+import '../services/notification_service.dart';
 
 class DayTrendData {
   final String label;
@@ -178,6 +179,8 @@ class HydrationProvider extends ChangeNotifier {
     _reminderTimes = await PrefService.getReminderTimes();
     _isSoloOptIn = await PrefService.getSoloOptIn();
 
+    await NotificationService.scheduleReminders(_reminderTimes, _isNotifEnabled);
+
     await checkMidnightReset();
     await loadTodayData();
     await loadHistoryStats();
@@ -352,6 +355,7 @@ class HydrationProvider extends ChangeNotifier {
   Future<void> toggleNotif(bool enabled) async {
     _isNotifEnabled = enabled;
     await PrefService.setNotifEnabled(enabled);
+    await NotificationService.scheduleReminders(_reminderTimes, _isNotifEnabled);
     notifyListeners();
   }
 
@@ -365,6 +369,7 @@ class HydrationProvider extends ChangeNotifier {
     if (!_reminderTimes.contains(timeStr)) {
       _reminderTimes.add(timeStr);
       await PrefService.setReminderTimes(_reminderTimes);
+      await NotificationService.scheduleReminders(_reminderTimes, _isNotifEnabled);
       notifyListeners();
     }
   }
@@ -372,6 +377,7 @@ class HydrationProvider extends ChangeNotifier {
   Future<void> removeReminderTime(String timeStr) async {
     _reminderTimes.remove(timeStr);
     await PrefService.setReminderTimes(_reminderTimes);
+    await NotificationService.scheduleReminders(_reminderTimes, _isNotifEnabled);
     notifyListeners();
   }
 
