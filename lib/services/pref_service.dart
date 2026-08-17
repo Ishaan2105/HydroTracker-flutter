@@ -1,0 +1,144 @@
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class PrefService {
+  static const String keyGoal = 'daily_goal_ml';
+  static const String keyUserName = 'user_name';
+  static const String keyCurrentStreak = 'current_streak';
+  static const String keyBestStreak = 'best_streak';
+  static const String keyLastActiveDate = 'last_active_date';
+  static const String keyBfastTime = 'bfast_time';
+  static const String keyLunchTime = 'lunch_time';
+  static const String keyDinnerTime = 'dinner_time';
+
+  static const String keyNotifEnabled = 'notif_enabled';
+  static const String keyPostMealNotif = 'post_meal_notif';
+  static const String keyReminderTimes = 'reminder_times';
+  static const String keySoloOptIn = 'solo_opt_in';
+
+  static String formatTo12H(String timeStr) {
+    try {
+      final clean = timeStr.trim();
+      final isPm = clean.toUpperCase().contains('PM');
+      final isAm = clean.toUpperCase().contains('AM');
+      if (isPm || isAm) return clean;
+
+      final parts = clean.split(':');
+      if (parts.length >= 2) {
+        int hour = int.parse(parts[0]);
+        int minute = int.parse(parts[1]);
+        final dt = DateTime(2026, 1, 1, hour, minute);
+        return DateFormat('hh:mm a').format(dt);
+      }
+    } catch (_) {}
+    return timeStr;
+  }
+
+  static Future<int> getGoal() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(keyGoal) ?? 2500;
+  }
+
+  static Future<void> setGoal(int goalMl) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(keyGoal, goalMl);
+  }
+
+  static Future<String> getUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(keyUserName) ?? 'HydroBuddy';
+  }
+
+  static Future<void> setUserName(String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(keyUserName, name);
+  }
+
+  static Future<int> getCurrentStreak() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(keyCurrentStreak) ?? 0;
+  }
+
+  static Future<void> setCurrentStreak(int streak) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(keyCurrentStreak, streak);
+  }
+
+  static Future<int> getBestStreak() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(keyBestStreak) ?? 0;
+  }
+
+  static Future<void> setBestStreak(int streak) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(keyBestStreak, streak);
+  }
+
+  static Future<String?> getLastActiveDate() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(keyLastActiveDate);
+  }
+
+  static Future<void> setLastActiveDate(String dateString) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(keyLastActiveDate, dateString);
+  }
+
+  static Future<Map<String, String>> getMealSchedule() async {
+    final prefs = await SharedPreferences.getInstance();
+    return {
+      'bfast': formatTo12H(prefs.getString(keyBfastTime) ?? '08:30 AM'),
+      'lunch': formatTo12H(prefs.getString(keyLunchTime) ?? '01:00 PM'),
+      'dinner': formatTo12H(prefs.getString(keyDinnerTime) ?? '08:00 PM'),
+    };
+  }
+
+  static Future<void> setMealSchedule(String bfast, String lunch, String dinner) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(keyBfastTime, bfast);
+    await prefs.setString(keyLunchTime, lunch);
+    await prefs.setString(keyDinnerTime, dinner);
+  }
+
+  static Future<bool> getNotifEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(keyNotifEnabled) ?? true;
+  }
+
+  static Future<void> setNotifEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(keyNotifEnabled, enabled);
+  }
+
+  static Future<bool> getPostMealNotif() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(keyPostMealNotif) ?? true;
+  }
+
+  static Future<void> setPostMealNotif(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(keyPostMealNotif, enabled);
+  }
+
+  static Future<List<String>> getReminderTimes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getStringList(keyReminderTimes) ?? ['08:00 AM', '12:00 PM', '04:00 PM', '08:00 PM'];
+    return raw.map(formatTo12H).toList();
+  }
+
+  static Future<void> setReminderTimes(List<String> times) async {
+    final prefs = await SharedPreferences.getInstance();
+    final formatted = times.map(formatTo12H).toList();
+    await prefs.setStringList(keyReminderTimes, formatted);
+  }
+
+  static Future<bool> getSoloOptIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(keySoloOptIn) ?? true;
+  }
+
+  static Future<void> setSoloOptIn(bool val) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(keySoloOptIn, val);
+  }
+}
