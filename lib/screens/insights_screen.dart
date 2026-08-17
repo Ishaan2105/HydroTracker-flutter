@@ -486,17 +486,6 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
                   const SizedBox(height: 20),
 
-                  // 4. 📈 7-Day Trend Chart Card
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
                   // 4. 📈 7-Day Hydration Analytics Section (Premium UI Redesign)
                   Container(
                     padding: const EdgeInsets.all(18),
