@@ -141,4 +141,18 @@ class PrefService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(keySoloOptIn, val);
   }
+
+  static const String keyDisabledReminderTimes = 'disabled_reminder_times';
+
+  static Future<List<String>> getDisabledReminderTimes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getStringList(keyDisabledReminderTimes) ?? [];
+    return raw.map(formatTo12H).toList();
+  }
+
+  static Future<void> setDisabledReminderTimes(List<String> times) async {
+    final prefs = await SharedPreferences.getInstance();
+    final formatted = times.map(formatTo12H).toList();
+    await prefs.setStringList(keyDisabledReminderTimes, formatted);
+  }
 }

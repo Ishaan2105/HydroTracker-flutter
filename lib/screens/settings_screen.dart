@@ -288,7 +288,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Scheduled Reminder Times:', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                            Text('Scheduled Alarms & Reminders:', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
                             IconButton(
                               icon: const Icon(Icons.add_alarm_rounded, color: Color(0xFF00E5FF)),
                               onPressed: () => _addReminderTime(context, provider),
@@ -296,20 +296,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ],
                         ),
                         const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
+                        Column(
                           children: provider.reminderTimes.map((timeStr) {
                             final displayTime = PrefService.formatTo12H(timeStr);
-                            return Chip(
-                              backgroundColor: const Color(0xFF0F172A),
-                              side: const BorderSide(color: Color(0xFF00E5FF), width: 0.5),
-                              label: Text(
-                                displayTime,
-                                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                            final isEnabled = provider.isReminderEnabled(timeStr);
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0F172A),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isEnabled ? const Color(0xFF00E5FF).withValues(alpha: 0.4) : Colors.white10,
+                                ),
                               ),
-                              deleteIcon: const Icon(Icons.close, size: 14, color: Colors.white70),
-                              onDeleted: () => provider.removeReminderTime(timeStr),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.alarm_rounded,
+                                    size: 18,
+                                    color: isEnabled ? const Color(0xFF00E5FF) : Colors.white38,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      displayTime,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: isEnabled ? Colors.white : Colors.white38,
+                                      ),
+                                    ),
+                                  ),
+                                  // On / Off Toggle Switch
+                                  Switch(
+                                    value: isEnabled,
+                                    activeColor: const Color(0xFF00E5FF),
+                                    onChanged: (val) => provider.toggleReminderActive(timeStr, val),
+                                  ),
+                                  // Delete Button
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.white60),
+                                    onPressed: () => provider.removeReminderTime(timeStr),
+                                  ),
+                                ],
+                              ),
                             );
                           }).toList(),
                         ),
