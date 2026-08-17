@@ -550,6 +550,9 @@ class _InsightsScreenState extends State<InsightsScreen> {
                           ),
                         ),
 
+                        // AI Trend Analysis Card
+                        _buildTrendAnalysisCard(provider),
+
                         const SizedBox(height: 14),
 
                         // Collapsible Weekly Performance Review
@@ -761,6 +764,115 @@ class _InsightsScreenState extends State<InsightsScreen> {
                 style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF00E5FF)),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrendAnalysisCard(HydrationProvider provider) {
+    final avgL = (provider.weeklyAverageMl / 1000).toStringAsFixed(2);
+    final goalL = (provider.dailyGoalMl / 1000).toStringAsFixed(1);
+    final isGoalMetAvg = provider.weeklyAverageMl >= provider.dailyGoalMl;
+
+    String headline;
+    String desc;
+    Color color;
+
+    if (provider.hitRatePct >= 70) {
+      headline = '🌟 Excellent Consistency!';
+      desc = 'You met your target on ${provider.hitRateFraction} days this week (${provider.hitRatePct.toStringAsFixed(0)}% hit rate). Your body is operating at peak hydration!';
+      color = const Color(0xFF10B981);
+    } else if (provider.hitRatePct >= 40) {
+      headline = '👍 Steady Hydration Pattern';
+      desc = 'You hit your target on ${provider.hitRateFraction} days. Setting post-meal alarms will help you close the gap on quiet days.';
+      color = const Color(0xFF00E5FF);
+    } else {
+      headline = '⚠️ Low Intake Alert';
+      desc = 'You hit your goal on ${provider.hitRateFraction} days. Try drinking 250ml of water first thing every morning to kickstart your daily target.';
+      color = const Color(0xFFF97316);
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.35), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🧠', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 8),
+              Text(
+                '7-Day AI Trend Analysis',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            headline,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            desc,
+            style: GoogleFonts.poppins(
+              fontSize: 11.5,
+              color: const Color(0xFFCBD5E1),
+              height: 1.4,
+            ),
+          ),
+          const Divider(color: Colors.white10, height: 16),
+          Row(
+            children: [
+              Icon(
+                isGoalMetAvg ? Icons.trending_up : Icons.trending_down,
+                color: isGoalMetAvg ? const Color(0xFF10B981) : const Color(0xFFF97316),
+                size: 16,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  isGoalMetAvg
+                      ? 'Weekly avg of $avgL L exceeds your target of $goalL L/day!'
+                      : 'Weekly avg is $avgL L/day (target: $goalL L/day).',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: const Color(0xFF94A3B8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Icon(Icons.star_outline_rounded, color: Color(0xFFEAB308), size: 16),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Peak day: ${provider.bestDayLabel} • Lowest day: ${provider.worstDayLabel}.',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: const Color(0xFF94A3B8),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
