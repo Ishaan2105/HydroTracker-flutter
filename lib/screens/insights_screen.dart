@@ -497,58 +497,211 @@ class _InsightsScreenState extends State<InsightsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '📈 7-Day Hydration Trend',
-                          style: GoogleFonts.poppins(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                  // 4. 📈 7-Day Hydration Analytics Section (Premium UI Redesign)
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.white12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8),
                         ),
-                        const SizedBox(height: 16),
-
-                        // Custom Bar Chart
-                        SizedBox(
-                          height: 140,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: provider.sevenDayTrend.map((dayData) {
-                              final barHeight = (dayData.ratio * 100).clamp(10.0, 100.0);
-                              Color barColor = const Color(0xFF3B82F6);
-                              if (dayData.ratio >= 1.0) {
-                                barColor = const Color(0xFF10B981);
-                              } else if (dayData.ratio < 0.4) {
-                                barColor = const Color(0xFFF97316);
-                              }
-
-                              return Column(
-                                mainAxisAlignment: MainAxisAlignment.end,
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header + Badges
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${(dayData.totalMl / 1000).toStringAsFixed(1)}L',
-                                    style: GoogleFonts.poppins(fontSize: 9, color: const Color(0xFF94A3B8)),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  AnimatedContainer(
-                                    duration: const Duration(milliseconds: 500),
-                                    width: 16,
-                                    height: barHeight,
-                                    decoration: BoxDecoration(
-                                      color: barColor,
-                                      borderRadius: BorderRadius.circular(8),
+                                    '📈 7-Day Hydration Analytics',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
                                   Text(
-                                    dayData.label,
-                                    style: GoogleFonts.poppins(fontSize: 10, color: Colors.white70),
+                                    'Visual weekly trend & pattern breakdown',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 11,
+                                      color: const Color(0xFF94A3B8),
+                                    ),
                                   ),
                                 ],
-                              );
-                            }).toList(),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1565C0).withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.4)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Text('💧 ', style: TextStyle(fontSize: 12)),
+                                  Text(
+                                    '${(provider.weeklyAverageMl / 1000).toStringAsFixed(1)}L/day',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF00E5FF),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Enhanced Bar Chart with 100% Goal Baseline
+                        SizedBox(
+                          height: 160,
+                          child: Stack(
+                            children: [
+                              // 100% Dotted Goal Baseline
+                              Positioned(
+                                top: 40,
+                                left: 0,
+                                right: 0,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Container(
+                                        height: 1,
+                                        color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 6),
+                                      child: Text(
+                                        '100% Target',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF10B981),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              // Bar Columns
+                              Positioned.fill(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: provider.sevenDayTrend.map((dayData) {
+                                    final ratio = dayData.ratio;
+                                    final barHeight = (ratio * 90).clamp(12.0, 100.0);
+                                    final isToday = dayData.label == 'Today';
+
+                                    List<Color> gradientColors;
+                                    Color glowColor;
+                                    if (ratio >= 1.0) {
+                                      gradientColors = [const Color(0xFF34D399), const Color(0xFF059669)];
+                                      glowColor = const Color(0xFF10B981);
+                                    } else if (ratio >= 0.7) {
+                                      gradientColors = [const Color(0xFF00E5FF), const Color(0xFF1565C0)];
+                                      glowColor = const Color(0xFF00E5FF);
+                                    } else if (ratio >= 0.4) {
+                                      gradientColors = [const Color(0xFF60A5FA), const Color(0xFF1E40AF)];
+                                      glowColor = const Color(0xFF3B82F6);
+                                    } else {
+                                      gradientColors = [const Color(0xFFFBBF24), const Color(0xFFDC2626)];
+                                      glowColor = const Color(0xFFEF4444);
+                                    }
+
+                                    return Column(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        // Liters Pill
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF0F172A),
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(color: Colors.white10),
+                                          ),
+                                          child: Text(
+                                            '${(dayData.totalMl / 1000).toStringAsFixed(1)}L',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 9.5,
+                                              fontWeight: FontWeight.bold,
+                                              color: isToday ? const Color(0xFF00E5FF) : const Color(0xFF94A3B8),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+
+                                        // Bar Container
+                                        AnimatedContainer(
+                                          duration: const Duration(milliseconds: 500),
+                                          width: 20,
+                                          height: barHeight,
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                              colors: gradientColors,
+                                            ),
+                                            borderRadius: BorderRadius.circular(10),
+                                            boxShadow: isToday
+                                                ? [
+                                                    BoxShadow(
+                                                      color: glowColor.withValues(alpha: 0.6),
+                                                      blurRadius: 8,
+                                                      spreadRadius: 1,
+                                                    ),
+                                                  ]
+                                                : [],
+                                            border: isToday
+                                                ? Border.all(color: Colors.white, width: 1.5)
+                                                : null,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+
+                                        // Day Label
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: isToday
+                                                ? const Color(0xFF00E5FF).withValues(alpha: 0.2)
+                                                : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            dayData.label,
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 10.5,
+                                              fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                                              color: isToday ? const Color(0xFF00E5FF) : Colors.white70,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+
+                        const SizedBox(height: 18),
 
                         // AI Trend Analysis Card
                         _buildTrendAnalysisCard(provider),
@@ -563,7 +716,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                             child: Row(
                               children: [
                                 Text(
-                                  '📊 Weekly Performance Review',
+                                  '📊 Detailed Weekly Metrics',
                                   style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF00E5FF)),
                                 ),
                                 const Spacer(),
@@ -582,16 +735,16 @@ class _InsightsScreenState extends State<InsightsScreen> {
                             margin: const EdgeInsets.only(top: 8),
                             decoration: BoxDecoration(
                               color: const Color(0xFF0F172A),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _buildReviewRow('Weekly Average', '${(provider.weeklyAverageMl / 1000).toStringAsFixed(2)} L / day'),
                                 _buildReviewRow('Total Volume', '${(provider.weeklyTotalMl / 1000).toStringAsFixed(1)} L'),
-                                _buildReviewRow('Best Day', provider.bestDayLabel),
-                                _buildReviewRow('Worst Day', provider.worstDayLabel),
-                                _buildReviewRow('Goal Hit Rate', provider.hitRateFraction),
+                                _buildReviewRow('Best Peak Day', provider.bestDayLabel),
+                                _buildReviewRow('Lowest Dip Day', provider.worstDayLabel),
+                                _buildReviewRow('Goal Hit Rate', '${provider.hitRateFraction} (${provider.hitRatePct.toStringAsFixed(0)}%)'),
                               ],
                             ),
                           ),
