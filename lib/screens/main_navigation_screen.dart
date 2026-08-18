@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/hydration_provider.dart';
-import '../services/notification_service.dart';
 import 'home_screen.dart';
 import 'history_screen.dart';
 import 'insights_screen.dart';
@@ -25,23 +22,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-    // Request permissions AFTER first frame is visible — never before UI shows
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      await NotificationService.requestPermissions();
-      // Re-schedule reminders now that permissions are granted
-      if (!mounted) return;
-      final provider = context.read<HydrationProvider>();
-      await NotificationService.scheduleReminders(
-        provider.reminderTimes,
-        provider.isNotifEnabled,
-      );
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
@@ -50,11 +30,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        onTap: (index) => setState(() => _currentIndex = index),
         backgroundColor: const Color(0xFF0F172A),
         selectedItemColor: const Color(0xFF00E5FF),
         unselectedItemColor: const Color(0xFF64748B),

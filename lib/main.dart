@@ -1,20 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/hydration_provider.dart';
-import 'screens/main_navigation_screen.dart';
+import 'screens/app_shell.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize provider FIRST, fully, before runApp
-  final provider = HydrationProvider();
-  try {
-    await provider.init();
-  } catch (_) {}
-
+  // runApp IMMEDIATELY — zero async work before this line
   runApp(
-    ChangeNotifierProvider.value(
-      value: provider,
+    ChangeNotifierProvider(
+      create: (_) => HydrationProvider(),
       child: const HydroTrackerApp(),
     ),
   );
@@ -36,7 +30,7 @@ class HydroTrackerApp extends StatelessWidget {
           surface: Color(0xFF1E293B),
         ),
       ),
-      home: const MainNavigationScreen(),
+      home: const AppShell(),
     );
   }
 }
