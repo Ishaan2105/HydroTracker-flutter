@@ -37,10 +37,19 @@ class NotificationService {
 
       await _notificationsPlugin.initialize(initSettings);
 
-      // Request permissions on Android 13+
+      const AndroidNotificationChannel channel = AndroidNotificationChannel(
+        'hydro_tracker_reminders',
+        'Hydration Reminders',
+        description: 'Scheduled alarms and daily water intake reminders',
+        importance: Importance.max,
+        playSound: true,
+      );
+
+      // Request permissions & create channel on Android 13+
       final androidImplementation = _notificationsPlugin
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       if (androidImplementation != null) {
+        await androidImplementation.createNotificationChannel(channel);
         await androidImplementation.requestNotificationsPermission();
         try {
           await androidImplementation.requestExactAlarmsPermission();
@@ -81,19 +90,21 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
-    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    tz.TZDateTime scheduledDate = tz.TZDateTime(
-      tz.local,
+    final DateTime now = DateTime.now();
+    DateTime scheduledDateTime = DateTime(
       now.year,
       now.month,
       now.day,
       hour,
       minute,
+      0,
     );
 
-    if (scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    if (scheduledDateTime.isBefore(now)) {
+      scheduledDateTime = scheduledDateTime.add(const Duration(days: 1));
     }
+
+    final tz.TZDateTime scheduledDate = tz.TZDateTime.from(scheduledDateTime, tz.local);
 
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       'hydro_tracker_reminders',
@@ -102,6 +113,7 @@ class NotificationService {
       importance: Importance.max,
       priority: Priority.high,
       playSound: true,
+      category: AndroidNotificationCategory.alarm,
     );
 
     const NotificationDetails notificationDetails = NotificationDetails(
@@ -116,7 +128,7 @@ class NotificationService {
         body,
         scheduledDate,
         notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.alarmClock,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
@@ -129,12 +141,26 @@ class NotificationService {
           body,
           scheduledDate,
           notificationDetails,
-          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
           uiLocalNotificationDateInterpretation:
               UILocalNotificationDateInterpretation.absoluteTime,
           matchDateTimeComponents: DateTimeComponents.time,
         );
-      } catch (_) {}
+      } catch (_) {
+        try {
+          await _notificationsPlugin.zonedSchedule(
+            id,
+            title,
+            body,
+            scheduledDate,
+            notificationDetails,
+            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.absoluteTime,
+            matchDateTimeComponents: DateTimeComponents.time,
+          );
+        } catch (_) {}
+      }
     }
   }
 
