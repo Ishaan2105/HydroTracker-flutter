@@ -371,8 +371,10 @@ class HydrationProvider extends ChangeNotifier {
   }
 
   Future<void> addReminderTime(String timeStr) async {
-    if (!_reminderTimes.contains(timeStr)) {
-      _reminderTimes.add(timeStr);
+    final formatted = PrefService.formatTo12H(timeStr);
+    if (!_reminderTimes.contains(formatted)) {
+      _reminderTimes.add(formatted);
+      _reminderTimes = PrefService.sortTimesChronologically(_reminderTimes);
       await PrefService.setReminderTimes(_reminderTimes);
       await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
       notifyListeners();

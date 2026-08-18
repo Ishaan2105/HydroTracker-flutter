@@ -120,16 +120,44 @@ class PrefService {
     await prefs.setBool(keyPostMealNotif, enabled);
   }
 
+  static DateTime? parseToTime(String timeStr) {
+    try {
+      final clean = timeStr.trim();
+      if (clean.toUpperCase().contains('AM') || clean.toUpperCase().contains('PM')) {
+        return DateFormat('hh:mm a').parse(clean);
+      } else {
+        return DateFormat('HH:mm').parse(clean);
+      }
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static List<String> sortTimesChronologically(List<String> times) {
+    final list = List<String>.from(times);
+    list.sort((a, b) {
+      final dtA = parseToTime(a);
+      final dtB = parseToTime(b);
+      if (dtA == null || dtB == null) return 0;
+      final minsA = dtA.hour * 60 + dtA.minute;
+      final minsB = dtB.hour * 60 + dtB.minute;
+      return minsA.compareTo(minsB);
+    });
+    return list;
+  }
+
   static Future<List<String>> getReminderTimes() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getStringList(keyReminderTimes) ?? ['08:00 AM', '12:00 PM', '04:00 PM', '08:00 PM'];
-    return raw.map(formatTo12H).toList();
+    final formatted = raw.map(formatTo12H).toList();
+    return sortTimesChronologically(formatted);
   }
 
   static Future<void> setReminderTimes(List<String> times) async {
     final prefs = await SharedPreferences.getInstance();
     final formatted = times.map(formatTo12H).toList();
-    await prefs.setStringList(keyReminderTimes, formatted);
+    final sorted = sortTimesChronologically(formatted);
+    await prefs.setStringList(keyReminderTimes, sorted);
   }
 
   static Future<bool> getSoloOptIn() async {
