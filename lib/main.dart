@@ -6,6 +6,7 @@ import 'screens/main_navigation_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  GoogleFonts.config.allowRuntimeFetching = true;
   runApp(const HydroTrackerApp());
 }
 
