@@ -18,13 +18,7 @@ class NotificationService {
     if (_initialized) return;
 
     try {
-      tz.initializeTimeZones();
-      try {
-        final String timeZoneName = await FlutterTimezone.getLocalTimezone();
-        tz.setLocalLocation(tz.getLocation(timeZoneName));
-      } catch (tzErr) {
-        debugPrint('Timezone initialization fallback: $tzErr');
-      }
+      await _initTimeZone();
 
       const AndroidInitializationSettings androidSettings =
           AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -42,7 +36,7 @@ class NotificationService {
 
       await _notificationsPlugin.initialize(initSettings);
 
-      // Create explicit Android Notification Channel
+      // Create explicit Android Notification Channel with max priority & sound
       final androidImplementation = _notificationsPlugin
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       if (androidImplementation != null) {
@@ -67,6 +61,43 @@ class NotificationService {
       _initialized = true;
     } catch (e) {
       debugPrint('NotificationService init error: $e');
+    }
+  }
+
+  /// Robust timezone initialization matching device offset
+  static Future<void> _initTimeZone() async {
+    tz.initializeTimeZones();
+    try {
+      String timeZoneName = await FlutterTimezone.getLocalTimezone();
+      timeZoneName = timeZoneName.trim();
+      if (timeZoneName == 'Asia/Calcutta') {
+        timeZoneName = 'Asia/Kolkata';
+      }
+
+      try {
+        tz.setLocalLocation(tz.getLocation(timeZoneName));
+        return;
+      } catch (_) {}
+
+      // Match by location name suffix
+      for (var locName in tz.timeZoneDatabase.locations.keys) {
+        if (locName.toLowerCase() == timeZoneName.toLowerCase() ||
+            locName.endsWith(timeZoneName.split('/').last)) {
+          tz.setLocalLocation(tz.getLocation(locName));
+          return;
+        }
+      }
+
+      // Match by exact timezone UTC offset (e.g., +05:30)
+      final offset = DateTime.now().timeZoneOffset;
+      for (var loc in tz.timeZoneDatabase.locations.values) {
+        if (loc.currentTimeZone.offset == offset.inMilliseconds) {
+          tz.setLocalLocation(loc);
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('Timezone config error: $e');
     }
   }
 
@@ -132,6 +163,7 @@ class NotificationService {
       now.day,
       hour,
       minute,
+      0,
     );
 
     if (scheduledDate.isBefore(now)) {
@@ -161,13 +193,13 @@ class NotificationService {
         body,
         scheduledDate,
         notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.alarmClock,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
-    } catch (exactErr) {
-      debugPrint('Exact alarm fallback to inexact: $exactErr');
+    } catch (alarmClockErr) {
+      debugPrint('alarmClock mode fallback to exactAllowWhileIdle: $alarmClockErr');
       try {
         await _notificationsPlugin.zonedSchedule(
           id,
@@ -175,13 +207,28 @@ class NotificationService {
           body,
           scheduledDate,
           notificationDetails,
-          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
           uiLocalNotificationDateInterpretation:
               UILocalNotificationDateInterpretation.absoluteTime,
           matchDateTimeComponents: DateTimeComponents.time,
         );
-      } catch (e) {
-        debugPrint('Error in zonedSchedule inexact: $e');
+      } catch (exactErr) {
+        debugPrint('exactAllowWhileIdle fallback to inexact: $exactErr');
+        try {
+          await _notificationsPlugin.zonedSchedule(
+            id,
+            title,
+            body,
+            scheduledDate,
+            notificationDetails,
+            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.absoluteTime,
+            matchDateTimeComponents: DateTimeComponents.time,
+          );
+        } catch (e) {
+          debugPrint('Error in zonedSchedule inexact: $e');
+        }
       }
     }
   }
