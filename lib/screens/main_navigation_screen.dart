@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/hydration_provider.dart';
+import '../services/notification_service.dart';
 import 'home_screen.dart';
 import 'history_screen.dart';
 import 'insights_screen.dart';
@@ -20,6 +23,23 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     InsightsScreen(),
     SettingsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Request permissions AFTER first frame is visible — never before UI shows
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await NotificationService.requestPermissions();
+      // Re-schedule reminders now that permissions are granted
+      if (!mounted) return;
+      final provider = context.read<HydrationProvider>();
+      await NotificationService.scheduleReminders(
+        provider.reminderTimes,
+        provider.isNotifEnabled,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

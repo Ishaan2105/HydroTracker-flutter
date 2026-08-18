@@ -185,9 +185,8 @@ class HydrationProvider extends ChangeNotifier {
       _disabledReminderTimes = await PrefService.getDisabledReminderTimes();
       _isSoloOptIn = await PrefService.getSoloOptIn();
 
-      try {
-        await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
-      } catch (_) {}
+      // Notification scheduling is handled after UI shows (MainNavigationScreen)
+      // to avoid permission dialogs blocking the first frame.
 
       await checkMidnightReset();
       await loadTodayData();

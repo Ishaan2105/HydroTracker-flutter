@@ -9,8 +9,10 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   static bool _initialized = false;
+  static bool _permissionsRequested = false;
 
-  /// Initialize notifications plugin & timezone data
+  /// Phase 1: Initialize plugin & timezone — NO permission dialogs.
+  /// Safe to call before runApp().
   static Future<void> init() async {
     if (_initialized) return;
 
@@ -25,9 +27,9 @@ class NotificationService {
           AndroidInitializationSettings('@mipmap/ic_launcher');
 
       const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
-        requestAlertPermission: true,
-        requestBadgePermission: true,
-        requestSoundPermission: true,
+        requestAlertPermission: false,
+        requestBadgePermission: false,
+        requestSoundPermission: false,
       );
 
       const InitializationSettings initSettings = InitializationSettings(
@@ -45,22 +47,34 @@ class NotificationService {
         playSound: true,
       );
 
-      // Request permissions & create channel on Android 13+
-      final androidImplementation = _notificationsPlugin
+      final androidImpl = _notificationsPlugin
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-      if (androidImplementation != null) {
-        await androidImplementation.createNotificationChannel(channel);
-        await androidImplementation.requestNotificationsPermission();
-        try {
-          await androidImplementation.requestExactAlarmsPermission();
-        } catch (_) {}
+      if (androidImpl != null) {
+        await androidImpl.createNotificationChannel(channel);
       }
 
       _initialized = true;
     } catch (_) {}
   }
 
-  /// Schedule daily recurring notifications for a list of 12h or 24h time strings (e.g., ["08:00 AM", "02:30 PM"])
+  /// Phase 2: Request runtime permissions — call AFTER UI is visible.
+  static Future<void> requestPermissions() async {
+    if (_permissionsRequested) return;
+    _permissionsRequested = true;
+
+    try {
+      final androidImpl = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      if (androidImpl != null) {
+        await androidImpl.requestNotificationsPermission();
+        try {
+          await androidImpl.requestExactAlarmsPermission();
+        } catch (_) {}
+      }
+    } catch (_) {}
+  }
+
+  /// Schedule daily recurring notifications for a list of 12h or 24h time strings.
   static Future<void> scheduleReminders(List<String> reminderTimes, bool enabled) async {
     await init();
     await _notificationsPlugin.cancelAll();
@@ -168,7 +182,8 @@ class NotificationService {
   static DateTime? _parseTimeString(String timeStr) {
     try {
       String clean = timeStr.trim();
-      if (clean.contains('AM') || clean.contains('PM') || clean.contains('am') || clean.contains('pm')) {
+      if (clean.contains('AM') || clean.contains('PM') ||
+          clean.contains('am') || clean.contains('pm')) {
         return DateFormat('hh:mm a').parse(clean);
       } else {
         return DateFormat('HH:mm').parse(clean);
