@@ -7,9 +7,14 @@ import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.init();
+  try {
+    await NotificationService.init();
+  } catch (_) {}
+
   final hydrationProvider = HydrationProvider();
-  await hydrationProvider.init();
+  try {
+    await hydrationProvider.init();
+  } catch (_) {}
 
   runApp(
     MultiProvider(
