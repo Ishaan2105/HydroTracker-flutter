@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/hydration_provider.dart';
 import '../widgets/wave_progress_ring.dart';
-import '../widgets/hydration_coach_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -90,15 +89,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _customController.clear();
       FocusScope.of(context).unfocus();
     }
-  }
-
-  void _openCoachSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const HydrationCoachSheet(),
-    );
   }
 
   @override
@@ -366,13 +356,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // 6. Floating Action Button for Hydration Coach AI (Emoji Only)
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => _openCoachSheet(context),
-            backgroundColor: const Color(0xFF00E5FF),
-            elevation: 8,
-            child: const Text('🤖', style: TextStyle(fontSize: 24)),
-          ),
         );
       },
     );
