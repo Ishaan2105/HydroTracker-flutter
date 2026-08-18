@@ -15,13 +15,18 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
+  bool _isReady = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // First frame renders the splash immediately, then init data
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
-        context.read<HydrationProvider>().init();
+        await context.read<HydrationProvider>().init();
+        if (mounted) {
+          setState(() => _isReady = true);
+        }
       }
     });
   }
@@ -35,6 +40,68 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Show splash/loading screen until data is ready
+    if (!_isReady) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0B1329),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Hydro drop icon
+              Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF1565C0), Color(0xFF00E5FF)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF00E5FF).withValues(alpha: 0.35),
+                      blurRadius: 30,
+                      spreadRadius: 4,
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.water_drop_rounded, color: Colors.white, size: 48),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Hydro Tracker',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Loading your hydration data...',
+                style: TextStyle(
+                  color: Color(0xFF94A3B8),
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 32),
+              const SizedBox(
+                width: 32,
+                height: 32,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  color: Color(0xFF00E5FF),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
