@@ -369,26 +369,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 16),
-
-                  // 5. 🏆 Community Leaderboards Opt-In Settings
-                  _buildCard(
-                    title: '🏆 Leaderboards Privacy Settings',
-                    subtitle: 'Control leaderboard participation visibility',
-                    child: Column(
-                      children: [
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text('Participate in Solo Leaderboard', style: GoogleFonts.poppins(fontSize: 13, color: Colors.white)),
-                          subtitle: Text('Show streak & completion rate on solo board', style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF94A3B8))),
-                          value: provider.isSoloOptIn,
-                          activeColor: const Color(0xFF00E5FF),
-                          onChanged: (val) => provider.toggleSoloOptIn(val),
-                        ),
-                      ],
-                    ),
-                  ),
-
                   const SizedBox(height: 20),
 
                   // 6. ⚠️ Danger Zone Section
