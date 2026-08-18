@@ -30,11 +30,7 @@ class _WaveProgressRingState extends State<WaveProgressRing>
     _waveController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
-    );
-    // Defer animation start so the first frame renders immediately
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _waveController.repeat();
-    });
+    )..repeat();
   }
 
   @override

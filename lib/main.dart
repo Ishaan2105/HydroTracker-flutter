@@ -1,14 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'providers/hydration_provider.dart';
-import 'screens/app_shell.dart';
+import 'screens/main_navigation_screen.dart';
+import 'services/notification_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // runApp IMMEDIATELY — zero async work before this line
+  try {
+    await NotificationService.init();
+  } catch (_) {}
+
+  final hydrationProvider = HydrationProvider();
+  try {
+    await hydrationProvider.init();
+  } catch (_) {}
+
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => HydrationProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: hydrationProvider),
+      ],
       child: const HydroTrackerApp(),
     ),
   );
@@ -29,8 +41,11 @@ class HydroTrackerApp extends StatelessWidget {
           secondary: Color(0xFF00E5FF),
           surface: Color(0xFF1E293B),
         ),
+        textTheme: GoogleFonts.poppinsTextTheme(
+          ThemeData.dark().textTheme,
+        ),
       ),
-      home: const AppShell(),
+      home: const MainNavigationScreen(),
     );
   }
 }

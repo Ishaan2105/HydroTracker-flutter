@@ -172,30 +172,24 @@ class HydrationProvider extends ChangeNotifier {
   }
 
   Future<void> init() async {
-    try {
-      _dailyGoalMl = await PrefService.getGoal();
-      _userName = await PrefService.getUserName();
-      _currentStreak = await PrefService.getCurrentStreak();
-      _bestStreak = await PrefService.getBestStreak();
-      _mealSchedule = await PrefService.getMealSchedule();
+    _dailyGoalMl = await PrefService.getGoal();
+    _userName = await PrefService.getUserName();
+    _currentStreak = await PrefService.getCurrentStreak();
+    _bestStreak = await PrefService.getBestStreak();
+    _mealSchedule = await PrefService.getMealSchedule();
 
-      _isNotifEnabled = await PrefService.getNotifEnabled();
-      _isPostMealNotifEnabled = await PrefService.getPostMealNotif();
-      _reminderTimes = await PrefService.getReminderTimes();
-      _disabledReminderTimes = await PrefService.getDisabledReminderTimes();
-      _isSoloOptIn = await PrefService.getSoloOptIn();
+    _isNotifEnabled = await PrefService.getNotifEnabled();
+    _isPostMealNotifEnabled = await PrefService.getPostMealNotif();
+    _reminderTimes = await PrefService.getReminderTimes();
+    _disabledReminderTimes = await PrefService.getDisabledReminderTimes();
+    _isSoloOptIn = await PrefService.getSoloOptIn();
 
-      // Notification scheduling is handled after UI shows (MainNavigationScreen)
-      // to avoid permission dialogs blocking the first frame.
+    await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
 
-      await checkMidnightReset();
-      await loadTodayData();
-      await loadHistoryStats();
-      await loadInsightsData();
-    } catch (_) {
-    } finally {
-      notifyListeners();
-    }
+    await checkMidnightReset();
+    await loadTodayData();
+    await loadHistoryStats();
+    await loadInsightsData();
   }
 
   Future<void> checkMidnightReset() async {

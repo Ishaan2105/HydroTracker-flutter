@@ -9,10 +9,8 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   static bool _initialized = false;
-  static bool _permissionsRequested = false;
 
-  /// Phase 1: Initialize plugin & timezone — NO permission dialogs.
-  /// Safe to call before runApp().
+  /// Initialize notifications plugin & timezone data
   static Future<void> init() async {
     if (_initialized) return;
 
@@ -27,9 +25,9 @@ class NotificationService {
           AndroidInitializationSettings('@mipmap/ic_launcher');
 
       const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
-        requestAlertPermission: false,
-        requestBadgePermission: false,
-        requestSoundPermission: false,
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
       );
 
       const InitializationSettings initSettings = InitializationSettings(
@@ -39,42 +37,21 @@ class NotificationService {
 
       await _notificationsPlugin.initialize(initSettings);
 
-      const AndroidNotificationChannel channel = AndroidNotificationChannel(
-        'hydro_tracker_reminders',
-        'Hydration Reminders',
-        description: 'Scheduled alarms and daily water intake reminders',
-        importance: Importance.max,
-        playSound: true,
-      );
-
-      final androidImpl = _notificationsPlugin
+      // Request permissions on Android 13+
+      final androidImplementation = _notificationsPlugin
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-      if (androidImpl != null) {
-        await androidImpl.createNotificationChannel(channel);
+      if (androidImplementation != null) {
+        await androidImplementation.requestNotificationsPermission();
+        try {
+          await androidImplementation.requestExactAlarmsPermission();
+        } catch (_) {}
       }
 
       _initialized = true;
     } catch (_) {}
   }
 
-  /// Phase 2: Request runtime permissions — call AFTER UI is visible.
-  static Future<void> requestPermissions() async {
-    if (_permissionsRequested) return;
-    _permissionsRequested = true;
-
-    try {
-      final androidImpl = _notificationsPlugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-      if (androidImpl != null) {
-        await androidImpl.requestNotificationsPermission();
-        try {
-          await androidImpl.requestExactAlarmsPermission();
-        } catch (_) {}
-      }
-    } catch (_) {}
-  }
-
-  /// Schedule daily recurring notifications for a list of 12h or 24h time strings.
+  /// Schedule daily recurring notifications for a list of 12h or 24h time strings (e.g., ["08:00 AM", "02:30 PM"])
   static Future<void> scheduleReminders(List<String> reminderTimes, bool enabled) async {
     await init();
     await _notificationsPlugin.cancelAll();
@@ -104,21 +81,19 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
-    final DateTime now = DateTime.now();
-    DateTime scheduledDateTime = DateTime(
+    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
+    tz.TZDateTime scheduledDate = tz.TZDateTime(
+      tz.local,
       now.year,
       now.month,
       now.day,
       hour,
       minute,
-      0,
     );
 
-    if (scheduledDateTime.isBefore(now)) {
-      scheduledDateTime = scheduledDateTime.add(const Duration(days: 1));
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
-
-    final tz.TZDateTime scheduledDate = tz.TZDateTime.from(scheduledDateTime, tz.local);
 
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       'hydro_tracker_reminders',
@@ -127,7 +102,6 @@ class NotificationService {
       importance: Importance.max,
       priority: Priority.high,
       playSound: true,
-      category: AndroidNotificationCategory.alarm,
     );
 
     const NotificationDetails notificationDetails = NotificationDetails(
@@ -142,7 +116,7 @@ class NotificationService {
         body,
         scheduledDate,
         notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.alarmClock,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
@@ -155,26 +129,12 @@ class NotificationService {
           body,
           scheduledDate,
           notificationDetails,
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
           uiLocalNotificationDateInterpretation:
               UILocalNotificationDateInterpretation.absoluteTime,
           matchDateTimeComponents: DateTimeComponents.time,
         );
-      } catch (_) {
-        try {
-          await _notificationsPlugin.zonedSchedule(
-            id,
-            title,
-            body,
-            scheduledDate,
-            notificationDetails,
-            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-            uiLocalNotificationDateInterpretation:
-                UILocalNotificationDateInterpretation.absoluteTime,
-            matchDateTimeComponents: DateTimeComponents.time,
-          );
-        } catch (_) {}
-      }
+      } catch (_) {}
     }
   }
 
@@ -182,8 +142,7 @@ class NotificationService {
   static DateTime? _parseTimeString(String timeStr) {
     try {
       String clean = timeStr.trim();
-      if (clean.contains('AM') || clean.contains('PM') ||
-          clean.contains('am') || clean.contains('pm')) {
+      if (clean.contains('AM') || clean.contains('PM') || clean.contains('am') || clean.contains('pm')) {
         return DateFormat('hh:mm a').parse(clean);
       } else {
         return DateFormat('HH:mm').parse(clean);
