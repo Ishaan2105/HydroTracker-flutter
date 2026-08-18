@@ -16,11 +16,7 @@ class HydroTrackerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) {
-        final provider = HydrationProvider();
-        provider.init();
-        return provider;
-      },
+      create: (_) => HydrationProvider(),
       child: MaterialApp(
         title: 'Hydro Tracker',
         debugShowCheckedModeBanner: false,

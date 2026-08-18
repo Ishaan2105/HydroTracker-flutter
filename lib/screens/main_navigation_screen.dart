@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/hydration_provider.dart';
 import 'home_screen.dart';
 import 'history_screen.dart';
 import 'insights_screen.dart';
@@ -13,6 +15,16 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<HydrationProvider>().init();
+      }
+    });
+  }
 
   final List<Widget> _screens = const [
     HomeScreen(),
