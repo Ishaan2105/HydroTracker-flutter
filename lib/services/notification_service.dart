@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -9,8 +10,10 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   static bool _initialized = false;
+  static const String channelId = 'hydro_tracker_reminders';
+  static const String channelName = 'Hydration Reminders';
 
-  /// Initialize notifications plugin & timezone data
+  /// Initialize notifications plugin, channels & timezone data
   static Future<void> init() async {
     if (_initialized) return;
 
@@ -19,7 +22,9 @@ class NotificationService {
       try {
         final String timeZoneName = await FlutterTimezone.getLocalTimezone();
         tz.setLocalLocation(tz.getLocation(timeZoneName));
-      } catch (_) {}
+      } catch (tzErr) {
+        debugPrint('Timezone initialization fallback: $tzErr');
+      }
 
       const AndroidInitializationSettings androidSettings =
           AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -37,39 +42,77 @@ class NotificationService {
 
       await _notificationsPlugin.initialize(initSettings);
 
-      // Request permissions on Android 13+
+      // Create explicit Android Notification Channel
       final androidImplementation = _notificationsPlugin
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       if (androidImplementation != null) {
-        await androidImplementation.requestNotificationsPermission();
+        const AndroidNotificationChannel channel = AndroidNotificationChannel(
+          channelId,
+          channelName,
+          description: 'Scheduled alarms and daily water intake reminders',
+          importance: Importance.max,
+          playSound: true,
+          enableVibration: true,
+          showBadge: true,
+        );
+        await androidImplementation.createNotificationChannel(channel);
+        try {
+          await androidImplementation.requestNotificationsPermission();
+        } catch (_) {}
         try {
           await androidImplementation.requestExactAlarmsPermission();
         } catch (_) {}
       }
 
       _initialized = true;
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('NotificationService init error: $e');
+    }
+  }
+
+  /// Request permissions on demand (e.g., when toggle is switched on)
+  static Future<bool> requestPermissions() async {
+    try {
+      await init();
+      final androidImplementation = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      if (androidImplementation != null) {
+        final granted = await androidImplementation.requestNotificationsPermission() ?? false;
+        try {
+          await androidImplementation.requestExactAlarmsPermission();
+        } catch (_) {}
+        return granted;
+      }
+      return true;
+    } catch (e) {
+      debugPrint('requestPermissions error: $e');
+      return false;
+    }
   }
 
   /// Schedule daily recurring notifications for a list of 12h or 24h time strings (e.g., ["08:00 AM", "02:30 PM"])
   static Future<void> scheduleReminders(List<String> reminderTimes, bool enabled) async {
-    await init();
-    await _notificationsPlugin.cancelAll();
+    try {
+      await init();
+      await _notificationsPlugin.cancelAll();
 
-    if (!enabled || reminderTimes.isEmpty) return;
+      if (!enabled || reminderTimes.isEmpty) return;
 
-    int id = 100;
-    for (String timeStr in reminderTimes) {
-      DateTime? time = _parseTimeString(timeStr);
-      if (time != null) {
-        await _scheduleDailyNotification(
-          id: id++,
-          hour: time.hour,
-          minute: time.minute,
-          title: '💧 Time to Hydrate!',
-          body: 'Stay on top of your goal with a fresh glass of water.',
-        );
+      int id = 100;
+      for (String timeStr in reminderTimes) {
+        DateTime? time = _parseTimeString(timeStr);
+        if (time != null) {
+          await _scheduleDailyNotification(
+            id: id++,
+            hour: time.hour,
+            minute: time.minute,
+            title: '💧 Time to Hydrate!',
+            body: 'Stay on top of your goal with a fresh glass of water.',
+          );
+        }
       }
+    } catch (e) {
+      debugPrint('Error scheduling reminders: $e');
     }
   }
 
@@ -96,12 +139,14 @@ class NotificationService {
     }
 
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'hydro_tracker_reminders',
-      'Hydration Reminders',
+      channelId,
+      channelName,
       channelDescription: 'Scheduled alarms and daily water intake reminders',
       importance: Importance.max,
       priority: Priority.high,
       playSound: true,
+      enableVibration: true,
+      icon: '@mipmap/ic_launcher',
     );
 
     const NotificationDetails notificationDetails = NotificationDetails(
@@ -121,7 +166,8 @@ class NotificationService {
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
-    } catch (_) {
+    } catch (exactErr) {
+      debugPrint('Exact alarm fallback to inexact: $exactErr');
       try {
         await _notificationsPlugin.zonedSchedule(
           id,
@@ -134,7 +180,9 @@ class NotificationService {
               UILocalNotificationDateInterpretation.absoluteTime,
           matchDateTimeComponents: DateTimeComponents.time,
         );
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Error in zonedSchedule inexact: $e');
+      }
     }
   }
 
@@ -154,25 +202,32 @@ class NotificationService {
 
   /// Trigger an instant test notification
   static Future<void> showTestNotification() async {
-    await init();
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'hydro_tracker_reminders',
-      'Hydration Reminders',
-      channelDescription: 'Scheduled alarms and daily water intake reminders',
-      importance: Importance.max,
-      priority: Priority.high,
-    );
+    try {
+      await init();
+      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        channelId,
+        channelName,
+        channelDescription: 'Scheduled alarms and daily water intake reminders',
+        importance: Importance.max,
+        priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
+        icon: '@mipmap/ic_launcher',
+      );
 
-    const NotificationDetails notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: DarwinNotificationDetails(),
-    );
+      const NotificationDetails notificationDetails = NotificationDetails(
+        android: androidDetails,
+        iOS: DarwinNotificationDetails(),
+      );
 
-    await _notificationsPlugin.show(
-      0,
-      '💧 Hydro Tracker Alarm Active!',
-      'Your scheduled hydration reminders are configured and working smoothly.',
-      notificationDetails,
-    );
+      await _notificationsPlugin.show(
+        0,
+        '💧 Hydro Tracker Alarm Active!',
+        'Your scheduled hydration reminders are configured and working smoothly.',
+        notificationDetails,
+      );
+    } catch (e) {
+      debugPrint('showTestNotification error: $e');
+    }
   }
 }

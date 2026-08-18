@@ -172,24 +172,34 @@ class HydrationProvider extends ChangeNotifier {
   }
 
   Future<void> init() async {
-    _dailyGoalMl = await PrefService.getGoal();
-    _userName = await PrefService.getUserName();
-    _currentStreak = await PrefService.getCurrentStreak();
-    _bestStreak = await PrefService.getBestStreak();
-    _mealSchedule = await PrefService.getMealSchedule();
+    try {
+      _dailyGoalMl = await PrefService.getGoal();
+      _userName = await PrefService.getUserName();
+      _currentStreak = await PrefService.getCurrentStreak();
+      _bestStreak = await PrefService.getBestStreak();
+      _mealSchedule = await PrefService.getMealSchedule();
 
-    _isNotifEnabled = await PrefService.getNotifEnabled();
-    _isPostMealNotifEnabled = await PrefService.getPostMealNotif();
-    _reminderTimes = await PrefService.getReminderTimes();
-    _disabledReminderTimes = await PrefService.getDisabledReminderTimes();
-    _isSoloOptIn = await PrefService.getSoloOptIn();
+      _isNotifEnabled = await PrefService.getNotifEnabled();
+      _isPostMealNotifEnabled = await PrefService.getPostMealNotif();
+      _reminderTimes = await PrefService.getReminderTimes();
+      _disabledReminderTimes = await PrefService.getDisabledReminderTimes();
+      _isSoloOptIn = await PrefService.getSoloOptIn();
 
-    await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
+      await checkMidnightReset();
+      await loadTodayData();
+      await loadHistoryStats();
+      await loadInsightsData();
+    } catch (e) {
+      debugPrint('HydrationProvider init data load error: $e');
+    }
 
-    await checkMidnightReset();
-    await loadTodayData();
-    await loadHistoryStats();
-    await loadInsightsData();
+    try {
+      await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
+    } catch (e) {
+      debugPrint('HydrationProvider notification scheduling error: $e');
+    }
+
+    notifyListeners();
   }
 
   Future<void> checkMidnightReset() async {
@@ -359,15 +369,20 @@ class HydrationProvider extends ChangeNotifier {
 
   Future<void> toggleNotif(bool enabled) async {
     _isNotifEnabled = enabled;
-    await PrefService.setNotifEnabled(enabled);
-    await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
     notifyListeners();
+    await PrefService.setNotifEnabled(enabled);
+    if (enabled) {
+      await NotificationService.requestPermissions();
+    }
+    try {
+      await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
+    } catch (_) {}
   }
 
   Future<void> togglePostMealNotif(bool enabled) async {
     _isPostMealNotifEnabled = enabled;
-    await PrefService.setPostMealNotif(enabled);
     notifyListeners();
+    await PrefService.setPostMealNotif(enabled);
   }
 
   Future<void> addReminderTime(String timeStr) async {
@@ -375,19 +390,23 @@ class HydrationProvider extends ChangeNotifier {
     if (!_reminderTimes.contains(formatted)) {
       _reminderTimes.add(formatted);
       _reminderTimes = PrefService.sortTimesChronologically(_reminderTimes);
-      await PrefService.setReminderTimes(_reminderTimes);
-      await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
       notifyListeners();
+      await PrefService.setReminderTimes(_reminderTimes);
+      try {
+        await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
+      } catch (_) {}
     }
   }
 
   Future<void> removeReminderTime(String timeStr) async {
     _reminderTimes.remove(timeStr);
     _disabledReminderTimes.remove(timeStr);
+    notifyListeners();
     await PrefService.setReminderTimes(_reminderTimes);
     await PrefService.setDisabledReminderTimes(_disabledReminderTimes);
-    await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
-    notifyListeners();
+    try {
+      await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
+    } catch (_) {}
   }
 
   Future<void> toggleReminderActive(String timeStr, bool active) async {
@@ -398,9 +417,11 @@ class HydrationProvider extends ChangeNotifier {
         _disabledReminderTimes.add(timeStr);
       }
     }
-    await PrefService.setDisabledReminderTimes(_disabledReminderTimes);
-    await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
     notifyListeners();
+    await PrefService.setDisabledReminderTimes(_disabledReminderTimes);
+    try {
+      await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
+    } catch (_) {}
   }
 
   Future<void> toggleSoloOptIn(bool val) async {
