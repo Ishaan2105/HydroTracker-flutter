@@ -179,19 +179,38 @@ class NotificationService {
     }
   }
 
-  static final List<Timer> _activeTimers = [];
+  /// Per-alarm in-memory timers keyed by notification ID.
+  /// Allows cancelling one alarm's timer without touching others.
+  static final Map<int, Timer> _activeTimers = {};
 
-  /// Cancel all scheduled system alarms and in-memory timers
+  /// Cancel ALL scheduled system alarms and in-memory timers.
+  /// Use this when notifications are globally disabled or on a full reset.
   static Future<void> cancelAllAlarms() async {
     try {
       await init();
-      for (var timer in _activeTimers) {
+      for (final timer in _activeTimers.values) {
         timer.cancel();
       }
       _activeTimers.clear();
       await _notificationsPlugin.cancelAll();
     } catch (e) {
       debugPrint('Error canceling all alarms: $e');
+    }
+  }
+
+  /// Cancel a single alarm by its notification [id] without touching other alarms.
+  /// Also cancels the backup one-shot ID (id + 500) used for daily alarm redundancy.
+  static Future<void> cancelAlarm(int id) async {
+    try {
+      await init();
+      // Cancel in-memory timer for this ID (and backup ID if present)
+      _activeTimers.remove(id)?.cancel();
+      _activeTimers.remove(id + 500)?.cancel();
+      // Cancel OS-level AlarmManager entries
+      await _notificationsPlugin.cancel(id);
+      await _notificationsPlugin.cancel(id + 500);
+    } catch (e) {
+      debugPrint('Error canceling alarm $id: $e');
     }
   }
 
@@ -316,12 +335,13 @@ class NotificationService {
       // 3. In-memory timer fallback while process is alive
       final diff = target.difference(tz.TZDateTime.now(tz.local));
       if (diff.inSeconds > 0 && diff.inHours < 24) {
-        final timer = Timer(diff, () async {
+        _activeTimers[id]?.cancel(); // cancel any previous timer for this slot
+        _activeTimers[id] = Timer(diff, () async {
+          _activeTimers.remove(id);
           try {
             await _notificationsPlugin.show(id, title, body, notificationDetails);
           } catch (_) {}
         });
-        _activeTimers.add(timer);
       }
     } else {
       // --- Strategy for ONE-TIME alarms ---
@@ -355,12 +375,13 @@ class NotificationService {
       // In-memory timer fallback
       final diff = target.difference(tz.TZDateTime.now(tz.local));
       if (diff.inSeconds > 0 && diff.inHours < 24) {
-        final timer = Timer(diff, () async {
+        _activeTimers[id]?.cancel();
+        _activeTimers[id] = Timer(diff, () async {
+          _activeTimers.remove(id);
           try {
             await _notificationsPlugin.show(id, title, body, notificationDetails);
           } catch (_) {}
         });
-        _activeTimers.add(timer);
       }
     }
   }

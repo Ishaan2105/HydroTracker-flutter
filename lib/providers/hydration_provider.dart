@@ -98,6 +98,14 @@ class HydrationProvider extends ChangeNotifier {
   List<String> get oneTimeReminderTimes => _oneTimeReminderTimes;
   List<String> get activeReminderTimes => _reminderTimes.where((t) => !_disabledReminderTimes.contains(t)).toList();
   bool isReminderEnabled(String timeStr) => !_disabledReminderTimes.contains(timeStr);
+
+  /// Returns the notification ID that scheduleReminders assigns to [timeStr].
+  /// IDs are assigned positionally: alarm at index i → ID 100 + i.
+  /// Returns -1 if the time is not found.
+  int _alarmIdForTime(String timeStr) {
+    final idx = _reminderTimes.indexOf(timeStr);
+    return idx >= 0 ? 100 + idx : -1;
+  }
   /// Returns true if the alarm for [timeStr] repeats daily (not one-time).
   bool isReminderDaily(String timeStr) => !_oneTimeReminderTimes.contains(timeStr);
   bool get isSoloOptIn => _isSoloOptIn;
@@ -420,6 +428,9 @@ class HydrationProvider extends ChangeNotifier {
   }
 
   Future<void> removeReminderTime(String timeStr) async {
+    // Resolve alarm ID BEFORE removing from the list (removal shifts indices)
+    final alarmId = _alarmIdForTime(timeStr);
+
     _reminderTimes.remove(timeStr);
     _disabledReminderTimes.remove(timeStr);
     _oneTimeReminderTimes.remove(timeStr); // clean up daily-toggle state
@@ -428,6 +439,9 @@ class HydrationProvider extends ChangeNotifier {
     await PrefService.setDisabledReminderTimes(_disabledReminderTimes);
     await PrefService.setOneTimeReminderTimes(_oneTimeReminderTimes);
     try {
+      // Cancel just the deleted alarm immediately — no full wipe needed
+      if (alarmId >= 0) await NotificationService.cancelAlarm(alarmId);
+      // Reschedule remaining alarms so IDs stay consistent (positional)
       await NotificationService.scheduleReminders(
         activeReminderTimes,
         _isNotifEnabled,
@@ -447,11 +461,18 @@ class HydrationProvider extends ChangeNotifier {
     notifyListeners();
     await PrefService.setDisabledReminderTimes(_disabledReminderTimes);
     try {
-      await NotificationService.scheduleReminders(
-        activeReminderTimes,
-        _isNotifEnabled,
-        dailyTimes: _buildDailySet(),
-      );
+      if (!active) {
+        // Cancel ONLY this alarm's OS entry and in-memory timer
+        final alarmId = _alarmIdForTime(timeStr);
+        if (alarmId >= 0) await NotificationService.cancelAlarm(alarmId);
+      } else {
+        // Re-enabling: reschedule all so this alarm gets its ID back
+        await NotificationService.scheduleReminders(
+          activeReminderTimes,
+          _isNotifEnabled,
+          dailyTimes: _buildDailySet(),
+        );
+      }
     } catch (_) {}
   }
 
