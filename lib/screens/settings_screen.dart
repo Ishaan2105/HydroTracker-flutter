@@ -96,49 +96,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  void _confirmClearAllData(BuildContext context, HydrationProvider provider) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        title: Text(
-          '⚠️ Full Reset to New Account?',
-          style: GoogleFonts.poppins(color: const Color(0xFFEF4444), fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          'This will permanently delete all water intake logs from SQLite, reset streaks and analytics to 0, cancel all scheduled alarms, and restore default factory settings just like a brand new account.',
-          style: GoogleFonts.poppins(color: const Color(0xFFCBD5E1), fontSize: 13),
-        ),
-        actions: [
-          TextButton(
-            child: Text('Cancel', style: GoogleFonts.poppins(color: Colors.white70)),
-            onPressed: () => Navigator.pop(ctx),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
-            child: Text('Reset Everything', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await provider.clearAllData();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      '✨ App fully reset! Fresh new account ready.',
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-                    ),
-                    backgroundColor: const Color(0xFF10B981),
-                    duration: const Duration(seconds: 3),
-                  ),
-                );
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<HydrationProvider>(
@@ -464,40 +421,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
 
                   const SizedBox(height: 20),
-
-                  // 6. ⚠️ Danger Zone Section
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF7C2D12).withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFEF4444)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('⚠️ Danger Zone', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFFEF4444))),
-                        Text('Permanently wipe all logs, reset streaks, and restore fresh account defaults.', style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFFFFEDD5))),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFFEF4444)),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            icon: const Icon(Icons.delete_forever_rounded, color: Color(0xFFEF4444)),
-                            label: Text('Full Reset (New Account)', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: const Color(0xFFEF4444))),
-                            onPressed: () => _confirmClearAllData(context, provider),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
                 ],
               ),
             ),
