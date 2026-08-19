@@ -431,15 +431,74 @@ class HydrationProvider extends ChangeNotifier {
   }
 
   Future<void> clearAllData() async {
+    // 1. Wipe all local SQLite database logs
     await DBHelper.instance.clearAllLogs();
+
+    // 2. Clear all SharedPreferences storage
+    await PrefService.clearAll();
+
+    // 3. Cancel all system background notifications and active in-memory timers
+    await NotificationService.cancelAllAlarms();
+
+    // 4. Reset all in-memory provider state to factory defaults
+    _todayIntakeMl = 0;
+    _dailyGoalMl = 2500;
     _currentStreak = 0;
     _bestStreak = 0;
-    await PrefService.setCurrentStreak(0);
-    await PrefService.setBestStreak(0);
+    _userName = 'HydroBuddy';
+    _todayLogs = [];
+    _isStreakBannerDismissed = false;
 
+    _selectedDate = DateTime.now();
+    _selectedDateLogs = [];
+    _selectedDateIntakeMl = 0;
+    _lifetimeVolumeMl = 0;
+    _perfectDaysCount = 0;
+    _successRatePct = 0.0;
+    _isShieldActive = false;
+    _dailyTotalsMap = {};
+
+    _sevenDayTrend = [];
+    _weeklyAverageMl = 0.0;
+    _weeklyTotalMl = 0;
+    _bestDayLabel = '—';
+    _bestDayMl = 0;
+    _worstDayLabel = '—';
+    _worstDayMl = 0;
+    _hitRateFraction = '0/7';
+    _hitRatePct = 0.0;
+    _mealSchedule = {
+      'bfast': '08:30 AM',
+      'lunch': '01:00 PM',
+      'dinner': '08:00 PM',
+    };
+
+    _isNotifEnabled = true;
+    _isPostMealNotifEnabled = true;
+    _reminderTimes = ['08:00 AM', '12:00 PM', '04:00 PM', '08:00 PM'];
+    _disabledReminderTimes = [];
+    _isSoloOptIn = true;
+
+    // 5. Re-seed default settings
+    await PrefService.setGoal(_dailyGoalMl);
+    await PrefService.setUserName(_userName);
+    await PrefService.setReminderTimes(_reminderTimes);
+    await PrefService.setDisabledReminderTimes(_disabledReminderTimes);
+    await PrefService.setNotifEnabled(_isNotifEnabled);
+    await PrefService.setPostMealNotif(_isPostMealNotifEnabled);
+    await PrefService.setMealSchedule('08:30 AM', '01:00 PM', '08:00 PM');
+    await PrefService.setSoloOptIn(_isSoloOptIn);
+
+    // 6. Schedule fresh reminders
+    try {
+      await NotificationService.scheduleReminders(_reminderTimes, _isNotifEnabled);
+    } catch (_) {}
+
+    // 7. Reload and notify all UI listeners
     await loadTodayData();
     await loadHistoryStats();
     await loadInsightsData();
+    notifyListeners();
   }
 
   Future<void> saveMealSchedule(String bfast, String lunch, String dinner) async {

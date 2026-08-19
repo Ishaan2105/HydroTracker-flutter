@@ -102,12 +102,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         title: Text(
-          '⚠️ Clear All Logs & Reset Data?',
+          '⚠️ Full Reset to New Account?',
           style: GoogleFonts.poppins(color: const Color(0xFFEF4444), fontWeight: FontWeight.bold),
         ),
         content: Text(
-          'This action will permanently delete all logged water intake records from SQLite and reset your streak to 0. This cannot be undone!',
-          style: GoogleFonts.poppins(color: const Color(0xFFCBD5E1)),
+          'This will permanently delete all water intake logs from SQLite, reset streaks and analytics to 0, cancel all scheduled alarms, and restore default factory settings just like a brand new account.',
+          style: GoogleFonts.poppins(color: const Color(0xFFCBD5E1), fontSize: 13),
         ),
         actions: [
           TextButton(
@@ -116,7 +116,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
-            child: Text('Clear Everything', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text('Reset Everything', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
             onPressed: () async {
               Navigator.pop(ctx);
               await provider.clearAllData();
@@ -124,11 +124,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      '🗑️ All logs cleared and app reset!',
+                      '✨ App fully reset! Fresh new account ready.',
                       style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
                     ),
-                    backgroundColor: const Color(0xFFEF4444),
-                    duration: const Duration(seconds: 2),
+                    backgroundColor: const Color(0xFF10B981),
+                    duration: const Duration(seconds: 3),
                   ),
                 );
               }
@@ -478,7 +478,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('⚠️ Danger Zone', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFFEF4444))),
-                        Text('Permanently wipe offline SQLite data and reset app streaks.', style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFFFFEDD5))),
+                        Text('Permanently wipe all logs, reset streaks, and restore fresh account defaults.', style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFFFFEDD5))),
                         const SizedBox(height: 12),
                         SizedBox(
                           width: double.infinity,
@@ -489,7 +489,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                             icon: const Icon(Icons.delete_forever_rounded, color: Color(0xFFEF4444)),
-                            label: Text('Clear All Logs & Reset App', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: const Color(0xFFEF4444))),
+                            label: Text('Full Reset (New Account)', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: const Color(0xFFEF4444))),
                             onPressed: () => _confirmClearAllData(context, provider),
                           ),
                         ),

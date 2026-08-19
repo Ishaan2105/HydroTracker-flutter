@@ -183,4 +183,10 @@ class PrefService {
     final formatted = times.map(formatTo12H).toList();
     await prefs.setStringList(keyDisabledReminderTimes, formatted);
   }
+
+  /// Wipe all keys in SharedPreferences
+  static Future<void> clearAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+  }
 }
