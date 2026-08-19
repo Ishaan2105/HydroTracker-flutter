@@ -12,13 +12,13 @@ class InsightsScreen extends StatefulWidget {
 }
 
 class _InsightsScreenState extends State<InsightsScreen> {
-  // Goal Calculator State
+  // Goal Calculator State (initialized to 0)
   bool _useCm = false;
-  final TextEditingController _ftController = TextEditingController(text: '5');
-  final TextEditingController _inController = TextEditingController(text: '9');
-  final TextEditingController _cmController = TextEditingController(text: '175');
-  final TextEditingController _weightController = TextEditingController(text: '70');
-  final TextEditingController _ageController = TextEditingController(text: '25');
+  final TextEditingController _ftController = TextEditingController(text: '0');
+  final TextEditingController _inController = TextEditingController(text: '0');
+  final TextEditingController _cmController = TextEditingController(text: '0');
+  final TextEditingController _weightController = TextEditingController(text: '0');
+  final TextEditingController _ageController = TextEditingController(text: '0');
   String _gender = 'Male';
   int? _calculatedGoalMl;
 
@@ -51,6 +51,24 @@ class _InsightsScreenState extends State<InsightsScreen> {
     super.dispose();
   }
 
+  void _showConfirmationBanner(String message, {Color color = const Color(0xFF1565C0)}) {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 13),
+        ),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   TimeOfDay _parseTimeOfDay(String timeStr) {
     try {
       final clean = timeStr.trim();
@@ -76,56 +94,81 @@ class _InsightsScreenState extends State<InsightsScreen> {
   }
 
   void _calculateGoal(HydrationProvider provider) {
-    final weight = double.tryParse(_weightController.text) ?? 70.0;
-    final age = int.tryParse(_ageController.text) ?? 25;
+    final weight = double.tryParse(_weightController.text) ?? 0.0;
+    final age = int.tryParse(_ageController.text) ?? 0;
 
     double? heightCm;
     if (_useCm) {
-      heightCm = double.tryParse(_cmController.text) ?? 175.0;
+      heightCm = double.tryParse(_cmController.text) ?? 0.0;
     } else {
-      final ft = double.tryParse(_ftController.text) ?? 5.0;
-      final inches = double.tryParse(_inController.text) ?? 9.0;
+      final ft = double.tryParse(_ftController.text) ?? 0.0;
+      final inches = double.tryParse(_inController.text) ?? 0.0;
       heightCm = (ft * 30.48) + (inches * 2.54);
     }
 
+    if (weight <= 0 && age <= 0 && heightCm <= 0) {
+      _showConfirmationBanner(
+        '⚠️ Please enter your height, weight & age to calculate your goal',
+        color: const Color(0xFFD97706),
+      );
+      return;
+    }
+
     final suggested = provider.calculateSuggestedGoal(
-      heightCm: heightCm,
-      weightKg: weight,
-      age: age,
+      heightCm: heightCm > 0 ? heightCm : 170.0,
+      weightKg: weight > 0 ? weight : 70.0,
+      age: age > 0 ? age : 25,
       gender: _gender,
     );
 
     setState(() {
       _calculatedGoalMl = suggested;
     });
+
+    _showConfirmationBanner(
+      '⚖️ Goal Calculated: ${(suggested / 1000).toStringAsFixed(1)}L ($suggested ml)',
+      color: const Color(0xFF1565C0),
+    );
+  }
+
+  void _resetGoalCalculator() {
+    setState(() {
+      _ftController.text = '0';
+      _inController.text = '0';
+      _cmController.text = '0';
+      _weightController.text = '0';
+      _ageController.text = '0';
+      _gender = 'Male';
+      _calculatedGoalMl = null;
+    });
+    _showConfirmationBanner(
+      '🔄 Calculator values reset to 0',
+      color: const Color(0xFFD97706),
+    );
   }
 
   void _applyGoal(HydrationProvider provider) async {
     if (_calculatedGoalMl != null) {
       await provider.updateGoal(_calculatedGoalMl!);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '🎯 Daily Goal set to $_calculatedGoalMl ml!',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-            ),
-            backgroundColor: const Color(0xFF1565C0),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
+      _showConfirmationBanner(
+        '🎯 Daily Goal set to ${(_calculatedGoalMl! / 1000).toStringAsFixed(1)}L ($_calculatedGoalMl ml)!',
+        color: const Color(0xFF10B981),
+      );
     }
   }
 
   void _selectMealTime(BuildContext context, String mealType) async {
     TimeOfDay initial;
+    String mealName;
     if (mealType == 'bfast') {
       initial = _bfastTime;
+      mealName = 'Breakfast';
     } else if (mealType == 'lunch') {
       initial = _lunchTime;
+      mealName = 'Lunch';
     } else {
       initial = _dinnerTime;
+      mealName = 'Dinner';
     }
 
     final picked = await showTimePicker(
@@ -134,6 +177,8 @@ class _InsightsScreenState extends State<InsightsScreen> {
     );
 
     if (picked != null) {
+      final timeFormatted = _formatTimeOfDay(picked);
+      if (!mounted) return;
       setState(() {
         if (mealType == 'bfast') {
           _bfastTime = picked;
@@ -143,6 +188,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
           _dinnerTime = picked;
         }
       });
+      _showConfirmationBanner('⏰ $mealName time set to $timeFormatted');
     }
   }
 
@@ -152,18 +198,10 @@ class _InsightsScreenState extends State<InsightsScreen> {
     final dinner = _formatTimeOfDay(_dinnerTime);
 
     await provider.saveMealSchedule(bfast, lunch, dinner);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '🍽️ Meal Schedule Saved ($bfast, $lunch, $dinner)!',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-          ),
-          backgroundColor: const Color(0xFF10B981),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
+    _showConfirmationBanner(
+      '🍽️ Meal Schedule Saved ($bfast, $lunch, $dinner)!',
+      color: const Color(0xFF10B981),
+    );
   }
 
   @override
@@ -230,7 +268,10 @@ class _InsightsScreenState extends State<InsightsScreen> {
                                 DropdownMenuItem(value: true, child: Text('cm')),
                               ],
                               onChanged: (val) {
-                                if (val != null) setState(() => _useCm = val);
+                                if (val != null) {
+                                  setState(() => _useCm = val);
+                                  _showConfirmationBanner('📏 Height unit changed to ${val ? "cm" : "ft + in"}');
+                                }
                               },
                             ),
                           ],
@@ -251,13 +292,13 @@ class _InsightsScreenState extends State<InsightsScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   if (_useCm) ...[
-                                    _buildNumberInput(_cmController, '175'),
+                                    _buildNumberInput(_cmController, '0', fieldLabel: 'Height (cm)'),
                                   ] else ...[
                                     Row(
                                       children: [
-                                        Expanded(child: _buildNumberInput(_ftController, 'ft')),
+                                        Expanded(child: _buildNumberInput(_ftController, '0', fieldLabel: 'Height (ft)')),
                                         const SizedBox(width: 4),
-                                        Expanded(child: _buildNumberInput(_inController, 'in')),
+                                        Expanded(child: _buildNumberInput(_inController, '0', fieldLabel: 'Height (in)')),
                                       ],
                                     ),
                                   ],
@@ -275,7 +316,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                                     style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF94A3B8)),
                                   ),
                                   const SizedBox(height: 4),
-                                  _buildNumberInput(_weightController, '70'),
+                                  _buildNumberInput(_weightController, '0', fieldLabel: 'Weight (kg)'),
                                 ],
                               ),
                             ),
@@ -295,7 +336,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                                     style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF94A3B8)),
                                   ),
                                   const SizedBox(height: 4),
-                                  _buildNumberInput(_ageController, '25'),
+                                  _buildNumberInput(_ageController, '0', fieldLabel: 'Age (yrs)'),
                                 ],
                               ),
                             ),
@@ -327,7 +368,10 @@ class _InsightsScreenState extends State<InsightsScreen> {
                                           DropdownMenuItem(value: 'Female', child: Text('Female')),
                                         ],
                                         onChanged: (val) {
-                                          if (val != null) setState(() => _gender = val);
+                                          if (val != null) {
+                                            setState(() => _gender = val);
+                                            _showConfirmationBanner('👤 Gender set to $val');
+                                          }
                                         },
                                       ),
                                     ),
@@ -379,18 +423,37 @@ class _InsightsScreenState extends State<InsightsScreen> {
                                     color: const Color(0xFF00E5FF),
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                ElevatedButton(
-                                  onPressed: () => _applyGoal(provider),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF10B981),
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                  child: Text(
-                                    'Set as My Goal',
-                                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
-                                  ),
+                                const SizedBox(height: 10),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        onPressed: () => _applyGoal(provider),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF10B981),
+                                          padding: const EdgeInsets.symmetric(vertical: 10),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        ),
+                                        child: Text(
+                                          'Set as My Goal',
+                                          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    OutlinedButton(
+                                      onPressed: _resetGoalCalculator,
+                                      style: OutlinedButton.styleFrom(
+                                        side: const BorderSide(color: Color(0xFFEF4444)),
+                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
+                                      child: Text(
+                                        'Reset 🔄',
+                                        style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: const Color(0xFFEF4444), fontSize: 13),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -840,7 +903,11 @@ class _InsightsScreenState extends State<InsightsScreen> {
     );
   }
 
-  Widget _buildNumberInput(TextEditingController controller, String hint) {
+  Widget _buildNumberInput(
+    TextEditingController controller,
+    String hint, {
+    String? fieldLabel,
+  }) {
     return TextField(
       controller: controller,
       keyboardType: TextInputType.number,
@@ -853,6 +920,11 @@ class _InsightsScreenState extends State<InsightsScreen> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
       ),
+      onSubmitted: (val) {
+        if (fieldLabel != null && val.trim().isNotEmpty) {
+          _showConfirmationBanner('✏️ $fieldLabel updated to $val');
+        }
+      },
     );
   }
 
