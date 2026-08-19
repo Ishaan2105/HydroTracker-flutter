@@ -217,6 +217,10 @@ class HydrationProvider extends ChangeNotifier {
         _isNotifEnabled,
         dailyTimes: dailySet,
       );
+      await NotificationService.schedulePostMealReminders(
+        _mealSchedule,
+        _isPostMealNotifEnabled && _isNotifEnabled,
+      );
     } catch (e) {
       debugPrint('HydrationProvider notification scheduling error: $e');
     }
@@ -463,6 +467,10 @@ class HydrationProvider extends ChangeNotifier {
         _isNotifEnabled,
         dailyTimes: _buildDailySet(),
       );
+      await NotificationService.schedulePostMealReminders(
+        _mealSchedule,
+        _isPostMealNotifEnabled && _isNotifEnabled,
+      );
     } catch (_) {}
   }
 
@@ -470,6 +478,17 @@ class HydrationProvider extends ChangeNotifier {
     _isPostMealNotifEnabled = enabled;
     notifyListeners();
     await PrefService.setPostMealNotif(enabled);
+    if (enabled) {
+      await NotificationService.requestPermissions();
+    }
+    try {
+      await NotificationService.schedulePostMealReminders(
+        _mealSchedule,
+        enabled && _isNotifEnabled,
+      );
+    } catch (e, st) {
+      AppLogger.error('HydrationProvider', 'togglePostMealNotif error: $e', e, st);
+    }
   }
 
   Future<void> addReminderTime(String timeStr) async {
@@ -656,6 +675,14 @@ class HydrationProvider extends ChangeNotifier {
     };
     await PrefService.setMealSchedule(bfast, lunch, dinner);
     notifyListeners();
+    try {
+      await NotificationService.schedulePostMealReminders(
+        _mealSchedule,
+        _isPostMealNotifEnabled && _isNotifEnabled,
+      );
+    } catch (e, st) {
+      AppLogger.error('HydrationProvider', 'saveMealSchedule error: $e', e, st);
+    }
   }
 
   Future<void> logWater(int amountMl) async {

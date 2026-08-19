@@ -231,7 +231,11 @@ class NotificationService {
     Set<String> dailyTimes = const {},
   }) async {
     try {
-      await cancelAllAlarms();
+      await init();
+      // Cancel existing reminder alarms (100..199 and backups 600..699)
+      for (int i = 0; i < 100; i++) {
+        await cancelAlarm(100 + i);
+      }
 
       if (!enabled || reminderTimes.isEmpty) {
         AppLogger.info('NotificationService', 'Notifications disabled or reminder list empty.');
@@ -263,6 +267,57 @@ class NotificationService {
       AppLogger.info('NotificationService', 'Successfully scheduled ${reminderTimes.length} reminder alarms.');
     } catch (e, st) {
       AppLogger.error('NotificationService', 'Error scheduling reminders', e, st);
+    }
+  }
+
+  /// Schedule post-meal reminders (30 minutes after each meal).
+  /// Uses the exact same dual-redundancy and triple-layer AlarmManager + Timer engine as the 1-min test alarm.
+  static Future<void> schedulePostMealReminders(
+    Map<String, String> mealSchedule,
+    bool enabled,
+  ) async {
+    try {
+      await init();
+      // Cancel previous post-meal alarms (IDs 300, 301, 302 and backups 800, 801, 802)
+      for (int i = 0; i < 3; i++) {
+        await cancelAlarm(300 + i);
+      }
+
+      if (!enabled || mealSchedule.isEmpty) {
+        AppLogger.info('NotificationService', 'Post-meal reminders disabled or schedule empty.');
+        return;
+      }
+
+      final meals = [
+        {'key': 'bfast', 'name': 'Breakfast', 'id': 300},
+        {'key': 'lunch', 'name': 'Lunch', 'id': 301},
+        {'key': 'dinner', 'name': 'Dinner', 'id': 302},
+      ];
+
+      for (var meal in meals) {
+        final timeStr = mealSchedule[meal['key'] as String];
+        if (timeStr == null || timeStr.trim().isEmpty) continue;
+
+        final mealTime = _parseTimeString(timeStr);
+        if (mealTime == null) continue;
+
+        // Add 30 minutes to meal time
+        final postMealTime = mealTime.add(const Duration(minutes: 30));
+        final postMealTimeStr = DateFormat('hh:mm a').format(postMealTime);
+        final target = calculateNextTzOccurrence(postMealTimeStr);
+
+        await _schedulePointInTimeAlarm(
+          id: meal['id'] as int,
+          target: target,
+          timeStr: postMealTimeStr,
+          title: '🍽️ Post-${meal['name']} Hydration 💧',
+          body: 'It’s been 30 minutes since ${meal['name']}. Drink a glass of water for optimal digestion!',
+          isDaily: true,
+        );
+      }
+      AppLogger.info('NotificationService', 'Successfully scheduled post-meal reminders (30m after meals).');
+    } catch (e, st) {
+      AppLogger.error('NotificationService', 'Error scheduling post-meal reminders', e, st);
     }
   }
 
