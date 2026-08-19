@@ -110,11 +110,13 @@ class AppLogger {
     // 2. Also print to console for debug
     debugPrint('[${level.name.toUpperCase()}] [$tag] $message');
 
-    // 3. Asynchronously persist to SQLite app_logs table
-    DBHelper.instance.insertAppLog(entry).catchError((e) {
-      debugPrint('AppLogger DB persist error: $e');
-      return -1;
-    });
+    // 3. Asynchronously persist to SQLite app_logs table if database is ready
+    if (DBHelper.instance.isReady) {
+      DBHelper.instance.insertAppLog(entry).catchError((e) {
+        debugPrint('AppLogger DB persist error: $e');
+        return -1;
+      });
+    }
   }
 
   /// Get all persisted logs from SQLite database

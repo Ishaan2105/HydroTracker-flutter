@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/water_log.dart';
@@ -14,8 +15,10 @@ class DBHelper {
 
   DBHelper._init();
 
+  bool get isReady => _database != null && _database!.isOpen;
+
   Future<Database> get database async {
-    if (_database != null) return _database!;
+    if (_database != null && _database!.isOpen) return _database!;
     _database = await _initDB(databaseFileName);
     return _database!;
   }
@@ -43,7 +46,7 @@ class DBHelper {
 
   /// Called when database is created for the first time
   Future<void> _createDB(Database db, int version) async {
-    AppLogger.info('DBHelper', 'Creating new database schema version $version...');
+    debugPrint('[DBHelper] Creating new database schema version $version...');
 
     // 1. Water Intake Logs Table
     await db.execute('''
@@ -69,7 +72,7 @@ class DBHelper {
 
     // 3. Performance Indexes
     await _createIndices(db);
-    AppLogger.info('DBHelper', 'Database tables and indices created successfully.');
+    debugPrint('[DBHelper] Database tables and indices created successfully.');
   }
 
   /// Create search & sorting indices for fast queries
@@ -80,20 +83,20 @@ class DBHelper {
       await db.execute('CREATE INDEX IF NOT EXISTS idx_app_logs_time ON app_logs (timestamp)');
       await db.execute('CREATE INDEX IF NOT EXISTS idx_app_logs_level ON app_logs (level)');
     } catch (e) {
-      AppLogger.warn('DBHelper', 'Index creation note: $e');
+      debugPrint('[DBHelper] Index creation note: $e');
     }
   }
 
   /// Sequential, versioned schema migration pipeline
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
-    AppLogger.info('DBHelper', 'Migrating database from version $oldVersion to $newVersion...');
+    debugPrint('[DBHelper] Migrating database from version $oldVersion to $newVersion...');
 
     for (int targetVersion = oldVersion + 1; targetVersion <= newVersion; targetVersion++) {
       try {
         await _applyMigration(db, targetVersion);
-        AppLogger.info('DBHelper', 'Successfully migrated database to version $targetVersion.');
-      } catch (e, st) {
-        AppLogger.error('DBHelper', 'Migration to version $targetVersion failed', e, st);
+        debugPrint('[DBHelper] Successfully migrated database to version $targetVersion.');
+      } catch (e) {
+        debugPrint('[DBHelper] Migration to version $targetVersion failed: $e');
         rethrow;
       }
     }
@@ -280,7 +283,8 @@ class DBHelper {
   // ---------------------------------------------------------------------------
 
   Future<int> insertAppLog(LogEntry log) async {
-    final db = await instance.database;
+    if (!isReady) return -1;
+    final db = _database!;
     return await db.insert('app_logs', log.toMap());
   }
 
