@@ -356,8 +356,7 @@ class NotificationService {
 
     if (isDaily) {
       // --- Strategy for DAILY alarms ---
-      // 1. Try native daily-repeating alarm (wallClockTime + matchDateTimeComponents.time)
-      //    This handles recurrence at the OS level.
+      // 1. Single native daily-repeating exact alarm (wallClockTime + matchDateTimeComponents.time)
       try {
         await _notificationsPlugin.zonedSchedule(
           id,
@@ -379,31 +378,14 @@ class NotificationService {
             body,
             target,
             notificationDetails,
-            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+            androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
             uiLocalNotificationDateInterpretation:
-                UILocalNotificationDateInterpretation.wallClockTime,
-            matchDateTimeComponents: DateTimeComponents.time,
+                UILocalNotificationDateInterpretation.absoluteTime,
           );
         } catch (_) {}
       }
 
-      // 2. One-shot absoluteTime backup for today (same engine as 1-min test alarm)
-      //    Uses a different notification ID (+500) to avoid conflicts with recurring alarm.
-      final backupId = id + 500;
-      try {
-        await _notificationsPlugin.zonedSchedule(
-          backupId,
-          title,
-          body,
-          target,
-          notificationDetails,
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-          uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
-        );
-      } catch (_) {}
-
-      // 3. In-memory timer fallback while process is alive
+      // 2. In-memory timer fallback while process is alive (uses same ID to prevent duplication)
       final diff = target.difference(tz.TZDateTime.now(tz.local));
       if (diff.inSeconds > 0 && diff.inHours < 24) {
         _activeTimers[id]?.cancel(); // cancel any previous timer for this slot
