@@ -376,17 +376,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             Expanded(
                               child: ElevatedButton.icon(
                                 onPressed: () async {
-                                  await NotificationService.requestExactAlarmsPermission();
-                                  final scheduledTime = await NotificationService.scheduleOneMinuteTest();
-                                  final timeStr = DateFormat('hh:mm:ss a').format(scheduledTime);
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('⏳ 1-Min Test Alarm set for $timeStr! Lock phone & wait 60s.'),
-                                        backgroundColor: const Color(0xFF1565C0),
-                                        duration: const Duration(seconds: 4),
-                                      ),
-                                    );
+                                  try {
+                                    final scheduledTime = await NotificationService.scheduleOneMinuteTest();
+                                    final timeStr = DateFormat('hh:mm:ss a').format(scheduledTime);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('⏳ 1-Min Alarm set for $timeStr! Lock phone & wait 60s.'),
+                                          backgroundColor: const Color(0xFF1565C0),
+                                          duration: const Duration(seconds: 4),
+                                        ),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('⚠️ Alarm scheduling error: $e'),
+                                          backgroundColor: const Color(0xFFEF4444),
+                                          duration: const Duration(seconds: 4),
+                                        ),
+                                      );
+                                    }
                                   }
                                 },
                                 icon: const Icon(Icons.timer_outlined, size: 16, color: Colors.white),

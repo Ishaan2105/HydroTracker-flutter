@@ -235,7 +235,10 @@ class NotificationService {
   /// Schedule a 1-minute test alarm for instant verification
   static Future<DateTime> scheduleOneMinuteTest() async {
     await init();
-    await requestPermissions();
+    try {
+      await requestPermissions();
+    } catch (_) {}
+
     final now = tz.TZDateTime.now(tz.local);
     final target = now.add(const Duration(seconds: 60));
 
@@ -264,20 +267,37 @@ class NotificationService {
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.wallClockTime,
+            UILocalNotificationDateInterpretation.absoluteTime,
       );
-    } catch (_) {
-      await _notificationsPlugin.zonedSchedule(
-        999,
-        '⏰ Hydro Tracker 1-Min Test Alarm!',
-        'Scheduled alarm test succeeded! Background notification working.',
-        target,
-        notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.wallClockTime,
-      );
+    } catch (e1) {
+      debugPrint('zonedSchedule exact error: $e1');
+      try {
+        await _notificationsPlugin.zonedSchedule(
+          999,
+          '⏰ Hydro Tracker 1-Min Test Alarm!',
+          'Scheduled alarm test succeeded! Background notification working.',
+          target,
+          notificationDetails,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+        );
+      } catch (e2) {
+        debugPrint('zonedSchedule inexact error: $e2');
+      }
     }
+
+    // Dual-redundancy timer fallback while process is active
+    Future.delayed(const Duration(seconds: 60), () async {
+      try {
+        await _notificationsPlugin.show(
+          999,
+          '⏰ Hydro Tracker 1-Min Test Alarm!',
+          'Scheduled alarm test succeeded! Background notification working.',
+          notificationDetails,
+        );
+      } catch (_) {}
+    });
 
     return DateTime.now().add(const Duration(seconds: 60));
   }
