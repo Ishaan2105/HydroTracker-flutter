@@ -21,11 +21,18 @@ class WaterLog {
   }
 
   factory WaterLog.fromMap(Map<String, dynamic> map) {
+    DateTime parsedTime;
+    try {
+      parsedTime = DateTime.parse(map['timestamp']?.toString() ?? '');
+    } catch (_) {
+      parsedTime = DateTime.now();
+    }
+
     return WaterLog(
       id: (map['id'] as num?)?.toInt(),
       amountMl: (map['amount_ml'] as num?)?.toInt() ?? 0,
-      timestamp: DateTime.parse(map['timestamp'] as String),
-      dateString: map['date_string'] as String,
+      timestamp: parsedTime,
+      dateString: map['date_string']?.toString() ?? '',
     );
   }
 }
