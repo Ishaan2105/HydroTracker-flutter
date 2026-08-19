@@ -5,6 +5,9 @@
     <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <!-- Allows prompting the user to exempt this app from battery optimizations.
+         Required for reliable alarm delivery on Samsung & other OEM devices. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
 
     <application
         android:label="Hydro Tracker"
@@ -38,12 +41,14 @@
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
             android:exported="false"/>
 
-        <!-- flutter_local_notifications: reschedule alarms after device reboot -->
+        <!-- flutter_local_notifications: reschedule alarms after device reboot.
+             LOCKED_BOOT_COMPLETED fires before the user unlocks — gives earlier restore window. -->
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED"/>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
                 <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
@@ -52,6 +57,27 @@
 
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver"
+            android:exported="false"/>
+
+        <!-- Native boot receiver — fully independent of Flutter engine.
+             Reads saved alarm times from SharedPreferences and schedules via AlarmManager.
+             Acts as a second-layer backup if flutter_local_notifications receiver is delayed. -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
+
+        <!-- Fires when a native BootReceiver alarm triggers — shows the notification
+             without initialising the Flutter engine. -->
+        <receiver
+            android:name=".AlarmNotificationReceiver"
             android:exported="false"/>
 
         <!-- Don't delete the meta-data below.

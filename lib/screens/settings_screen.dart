@@ -16,6 +16,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _nameController;
   late TextEditingController _goalController;
+  bool _isBatteryExempt = true; // assume OK until checked
 
   @override
   void initState() {
@@ -23,6 +24,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final provider = Provider.of<HydrationProvider>(context, listen: false);
     _nameController = TextEditingController(text: provider.userName);
     _goalController = TextEditingController(text: (provider.dailyGoalMl / 1000).toStringAsFixed(1));
+    _checkBatteryStatus();
+  }
+
+  Future<void> _checkBatteryStatus() async {
+    final exempt = await NotificationService.isBatteryOptimizationExempt();
+    if (mounted) {
+      setState(() => _isBatteryExempt = exempt);
+    }
   }
 
   @override
@@ -126,6 +135,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
 
                   const SizedBox(height: 20),
+
+                  // ⚡ Battery Optimization Warning Banner
+                  if (!_isBatteryExempt) ...[
+                    _BatteryGuidanceBanner(
+                      onFixed: _checkBatteryStatus,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
 
                   // 1. 👤 User Profile Section
                   _buildCard(
@@ -269,6 +286,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           children: provider.reminderTimes.map((timeStr) {
                             final displayTime = PrefService.formatTo12H(timeStr);
                             final isEnabled = provider.isReminderEnabled(timeStr);
+                            final isDaily = provider.isReminderDaily(timeStr);
                             return Container(
                               margin: const EdgeInsets.only(bottom: 8),
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -288,13 +306,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
-                                    child: Text(
-                                      displayTime,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                        color: isEnabled ? Colors.white : Colors.white38,
-                                      ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          displayTime,
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                            color: isEnabled ? Colors.white : Colors.white38,
+                                          ),
+                                        ),
+                                        // Daily / Once chip
+                                        GestureDetector(
+                                          onTap: isEnabled
+                                              ? () async {
+                                                  await provider.toggleReminderDaily(timeStr, !isDaily);
+                                                  if (context.mounted) {
+                                                    final label = !isDaily ? 'daily 🔁' : 'one-time only 1️⃣';
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text('$displayTime set to repeat $label'),
+                                                        duration: const Duration(seconds: 2),
+                                                        backgroundColor: const Color(0xFF1565C0),
+                                                      ),
+                                                    );
+                                                  }
+                                                }
+                                              : null,
+                                          child: Container(
+                                            margin: const EdgeInsets.only(top: 3),
+                                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: isDaily
+                                                  ? const Color(0xFF00E5FF).withValues(alpha: 0.12)
+                                                  : Colors.orange.withValues(alpha: 0.12),
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border.all(
+                                                color: isDaily
+                                                    ? const Color(0xFF00E5FF).withValues(alpha: 0.35)
+                                                    : Colors.orange.withValues(alpha: 0.35),
+                                              ),
+                                            ),
+                                            child: Text(
+                                              isDaily ? '🔁 Daily' : '1️⃣ Once',
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w600,
+                                                color: isDaily
+                                                    ? const Color(0xFF00E5FF)
+                                                    : Colors.orange,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                   // On / Off Toggle Switch
@@ -461,6 +527,373 @@ class _SettingsScreenState extends State<SettingsScreen> {
         selectedColor: const Color(0xFF00E5FF),
         backgroundColor: const Color(0xFF0F172A),
         onSelected: (_) => _saveGoal(provider, liters),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// ⚡ Battery Guidance Banner — shown inside Settings when battery is not exempt
+// =============================================================================
+
+class _BatteryGuidanceBanner extends StatefulWidget {
+  final VoidCallback onFixed;
+  const _BatteryGuidanceBanner({required this.onFixed});
+
+  @override
+  State<_BatteryGuidanceBanner> createState() => _BatteryGuidanceBannerState();
+}
+
+class _BatteryGuidanceBannerState extends State<_BatteryGuidanceBanner> {
+  bool _showManualSteps = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              const Icon(Icons.battery_alert_rounded, color: Colors.orange, size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '⚡ Battery Optimization is ON',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Samsung One UI can kill background alarms even with all permissions granted. '
+            'Two settings need to be fixed for reliable delivery:',
+            style: GoogleFonts.poppins(fontSize: 11, color: Colors.white70),
+          ),
+          const SizedBox(height: 12),
+
+          // Fix 1 — Standard Android exemption
+          Text(
+            'Fix 1 — Unrestricted Battery Mode',
+            style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          const SizedBox(height: 4),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                await NotificationService.requestBatteryOptimizationExemption();
+                await Future.delayed(const Duration(milliseconds: 800));
+                widget.onFixed();
+              },
+              icon: const Icon(Icons.bolt_rounded, size: 16),
+              label: Text(
+                'Allow Unrestricted Battery',
+                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 9),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Fix 2 — Samsung Device Care / App Sleep
+          Text(
+            'Fix 2 — Samsung App Sleep (Never Sleeping Apps)',
+            style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Samsung\'s "App Sleep" can suppress alarms separately from battery optimization.',
+            style: GoogleFonts.poppins(fontSize: 10, color: Colors.white54),
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                await NotificationService.openSamsungDeviceCare();
+              },
+              icon: const Icon(Icons.phone_android_rounded, size: 16, color: Colors.orange),
+              label: Text(
+                'Open Samsung Device Care',
+                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.orange),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: Colors.orange.withValues(alpha: 0.6)),
+                padding: const EdgeInsets.symmetric(vertical: 9),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Collapsible manual guide
+          GestureDetector(
+            onTap: () => setState(() => _showManualSteps = !_showManualSteps),
+            child: Row(
+              children: [
+                Icon(
+                  _showManualSteps ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                  color: Colors.white38,
+                  size: 18,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  _showManualSteps ? 'Hide manual steps' : 'Show manual steps (if buttons don\'t work)',
+                  style: GoogleFonts.poppins(fontSize: 10, color: Colors.white38),
+                ),
+              ],
+            ),
+          ),
+
+          if (_showManualSteps) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F172A),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _manualStep('1', 'Open Samsung Settings'),
+                  _manualStep('2', 'Tap Battery → Background usage limits'),
+                  _manualStep('3', 'Tap Never sleeping apps → + (Add)'),
+                  _manualStep('4', 'Find and select Hydro Tracker'),
+                  const Divider(color: Colors.white12, height: 14),
+                  _manualStep('A', 'Also go to: Settings → Apps → Hydro Tracker'),
+                  _manualStep('B', 'Tap Battery → Select Unrestricted'),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _manualStep(String number, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 20,
+            height: 20,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.orange.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              number,
+              style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.orange),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(text, style: GoogleFonts.poppins(fontSize: 11, color: Colors.white70)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Battery Guidance Bottom Sheet — shown once on first launch
+// =============================================================================
+
+class BatteryGuidanceBottomSheet extends StatelessWidget {
+  final VoidCallback? onDismiss;
+  const BatteryGuidanceBottomSheet({super.key, this.onDismiss});
+
+  static Future<void> showIfNeeded(BuildContext context) async {
+    final alreadyShown = await PrefService.getBatteryPromptShown();
+    if (alreadyShown) return;
+
+    final isExempt = await NotificationService.isBatteryOptimizationExempt();
+    if (isExempt) return; // Battery already OK — don't bother the user
+
+    // Mark as shown before presenting, so it never shows twice even if dismissed instantly
+    await PrefService.setBatteryPromptShown(true);
+
+    // Guard against context becoming stale across the async gaps above
+    if (!context.mounted) return;
+
+    // ignore: use_build_context_synchronously — mounted guard is above
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => const BatteryGuidanceBottomSheet(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+
+            Row(
+              children: [
+                const Text('⚡', style: TextStyle(fontSize: 28)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Action needed for reliable alarms',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+            Text(
+              'Samsung One UI\'s battery optimization can silently suppress your '
+              'hydration alarms, even when all permissions are granted.\n\n'
+              'Two quick fixes take less than 30 seconds:',
+              style: GoogleFonts.poppins(fontSize: 13, color: Colors.white70, height: 1.5),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Fix 1
+            _sheetFixRow(
+              icon: Icons.bolt_rounded,
+              title: 'Fix 1 — Allow Unrestricted Battery',
+              subtitle: 'Prevents Samsung from throttling the AlarmManager',
+              color: Colors.orange,
+              onTap: () async {
+                await NotificationService.requestBatteryOptimizationExemption();
+              },
+            ),
+
+            const SizedBox(height: 10),
+
+            // Fix 2
+            _sheetFixRow(
+              icon: Icons.phone_android_rounded,
+              title: 'Fix 2 — Never Sleeping Apps (Samsung)',
+              subtitle: 'Device Care → Battery → Background usage limits',
+              color: const Color(0xFF00E5FF),
+              onTap: () async {
+                await NotificationService.openSamsungDeviceCare();
+              },
+            ),
+
+            const SizedBox(height: 20),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1565C0),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text(
+                  'Done — I\'ve applied the fixes',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Center(
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(
+                  'Skip for now',
+                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.white38),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sheetFixRow({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text(subtitle, style: GoogleFonts.poppins(fontSize: 10, color: Colors.white54)),
+                ],
+              ),
+            ),
+            Icon(Icons.open_in_new_rounded, color: color, size: 16),
+          ],
+        ),
       ),
     );
   }

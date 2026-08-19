@@ -22,6 +22,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // After the first frame renders, check if we need to show the battery guidance
+    // bottom sheet. It only shows once (tracked by a SharedPreferences flag) and
+    // only when the device's battery optimization is not yet exempted.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        BatteryGuidanceBottomSheet.showIfNeeded(context);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(

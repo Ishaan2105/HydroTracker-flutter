@@ -189,4 +189,33 @@ class PrefService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
   }
+
+  // --- Daily toggle: tracks alarms that should fire only ONCE (not daily) ---
+  // Default is empty → all alarms repeat daily.
+  static const String keyOneTimeReminderTimes = 'one_time_reminder_times';
+
+  static Future<List<String>> getOneTimeReminderTimes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getStringList(keyOneTimeReminderTimes) ?? [];
+    return raw.map(formatTo12H).toList();
+  }
+
+  static Future<void> setOneTimeReminderTimes(List<String> times) async {
+    final prefs = await SharedPreferences.getInstance();
+    final formatted = times.map(formatTo12H).toList();
+    await prefs.setStringList(keyOneTimeReminderTimes, formatted);
+  }
+
+  // --- One-time battery guidance dialog flag ---
+  static const String keyBatteryPromptShown = 'battery_prompt_shown';
+
+  static Future<bool> getBatteryPromptShown() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(keyBatteryPromptShown) ?? false;
+  }
+
+  static Future<void> setBatteryPromptShown(bool shown) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(keyBatteryPromptShown, shown);
+  }
 }

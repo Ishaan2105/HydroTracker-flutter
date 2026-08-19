@@ -59,6 +59,8 @@ class HydrationProvider extends ChangeNotifier {
   bool _isPostMealNotifEnabled = true;
   List<String> _reminderTimes = ['08:00 AM', '12:00 PM', '04:00 PM', '08:00 PM'];
   List<String> _disabledReminderTimes = [];
+  /// Times that should fire only ONCE (not repeat daily). Default = empty → all daily.
+  List<String> _oneTimeReminderTimes = [];
   bool _isSoloOptIn = true;
 
   int get todayIntakeMl => _todayIntakeMl;
@@ -93,8 +95,11 @@ class HydrationProvider extends ChangeNotifier {
   bool get isPostMealNotifEnabled => _isPostMealNotifEnabled;
   List<String> get reminderTimes => _reminderTimes;
   List<String> get disabledReminderTimes => _disabledReminderTimes;
+  List<String> get oneTimeReminderTimes => _oneTimeReminderTimes;
   List<String> get activeReminderTimes => _reminderTimes.where((t) => !_disabledReminderTimes.contains(t)).toList();
   bool isReminderEnabled(String timeStr) => !_disabledReminderTimes.contains(timeStr);
+  /// Returns true if the alarm for [timeStr] repeats daily (not one-time).
+  bool isReminderDaily(String timeStr) => !_oneTimeReminderTimes.contains(timeStr);
   bool get isSoloOptIn => _isSoloOptIn;
 
   String formatDateString(DateTime dt) => DateFormat('yyyy-MM-dd').format(dt);
@@ -183,6 +188,7 @@ class HydrationProvider extends ChangeNotifier {
       _isPostMealNotifEnabled = await PrefService.getPostMealNotif();
       _reminderTimes = await PrefService.getReminderTimes();
       _disabledReminderTimes = await PrefService.getDisabledReminderTimes();
+      _oneTimeReminderTimes = await PrefService.getOneTimeReminderTimes();
       _isSoloOptIn = await PrefService.getSoloOptIn();
 
       await checkMidnightReset();
@@ -194,7 +200,14 @@ class HydrationProvider extends ChangeNotifier {
     }
 
     try {
-      await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
+      final dailySet = activeReminderTimes
+          .where((t) => !_oneTimeReminderTimes.contains(t))
+          .toSet();
+      await NotificationService.scheduleReminders(
+        activeReminderTimes,
+        _isNotifEnabled,
+        dailyTimes: dailySet,
+      );
     } catch (e) {
       debugPrint('HydrationProvider notification scheduling error: $e');
     }
@@ -375,7 +388,11 @@ class HydrationProvider extends ChangeNotifier {
       await NotificationService.requestPermissions();
     }
     try {
-      await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
+      await NotificationService.scheduleReminders(
+        activeReminderTimes,
+        _isNotifEnabled,
+        dailyTimes: _buildDailySet(),
+      );
     } catch (_) {}
   }
 
@@ -393,7 +410,11 @@ class HydrationProvider extends ChangeNotifier {
       notifyListeners();
       await PrefService.setReminderTimes(_reminderTimes);
       try {
-        await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
+        await NotificationService.scheduleReminders(
+          activeReminderTimes,
+          _isNotifEnabled,
+          dailyTimes: _buildDailySet(),
+        );
       } catch (_) {}
     }
   }
@@ -401,11 +422,17 @@ class HydrationProvider extends ChangeNotifier {
   Future<void> removeReminderTime(String timeStr) async {
     _reminderTimes.remove(timeStr);
     _disabledReminderTimes.remove(timeStr);
+    _oneTimeReminderTimes.remove(timeStr); // clean up daily-toggle state
     notifyListeners();
     await PrefService.setReminderTimes(_reminderTimes);
     await PrefService.setDisabledReminderTimes(_disabledReminderTimes);
+    await PrefService.setOneTimeReminderTimes(_oneTimeReminderTimes);
     try {
-      await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
+      await NotificationService.scheduleReminders(
+        activeReminderTimes,
+        _isNotifEnabled,
+        dailyTimes: _buildDailySet(),
+      );
     } catch (_) {}
   }
 
@@ -420,8 +447,39 @@ class HydrationProvider extends ChangeNotifier {
     notifyListeners();
     await PrefService.setDisabledReminderTimes(_disabledReminderTimes);
     try {
-      await NotificationService.scheduleReminders(activeReminderTimes, _isNotifEnabled);
+      await NotificationService.scheduleReminders(
+        activeReminderTimes,
+        _isNotifEnabled,
+        dailyTimes: _buildDailySet(),
+      );
     } catch (_) {}
+  }
+
+  /// Toggle whether a reminder fires daily or only once.
+  Future<void> toggleReminderDaily(String timeStr, bool isDaily) async {
+    if (isDaily) {
+      _oneTimeReminderTimes.remove(timeStr);
+    } else {
+      if (!_oneTimeReminderTimes.contains(timeStr)) {
+        _oneTimeReminderTimes.add(timeStr);
+      }
+    }
+    notifyListeners();
+    await PrefService.setOneTimeReminderTimes(_oneTimeReminderTimes);
+    try {
+      await NotificationService.scheduleReminders(
+        activeReminderTimes,
+        _isNotifEnabled,
+        dailyTimes: _buildDailySet(),
+      );
+    } catch (_) {}
+  }
+
+  /// Returns the set of active reminder times that should repeat daily.
+  Set<String> _buildDailySet() {
+    return activeReminderTimes
+        .where((t) => !_oneTimeReminderTimes.contains(t))
+        .toSet();
   }
 
   Future<void> toggleSoloOptIn(bool val) async {
@@ -477,6 +535,7 @@ class HydrationProvider extends ChangeNotifier {
     _isPostMealNotifEnabled = true;
     _reminderTimes = ['08:00 AM', '12:00 PM', '04:00 PM', '08:00 PM'];
     _disabledReminderTimes = [];
+    _oneTimeReminderTimes = []; // reset: all reminders back to daily by default
     _isSoloOptIn = true;
 
     // 5. Re-seed default settings
@@ -484,14 +543,19 @@ class HydrationProvider extends ChangeNotifier {
     await PrefService.setUserName(_userName);
     await PrefService.setReminderTimes(_reminderTimes);
     await PrefService.setDisabledReminderTimes(_disabledReminderTimes);
+    await PrefService.setOneTimeReminderTimes(_oneTimeReminderTimes);
     await PrefService.setNotifEnabled(_isNotifEnabled);
     await PrefService.setPostMealNotif(_isPostMealNotifEnabled);
     await PrefService.setMealSchedule('08:30 AM', '01:00 PM', '08:00 PM');
     await PrefService.setSoloOptIn(_isSoloOptIn);
 
-    // 6. Schedule fresh reminders
+    // 6. Schedule fresh reminders (all daily by default after reset)
     try {
-      await NotificationService.scheduleReminders(_reminderTimes, _isNotifEnabled);
+      await NotificationService.scheduleReminders(
+        _reminderTimes,
+        _isNotifEnabled,
+        dailyTimes: _reminderTimes.toSet(),
+      );
     } catch (_) {}
 
     // 7. Reload and notify all UI listeners

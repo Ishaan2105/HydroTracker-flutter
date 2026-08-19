@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -194,21 +195,39 @@ class NotificationService {
     }
   }
 
-  /// Schedule daily recurring notifications for a list of 12h or 24h time strings (e.g., ["08:00 AM", "02:30 PM"])
-  static Future<void> scheduleReminders(List<String> reminderTimes, bool enabled) async {
+  /// Schedule notifications for a list of reminder times.
+  /// [dailyTimes] = set of times that should fire every day.
+  /// Times NOT in dailyTimes fire only once (one-shot).
+  static Future<void> scheduleReminders(
+    List<String> reminderTimes,
+    bool enabled, {
+    Set<String> dailyTimes = const {},
+  }) async {
     try {
       await cancelAllAlarms();
 
       if (!enabled || reminderTimes.isEmpty) return;
 
+      // Log battery optimization status — UI banner reads this via isBatteryOptimizationExempt()
+      final exempt = await isBatteryOptimizationExempt();
+      if (!exempt) {
+        debugPrint(
+          '[HydroTracker] WARNING: Battery optimization is NOT disabled for this app. '
+          'Samsung One UI may suppress AlarmManager. Open Settings to fix.',
+        );
+      }
+
       int id = 100;
       for (String timeStr in reminderTimes) {
         final target = calculateNextTzOccurrence(timeStr);
+        final isDaily = dailyTimes.contains(timeStr);
         await _schedulePointInTimeAlarm(
           id: id++,
           target: target,
+          timeStr: timeStr,
           title: '💧 Time to Hydrate!',
           body: 'Stay on top of your goal with a fresh glass of water.',
+          isDaily: isDaily,
         );
       }
     } catch (e) {
@@ -216,12 +235,18 @@ class NotificationService {
     }
   }
 
-  /// Point-in-time exact alarm scheduling identical to the 1-min test alarm
+
+  /// Point-in-time alarm scheduling.
+  /// For [isDaily] = true: registers a native daily-repeating alarm (wallClockTime +
+  /// matchDateTimeComponents) PLUS an absoluteTime one-shot backup for today.
+  /// For [isDaily] = false: one-shot absoluteTime only.
   static Future<void> _schedulePointInTimeAlarm({
     required int id,
     required tz.TZDateTime target,
     required String title,
     required String body,
+    String timeStr = '',
+    bool isDaily = true,
   }) async {
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       channelId,
@@ -239,19 +264,10 @@ class NotificationService {
       iOS: DarwinNotificationDetails(presentAlert: true, presentSound: true),
     );
 
-    try {
-      await _notificationsPlugin.zonedSchedule(
-        id,
-        title,
-        body,
-        target,
-        notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-      );
-    } catch (e1) {
-      debugPrint('exactAllowWhileIdle fallback to inexact: $e1');
+    if (isDaily) {
+      // --- Strategy for DAILY alarms ---
+      // 1. Try native daily-repeating alarm (wallClockTime + matchDateTimeComponents.time)
+      //    This handles recurrence at the OS level.
       try {
         await _notificationsPlugin.zonedSchedule(
           id,
@@ -259,29 +275,93 @@ class NotificationService {
           body,
           target,
           notificationDetails,
-          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
           uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
+              UILocalNotificationDateInterpretation.wallClockTime,
+          matchDateTimeComponents: DateTimeComponents.time,
         );
-      } catch (e2) {
-        debugPrint('inexact error: $e2');
-      }
-    }
-
-    // Dual-redundancy timer fallback while process is active (if target within 24h)
-    final diff = target.difference(tz.TZDateTime.now(tz.local));
-    if (diff.inSeconds > 0 && diff.inHours < 24) {
-      final timer = Timer(diff, () async {
+      } catch (e1) {
+        debugPrint('Daily recurring alarm fallback: $e1');
         try {
-          await _notificationsPlugin.show(
+          await _notificationsPlugin.zonedSchedule(
             id,
             title,
             body,
+            target,
             notificationDetails,
+            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.wallClockTime,
+            matchDateTimeComponents: DateTimeComponents.time,
           );
         } catch (_) {}
-      });
-      _activeTimers.add(timer);
+      }
+
+      // 2. One-shot absoluteTime backup for today (same engine as 1-min test alarm)
+      //    Uses a different notification ID (+500) to avoid conflicts with recurring alarm.
+      final backupId = id + 500;
+      try {
+        await _notificationsPlugin.zonedSchedule(
+          backupId,
+          title,
+          body,
+          target,
+          notificationDetails,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+        );
+      } catch (_) {}
+
+      // 3. In-memory timer fallback while process is alive
+      final diff = target.difference(tz.TZDateTime.now(tz.local));
+      if (diff.inSeconds > 0 && diff.inHours < 24) {
+        final timer = Timer(diff, () async {
+          try {
+            await _notificationsPlugin.show(id, title, body, notificationDetails);
+          } catch (_) {}
+        });
+        _activeTimers.add(timer);
+      }
+    } else {
+      // --- Strategy for ONE-TIME alarms ---
+      // absoluteTime exact alarm only (same as 1-min test alarm).
+      try {
+        await _notificationsPlugin.zonedSchedule(
+          id,
+          title,
+          body,
+          target,
+          notificationDetails,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+        );
+      } catch (e1) {
+        try {
+          await _notificationsPlugin.zonedSchedule(
+            id,
+            title,
+            body,
+            target,
+            notificationDetails,
+            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.absoluteTime,
+          );
+        } catch (_) {}
+      }
+
+      // In-memory timer fallback
+      final diff = target.difference(tz.TZDateTime.now(tz.local));
+      if (diff.inSeconds > 0 && diff.inHours < 24) {
+        final timer = Timer(diff, () async {
+          try {
+            await _notificationsPlugin.show(id, title, body, notificationDetails);
+          } catch (_) {}
+        });
+        _activeTimers.add(timer);
+      }
     }
   }
 
@@ -397,6 +477,50 @@ class NotificationService {
       );
     } catch (e) {
       debugPrint('showTestNotification error: $e');
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Battery Optimization (Android) — via MethodChannel to MainActivity.kt
+  // ---------------------------------------------------------------------------
+
+  static const _batteryChannel = MethodChannel('hydro_flutter/battery');
+
+  /// Returns true if this app is already exempt from battery optimizations.
+  /// Always returns true on iOS or Android < M (no restriction on those platforms).
+  static Future<bool> isBatteryOptimizationExempt() async {
+    try {
+      final result = await _batteryChannel.invokeMethod<bool>('checkBatteryOptimization');
+      return result ?? true;
+    } catch (_) {
+      return true; // Assume OK if channel fails (e.g. iOS)
+    }
+  }
+
+  /// Opens the system dialog asking the user to exempt this app from battery
+  /// optimizations. On Samsung One UI, this sets the app to "Unrestricted"
+  /// battery mode which prevents the OS from killing its AlarmManager entries.
+  ///
+  /// Returns true if the direct exemption dialog was shown,
+  /// false if a fallback settings page was opened instead.
+  static Future<bool> requestBatteryOptimizationExemption() async {
+    try {
+      final result = await _batteryChannel.invokeMethod<bool>('requestBatteryOptimization');
+      return result ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Opens Samsung Device Care battery page directly.
+  /// Guides the user to: Battery → Background usage limits → Never sleeping apps.
+  /// Falls back to the app's system detail page on non-Samsung devices.
+  static Future<bool> openSamsungDeviceCare() async {
+    try {
+      final result = await _batteryChannel.invokeMethod<bool>('openSamsungDeviceCare');
+      return result ?? false;
+    } catch (_) {
+      return false;
     }
   }
 }
