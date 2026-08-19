@@ -574,13 +574,13 @@ class _BatteryGuidanceBanner extends StatefulWidget {
 }
 
 class _BatteryGuidanceBannerState extends State<_BatteryGuidanceBanner> {
+  bool _isExpanded = false;
   bool _showManualSteps = false;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.orange.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(14),
@@ -589,30 +589,60 @@ class _BatteryGuidanceBannerState extends State<_BatteryGuidanceBanner> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Row(
-            children: [
-              const Icon(Icons.battery_alert_rounded, color: Colors.orange, size: 22),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '⚡ Battery Optimization is ON',
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
+          // Header (Clickable with Dropdown Arrow)
+          InkWell(
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
+            borderRadius: BorderRadius.circular(14),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.battery_alert_rounded, color: Colors.orange, size: 22),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '⚡ Battery Optimization is ON',
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange,
+                          ),
+                        ),
+                        if (!_isExpanded)
+                          Text(
+                            'Tap to fix background alarm delivery on Samsung',
+                            style: GoogleFonts.poppins(fontSize: 10, color: Colors.white60),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
+                  Icon(
+                    _isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                    color: Colors.orange,
+                    size: 24,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Samsung One UI can kill background alarms even with all permissions granted. '
-            'Two settings need to be fixed for reliable delivery:',
-            style: GoogleFonts.poppins(fontSize: 11, color: Colors.white70),
-          ),
-          const SizedBox(height: 12),
+
+          if (_isExpanded) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Divider(color: Colors.orangeAccent, height: 1, thickness: 0.3),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Samsung One UI can kill background alarms even with all permissions granted. '
+                    'Two settings need to be fixed for reliable delivery:',
+                    style: GoogleFonts.poppins(fontSize: 11, color: Colors.white70),
+                  ),
+                  const SizedBox(height: 12),
 
           // Fix 1 — Standard Android exemption
           Text(
@@ -713,6 +743,10 @@ class _BatteryGuidanceBannerState extends State<_BatteryGuidanceBanner> {
                   const Divider(color: Colors.white12, height: 14),
                   _manualStep('A', 'Also go to: Settings → Apps → Hydro Tracker'),
                   _manualStep('B', 'Tap Battery → Select Unrestricted'),
+                ],
+              ),
+            ),
+          ],
                 ],
               ),
             ),
