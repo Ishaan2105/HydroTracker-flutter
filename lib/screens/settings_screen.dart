@@ -346,23 +346,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     activeColor: const Color(0xFF00E5FF),
                                     onChanged: (val) async {
                                       await provider.toggleReminderActive(timeStr, val);
-                                      if (val && context.mounted) {
-                                        final target = NotificationService.calculateNextTzOccurrence(timeStr);
-                                        final banner = NotificationService.formatAlarmConfirmation(target);
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(banner),
-                                            backgroundColor: const Color(0xFF1565C0),
-                                            duration: const Duration(seconds: 4),
-                                          ),
-                                        );
+                                      if (context.mounted) {
+                                        if (val) {
+                                          final target = NotificationService.calculateNextTzOccurrence(timeStr);
+                                          final banner = NotificationService.formatAlarmConfirmation(target);
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(banner),
+                                              backgroundColor: const Color(0xFF1565C0),
+                                              duration: const Duration(seconds: 4),
+                                            ),
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text('🔕 Alarm for $displayTime turned off & cancelled.'),
+                                              duration: const Duration(seconds: 2),
+                                            ),
+                                          );
+                                        }
                                       }
                                     },
                                   ),
                                   // Delete Button
                                   IconButton(
                                     icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.white60),
-                                    onPressed: () => provider.removeReminderTime(timeStr),
+                                    onPressed: () async {
+                                      await provider.removeReminderTime(timeStr);
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('🗑️ Alarm for $displayTime deleted & cancelled.'),
+                                            backgroundColor: const Color(0xFFEF4444),
+                                            duration: const Duration(seconds: 2),
+                                          ),
+                                        );
+                                      }
+                                    },
                                   ),
                                 ],
                               ),

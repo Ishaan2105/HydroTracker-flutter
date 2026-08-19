@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -177,11 +178,26 @@ class NotificationService {
     }
   }
 
+  static final List<Timer> _activeTimers = [];
+
+  /// Cancel all scheduled system alarms and in-memory timers
+  static Future<void> cancelAllAlarms() async {
+    try {
+      await init();
+      for (var timer in _activeTimers) {
+        timer.cancel();
+      }
+      _activeTimers.clear();
+      await _notificationsPlugin.cancelAll();
+    } catch (e) {
+      debugPrint('Error canceling all alarms: $e');
+    }
+  }
+
   /// Schedule daily recurring notifications for a list of 12h or 24h time strings (e.g., ["08:00 AM", "02:30 PM"])
   static Future<void> scheduleReminders(List<String> reminderTimes, bool enabled) async {
     try {
-      await init();
-      await _notificationsPlugin.cancelAll();
+      await cancelAllAlarms();
 
       if (!enabled || reminderTimes.isEmpty) return;
 
@@ -255,7 +271,7 @@ class NotificationService {
     // Dual-redundancy timer fallback while process is active (if target within 24h)
     final diff = target.difference(tz.TZDateTime.now(tz.local));
     if (diff.inSeconds > 0 && diff.inHours < 24) {
-      Future.delayed(diff, () async {
+      final timer = Timer(diff, () async {
         try {
           await _notificationsPlugin.show(
             id,
@@ -265,6 +281,7 @@ class NotificationService {
           );
         } catch (_) {}
       });
+      _activeTimers.add(timer);
     }
   }
 
