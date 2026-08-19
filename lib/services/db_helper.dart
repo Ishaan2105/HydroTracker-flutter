@@ -1,6 +1,7 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/water_log.dart';
+import 'app_logger.dart';
 
 class DBHelper {
   static final DBHelper instance = DBHelper._init();
@@ -20,8 +21,9 @@ class DBHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _upgradeDB,
     );
   }
 
@@ -34,6 +36,31 @@ class DBHelper {
         date_string TEXT NOT NULL
       )
     ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS app_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        level TEXT NOT NULL,
+        tag TEXT NOT NULL,
+        message TEXT NOT NULL,
+        stack_trace TEXT,
+        timestamp TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS app_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          level TEXT NOT NULL,
+          tag TEXT NOT NULL,
+          message TEXT NOT NULL,
+          stack_trace TEXT,
+          timestamp TEXT NOT NULL
+        )
+      ''');
+    }
   }
 
   Future<int> insertLog(WaterLog log) async {
@@ -119,4 +146,29 @@ class DBHelper {
     final db = await instance.database;
     return await db.delete('water_logs');
   }
+
+  // ---------------------------------------------------------------------------
+  // App Diagnostic & Crash Logs (app_logs table)
+  // ---------------------------------------------------------------------------
+
+  Future<int> insertAppLog(LogEntry log) async {
+    final db = await instance.database;
+    return await db.insert('app_logs', log.toMap());
+  }
+
+  Future<List<LogEntry>> getAppLogs({int limit = 200}) async {
+    final db = await instance.database;
+    final result = await db.query(
+      'app_logs',
+      orderBy: 'id DESC',
+      limit: limit,
+    );
+    return result.map((json) => LogEntry.fromMap(json)).toList();
+  }
+
+  Future<int> clearAppLogs() async {
+    final db = await instance.database;
+    return await db.delete('app_logs');
+  }
 }
+

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/hydration_provider.dart';
 import '../services/pref_service.dart';
 import '../services/notification_service.dart';
+import '../widgets/diagnostic_logs_sheet.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -483,6 +484,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ],
                         ),
                       ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 4. 🛡️ Diagnostics & Error Logs Section
+                  _buildCard(
+                    title: '🛡️ Diagnostics & Error Logs',
+                    subtitle: 'Inspect system health, background alarms & error traces',
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => DiagnosticLogsSheet.show(context),
+                        icon: const Icon(Icons.bug_report_outlined, size: 18, color: Color(0xFF00E5FF)),
+                        label: Text(
+                          'View Diagnostic Logs & Errors',
+                          style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF00E5FF)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
                     ),
                   ),
 

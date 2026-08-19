@@ -6,6 +6,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:intl/intl.dart';
+import 'app_logger.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
@@ -193,8 +194,9 @@ class NotificationService {
       }
       _activeTimers.clear();
       await _notificationsPlugin.cancelAll();
-    } catch (e) {
-      debugPrint('Error canceling all alarms: $e');
+      AppLogger.info('NotificationService', 'Cancelled all alarms and cleared all timers.');
+    } catch (e, st) {
+      AppLogger.error('NotificationService', 'Error canceling all alarms', e, st);
     }
   }
 
@@ -209,8 +211,9 @@ class NotificationService {
       // Cancel OS-level AlarmManager entries
       await _notificationsPlugin.cancel(id);
       await _notificationsPlugin.cancel(id + 500);
-    } catch (e) {
-      debugPrint('Error canceling alarm $id: $e');
+      AppLogger.info('NotificationService', 'Cancelled alarm ID $id (and backup ID ${id + 500}).');
+    } catch (e, st) {
+      AppLogger.error('NotificationService', 'Error canceling alarm $id', e, st);
     }
   }
 
@@ -225,14 +228,17 @@ class NotificationService {
     try {
       await cancelAllAlarms();
 
-      if (!enabled || reminderTimes.isEmpty) return;
+      if (!enabled || reminderTimes.isEmpty) {
+        AppLogger.info('NotificationService', 'Notifications disabled or reminder list empty.');
+        return;
+      }
 
       // Log battery optimization status — UI banner reads this via isBatteryOptimizationExempt()
       final exempt = await isBatteryOptimizationExempt();
       if (!exempt) {
-        debugPrint(
-          '[HydroTracker] WARNING: Battery optimization is NOT disabled for this app. '
-          'Samsung One UI may suppress AlarmManager. Open Settings to fix.',
+        AppLogger.warn(
+          'NotificationService',
+          'Battery optimization is NOT disabled for this app. Samsung One UI may suppress AlarmManager. Open Settings to fix.',
         );
       }
 
@@ -249,8 +255,9 @@ class NotificationService {
           isDaily: isDaily,
         );
       }
-    } catch (e) {
-      debugPrint('Error scheduling reminders: $e');
+      AppLogger.info('NotificationService', 'Successfully scheduled ${reminderTimes.length} reminder alarms.');
+    } catch (e, st) {
+      AppLogger.error('NotificationService', 'Error scheduling reminders', e, st);
     }
   }
 
