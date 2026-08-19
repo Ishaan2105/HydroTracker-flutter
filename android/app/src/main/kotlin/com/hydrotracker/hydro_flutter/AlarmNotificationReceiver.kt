@@ -16,10 +16,12 @@ class AlarmNotificationReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val notifId = intent.getIntExtra(BootReceiver.EXTRA_NOTIF_ID, 999)
-        showNotification(context, notifId)
+        val title = intent.getStringExtra(BootReceiver.EXTRA_TITLE) ?: "\uD83D\uDCA7 Time to Hydrate!"
+        val body = intent.getStringExtra(BootReceiver.EXTRA_BODY) ?: "Stay on top of your goal with a fresh glass of water."
+        showNotification(context, notifId, title, body)
     }
 
-    private fun showNotification(context: Context, notifId: Int) {
+    private fun showNotification(context: Context, notifId: Int, title: String, body: String) {
         // Tapping the notification opens the app
         val openIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -42,8 +44,8 @@ class AlarmNotificationReceiver : BroadcastReceiver() {
 
         builder
             .setSmallIcon(android.R.drawable.ic_popup_reminder)
-            .setContentTitle("\uD83D\uDCA7 Time to Hydrate!")
-            .setContentText("Stay on top of your goal with a fresh glass of water.")
+            .setContentTitle(title)
+            .setContentText(body)
             .setAutoCancel(true)
             .setContentIntent(tapPending)
 
