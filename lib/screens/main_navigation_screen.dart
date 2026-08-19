@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/hydration_provider.dart';
 import 'home_screen.dart';
 import 'history_screen.dart';
 import 'insights_screen.dart';
@@ -34,6 +36,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     });
   }
 
+  /// Called every time the user taps a bottom-nav tab.
+  ///
+  /// History (1) and Insights (2) re-fetch their data from the DB on every
+  /// visit so they always reflect the latest state — even if water was logged
+  /// on another tab without triggering a full rebuild.
+  void _onTabTapped(int index) {
+    final provider = context.read<HydrationProvider>();
+
+    if (index == 1) {
+      // History tab: reload today's data + all history stats
+      provider.loadTodayData();
+      provider.loadHistoryStats();
+    } else if (index == 2) {
+      // Insights tab: history stats are a dependency for trend computation
+      provider.loadHistoryStats().then((_) => provider.loadInsightsData());
+    }
+
+    setState(() => _currentIndex = index);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,11 +65,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        onTap: _onTabTapped,
         backgroundColor: const Color(0xFF0F172A),
         selectedItemColor: const Color(0xFF00E5FF),
         unselectedItemColor: const Color(0xFF64748B),
