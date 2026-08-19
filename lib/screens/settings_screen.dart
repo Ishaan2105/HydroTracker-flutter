@@ -82,7 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final timeStr = DateFormat('hh:mm a').format(dt);
       await provider.addReminderTime(timeStr);
 
-      final target = NotificationService.calculateNextOccurrence(timeStr);
+      final target = NotificationService.calculateNextTzOccurrence(timeStr);
       final banner = NotificationService.formatAlarmConfirmation(target);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -347,7 +347,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     onChanged: (val) async {
                                       await provider.toggleReminderActive(timeStr, val);
                                       if (val && context.mounted) {
-                                        final target = NotificationService.calculateNextOccurrence(timeStr);
+                                        final target = NotificationService.calculateNextTzOccurrence(timeStr);
                                         final banner = NotificationService.formatAlarmConfirmation(target);
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(

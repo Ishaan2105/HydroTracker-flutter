@@ -135,13 +135,22 @@ class NotificationService {
     }
   }
 
-  /// Calculate next DateTime occurrence for a given 12h or 24h string
-  static DateTime calculateNextOccurrence(String timeStr) {
+  /// Calculate next tz.TZDateTime occurrence directly in device timezone
+  static tz.TZDateTime calculateNextTzOccurrence(String timeStr) {
     DateTime? parsed = _parseTimeString(timeStr);
-    final now = DateTime.now();
+    final now = tz.TZDateTime.now(tz.local);
     if (parsed == null) return now.add(const Duration(minutes: 1));
 
-    DateTime target = DateTime(now.year, now.month, now.day, parsed.hour, parsed.minute, 0);
+    var target = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      parsed.hour,
+      parsed.minute,
+      0,
+    );
+
     if (target.isBefore(now)) {
       target = target.add(const Duration(days: 1));
     }
@@ -178,7 +187,7 @@ class NotificationService {
 
       int id = 100;
       for (String timeStr in reminderTimes) {
-        final target = calculateNextOccurrence(timeStr);
+        final target = calculateNextTzOccurrence(timeStr);
         await _schedulePointInTimeAlarm(
           id: id++,
           target: target,
@@ -194,12 +203,10 @@ class NotificationService {
   /// Point-in-time exact alarm scheduling identical to the 1-min test alarm
   static Future<void> _schedulePointInTimeAlarm({
     required int id,
-    required DateTime target,
+    required tz.TZDateTime target,
     required String title,
     required String body,
   }) async {
-    final tzTarget = tz.TZDateTime.from(target, tz.local);
-
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       channelId,
       channelName,
@@ -221,7 +228,7 @@ class NotificationService {
         id,
         title,
         body,
-        tzTarget,
+        target,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
@@ -234,7 +241,7 @@ class NotificationService {
           id,
           title,
           body,
-          tzTarget,
+          target,
           notificationDetails,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
           uiLocalNotificationDateInterpretation:
@@ -246,7 +253,7 @@ class NotificationService {
     }
 
     // Dual-redundancy timer fallback while process is active (if target within 24h)
-    final diff = target.difference(DateTime.now());
+    final diff = target.difference(tz.TZDateTime.now(tz.local));
     if (diff.inSeconds > 0 && diff.inHours < 24) {
       Future.delayed(diff, () async {
         try {
