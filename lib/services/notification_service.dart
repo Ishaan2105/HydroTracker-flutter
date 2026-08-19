@@ -101,6 +101,20 @@ class NotificationService {
     }
   }
 
+  /// Check and request exact alarms permission (Android 12/13/14)
+  static Future<bool> requestExactAlarmsPermission() async {
+    try {
+      final androidImplementation = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      if (androidImplementation != null) {
+        return await androidImplementation.requestExactAlarmsPermission() ?? false;
+      }
+      return true;
+    } catch (_) {
+      return true;
+    }
+  }
+
   /// Request permissions on demand (e.g., when toggle is switched on)
   static Future<bool> requestPermissions() async {
     try {

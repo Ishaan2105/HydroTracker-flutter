@@ -376,12 +376,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             Expanded(
                               child: ElevatedButton.icon(
                                 onPressed: () async {
+                                  await NotificationService.requestExactAlarmsPermission();
                                   final scheduledTime = await NotificationService.scheduleOneMinuteTest();
                                   final timeStr = DateFormat('hh:mm:ss a').format(scheduledTime);
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text('⏳ 1-Min Test Alarm set for $timeStr! Lock your phone & wait 60s.'),
+                                        content: Text('⏳ 1-Min Test Alarm set for $timeStr! Lock phone & wait 60s.'),
                                         backgroundColor: const Color(0xFF1565C0),
                                         duration: const Duration(seconds: 4),
                                       ),
