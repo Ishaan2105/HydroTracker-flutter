@@ -193,13 +193,13 @@ class NotificationService {
         body,
         scheduledDate,
         notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.alarmClock,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
+            UILocalNotificationDateInterpretation.wallClockTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
-    } catch (alarmClockErr) {
-      debugPrint('alarmClock mode fallback to exactAllowWhileIdle: $alarmClockErr');
+    } catch (exactErr) {
+      debugPrint('exactAllowWhileIdle fallback to inexact: $exactErr');
       try {
         await _notificationsPlugin.zonedSchedule(
           id,
@@ -207,30 +207,65 @@ class NotificationService {
           body,
           scheduledDate,
           notificationDetails,
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
           uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
+              UILocalNotificationDateInterpretation.wallClockTime,
           matchDateTimeComponents: DateTimeComponents.time,
         );
-      } catch (exactErr) {
-        debugPrint('exactAllowWhileIdle fallback to inexact: $exactErr');
-        try {
-          await _notificationsPlugin.zonedSchedule(
-            id,
-            title,
-            body,
-            scheduledDate,
-            notificationDetails,
-            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-            uiLocalNotificationDateInterpretation:
-                UILocalNotificationDateInterpretation.absoluteTime,
-            matchDateTimeComponents: DateTimeComponents.time,
-          );
-        } catch (e) {
-          debugPrint('Error in zonedSchedule inexact: $e');
-        }
+      } catch (e) {
+        debugPrint('Error in zonedSchedule inexact: $e');
       }
     }
+  }
+
+  /// Schedule a 1-minute test alarm for instant verification
+  static Future<DateTime> scheduleOneMinuteTest() async {
+    await init();
+    await requestPermissions();
+    final now = tz.TZDateTime.now(tz.local);
+    final target = now.add(const Duration(seconds: 60));
+
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      channelId,
+      channelName,
+      channelDescription: 'Scheduled alarms and daily water intake reminders',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+      icon: '@mipmap/ic_launcher',
+    );
+
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: DarwinNotificationDetails(presentAlert: true, presentSound: true),
+    );
+
+    try {
+      await _notificationsPlugin.zonedSchedule(
+        999,
+        '⏰ Hydro Tracker 1-Min Test Alarm!',
+        'Scheduled alarm test succeeded! Background notification working.',
+        target,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.wallClockTime,
+      );
+    } catch (_) {
+      await _notificationsPlugin.zonedSchedule(
+        999,
+        '⏰ Hydro Tracker 1-Min Test Alarm!',
+        'Scheduled alarm test succeeded! Background notification working.',
+        target,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.wallClockTime,
+      );
+    }
+
+    return DateTime.now().add(const Duration(seconds: 60));
   }
 
   /// Helper to parse 12h "08:00 AM" or 24h "08:00" strings into DateTime

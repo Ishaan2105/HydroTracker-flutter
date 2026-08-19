@@ -345,27 +345,62 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           }).toList(),
                         ),
                         const SizedBox(height: 12),
-                        OutlinedButton.icon(
-                          onPressed: () async {
-                            await NotificationService.showTestNotification();
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('🔔 Sent test notification! Check your phone status bar.'),
-                                  duration: Duration(seconds: 2),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  await NotificationService.showTestNotification();
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('🔔 Instant notification sent to status bar!'),
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
+                                },
+                                icon: const Icon(Icons.notifications_active_rounded, size: 16, color: Color(0xFF00E5FF)),
+                                label: Text(
+                                  'Instant Test',
+                                  style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFF00E5FF)),
                                 ),
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.notifications_active_rounded, size: 16, color: Color(0xFF00E5FF)),
-                          label: Text(
-                            'Test Alarm Notification',
-                            style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF00E5FF)),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFF00E5FF)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                                  side: const BorderSide(color: Color(0xFF00E5FF)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () async {
+                                  final scheduledTime = await NotificationService.scheduleOneMinuteTest();
+                                  final timeStr = DateFormat('hh:mm:ss a').format(scheduledTime);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('⏳ 1-Min Test Alarm set for $timeStr! Lock your phone & wait 60s.'),
+                                        backgroundColor: const Color(0xFF1565C0),
+                                        duration: const Duration(seconds: 4),
+                                      ),
+                                    );
+                                  }
+                                },
+                                icon: const Icon(Icons.timer_outlined, size: 16, color: Colors.white),
+                                label: Text(
+                                  '1-Min Test Alarm',
+                                  style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                                  backgroundColor: const Color(0xFF1565C0),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
