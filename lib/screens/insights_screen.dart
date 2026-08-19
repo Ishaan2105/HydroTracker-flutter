@@ -592,7 +592,10 @@ class _InsightsScreenState extends State<InsightsScreen> {
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                                   crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: provider.sevenDayTrend.map((dayData) {
+                                  children: (provider.sevenDayTrend.isNotEmpty
+                                          ? provider.sevenDayTrend
+                                          : HydrationProvider.generateDefaultSevenDayTrend())
+                                      .map((dayData) {
                                     final ratio = dayData.ratio;
                                     final barHeight = (ratio * 90).clamp(12.0, 100.0);
                                     final isToday = dayData.label == 'Today';

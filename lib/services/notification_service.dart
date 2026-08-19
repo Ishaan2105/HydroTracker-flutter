@@ -37,7 +37,12 @@ class NotificationService {
         iOS: iosSettings,
       );
 
-      await _notificationsPlugin.initialize(initSettings);
+      await _notificationsPlugin.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+          AppLogger.info('NotificationService', 'Notification response received: ${response.id}');
+        },
+      );
 
       // Create explicit Android Notification Channel with max priority & sound
       final androidImplementation = _notificationsPlugin
@@ -168,15 +173,15 @@ class NotificationService {
 
     if (diff.inSeconds <= 60) {
       final secs = diff.inSeconds > 0 ? diff.inSeconds : 60;
-      return '⏳ Alarm active for $timeFormatted! Lock phone & wait ${secs}s.';
+      return '⏳ Alarm set for $timeFormatted (in ${secs}s)';
     } else if (diff.inMinutes < 60) {
       final mins = diff.inMinutes;
       final secs = diff.inSeconds % 60;
-      return '⏳ Alarm active for $timeFormatted (in ${mins}m ${secs}s)! Lock phone & wait.';
+      return '⏳ Alarm set for $timeFormatted (in ${mins}m ${secs}s)';
     } else {
       final hours = diff.inHours;
       final mins = diff.inMinutes % 60;
-      return '⏳ Alarm active for $timeFormatted (in ${hours}h ${mins}m)!';
+      return '⏳ Alarm set for $timeFormatted (in ${hours}h ${mins}m)';
     }
   }
 
@@ -283,6 +288,9 @@ class NotificationService {
       playSound: true,
       enableVibration: true,
       icon: '@mipmap/ic_launcher',
+      category: AndroidNotificationCategory.reminder,
+      visibility: NotificationVisibility.public,
+      showWhen: true,
     );
 
     const NotificationDetails notificationDetails = NotificationDetails(
@@ -490,6 +498,9 @@ class NotificationService {
         playSound: true,
         enableVibration: true,
         icon: '@mipmap/ic_launcher',
+        category: AndroidNotificationCategory.reminder,
+        visibility: NotificationVisibility.public,
+        showWhen: true,
       );
 
       const NotificationDetails notificationDetails = NotificationDetails(

@@ -63,8 +63,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _saveGoal(HydrationProvider provider, double goalLiters) async {
     final goalMl = (goalLiters * 1000).round();
+    setState(() {
+      _goalController.text = goalLiters.toStringAsFixed(1);
+    });
     await provider.updateGoal(goalMl);
-    _goalController.text = goalLiters.toStringAsFixed(1);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

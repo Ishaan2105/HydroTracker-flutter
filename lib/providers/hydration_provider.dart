@@ -39,7 +39,7 @@ class HydrationProvider extends ChangeNotifier {
   Map<String, int> _dailyTotalsMap = {};
 
   // Insights State
-  List<DayTrendData> _sevenDayTrend = [];
+  List<DayTrendData> _sevenDayTrend = generateDefaultSevenDayTrend();
   double _weeklyAverageMl = 0.0;
   int _weeklyTotalMl = 0;
   String _bestDayLabel = '—';
@@ -598,7 +598,7 @@ class HydrationProvider extends ChangeNotifier {
     _isShieldActive = false;
     _dailyTotalsMap = {};
 
-    _sevenDayTrend = [];
+    _sevenDayTrend = generateDefaultSevenDayTrend();
     _weeklyAverageMl = 0.0;
     _weeklyTotalMl = 0;
     _bestDayLabel = '—';
@@ -689,12 +689,36 @@ class HydrationProvider extends ChangeNotifier {
     await loadInsightsData();
   }
 
+  static List<DayTrendData> generateDefaultSevenDayTrend() {
+    final now = DateTime.now();
+    final List<DayTrendData> list = [];
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      final dateStr = DateFormat('yyyy-MM-dd').format(date);
+      String label;
+      if (i == 0) {
+        label = 'Today';
+      } else if (i == 1) {
+        label = 'Yesterday';
+      } else {
+        label = DateFormat('E').format(date);
+      }
+      list.add(DayTrendData(
+        label: label,
+        dateString: dateStr,
+        totalMl: 0,
+        ratio: 0.0,
+      ));
+    }
+    return list;
+  }
+
   Future<void> updateGoal(int newGoalMl) async {
     _dailyGoalMl = newGoalMl;
+    notifyListeners(); // Notify instantly so UI updates in 0ms!
     await PrefService.setGoal(newGoalMl);
     await loadHistoryStats();
     await loadInsightsData();
-    notifyListeners();
   }
 
   Future<void> updateUserName(String name) async {
