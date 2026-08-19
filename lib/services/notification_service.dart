@@ -531,10 +531,22 @@ class NotificationService {
   static DateTime? _parseTimeString(String timeStr) {
     try {
       String clean = timeStr.trim();
-      if (clean.contains('AM') || clean.contains('PM') || clean.contains('am') || clean.contains('pm')) {
-        return DateFormat('hh:mm a').parse(clean);
+      if (clean.toUpperCase().contains('AM') || clean.toUpperCase().contains('PM')) {
+        try {
+          return DateFormat('hh:mm a').parse(clean);
+        } catch (_) {
+          try {
+            return DateFormat('h:mm a').parse(clean);
+          } catch (_) {
+            return DateFormat('hh:mma').parse(clean);
+          }
+        }
       } else {
-        return DateFormat('HH:mm').parse(clean);
+        try {
+          return DateFormat('HH:mm').parse(clean);
+        } catch (_) {
+          return DateFormat('H:mm').parse(clean);
+        }
       }
     } catch (_) {
       return null;
