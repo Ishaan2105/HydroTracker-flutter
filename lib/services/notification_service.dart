@@ -314,6 +314,7 @@ class NotificationService {
           body: 'It’s been 30 minutes since ${meal['name']}. Drink a glass of water for optimal digestion!',
           isDaily: true,
         );
+        AppLogger.info('NotificationService', 'Scheduled Post-${meal['name']} alarm for $postMealTimeStr (Target: $target)');
       }
       AppLogger.info('NotificationService', 'Successfully scheduled post-meal reminders (30m after meals).');
     } catch (e, st) {
