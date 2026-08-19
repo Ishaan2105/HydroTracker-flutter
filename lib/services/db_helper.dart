@@ -246,7 +246,8 @@ class DBHelper {
     final db = await instance.database;
     final result = await db.rawQuery('SELECT SUM(amount_ml) as total FROM water_logs');
     if (result.isNotEmpty && result.first['total'] != null) {
-      return result.first['total'] as int;
+      final val = result.first['total'];
+      return val is num ? val.toInt() : (int.tryParse(val.toString()) ?? 0);
     }
     return 0;
   }
@@ -259,9 +260,12 @@ class DBHelper {
 
     final Map<String, int> map = {};
     for (var row in result) {
-      final dateStr = row['date_string'] as String;
-      final total = row['total'] as int;
-      map[dateStr] = total;
+      final dateStr = row['date_string']?.toString() ?? '';
+      if (dateStr.isNotEmpty) {
+        final val = row['total'];
+        final total = val is num ? val.toInt() : (int.tryParse(val?.toString() ?? '') ?? 0);
+        map[dateStr] = total;
+      }
     }
     return map;
   }

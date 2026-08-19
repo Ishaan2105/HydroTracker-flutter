@@ -22,8 +22,8 @@ class WaterLog {
 
   factory WaterLog.fromMap(Map<String, dynamic> map) {
     return WaterLog(
-      id: map['id'] as int?,
-      amountMl: map['amount_ml'] as int,
+      id: (map['id'] as num?)?.toInt(),
+      amountMl: (map['amount_ml'] as num?)?.toInt() ?? 0,
       timestamp: DateTime.parse(map['timestamp'] as String),
       dateString: map['date_string'] as String,
     );

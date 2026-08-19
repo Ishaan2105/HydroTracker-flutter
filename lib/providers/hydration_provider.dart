@@ -4,6 +4,7 @@ import '../models/water_log.dart';
 import '../services/db_helper.dart';
 import '../services/pref_service.dart';
 import '../services/notification_service.dart';
+import '../services/app_logger.dart';
 
 class DayTrendData {
   final String label;
@@ -658,35 +659,48 @@ class HydrationProvider extends ChangeNotifier {
   }
 
   Future<void> logWater(int amountMl) async {
-    final log = WaterLog(
-      amountMl: amountMl,
-      timestamp: DateTime.now(),
-      dateString: todayDateString,
-    );
+    try {
+      final log = WaterLog(
+        amountMl: amountMl,
+        timestamp: DateTime.now(),
+        dateString: todayDateString,
+      );
 
-    await DBHelper.instance.insertLog(log);
-    await loadTodayData();
-    await loadHistoryStats();
-    await loadInsightsData();
-  }
-
-  Future<bool> undoLastLog() async {
-    final lastLog = await DBHelper.instance.getLastLogForDate(todayDateString);
-    if (lastLog != null && lastLog.id != null) {
-      await DBHelper.instance.deleteLog(lastLog.id!);
+      await DBHelper.instance.insertLog(log);
       await loadTodayData();
       await loadHistoryStats();
       await loadInsightsData();
-      return true;
+    } catch (e, st) {
+      AppLogger.error('HydrationProvider', 'logWater failed: $e', e, st);
     }
-    return false;
+  }
+
+  Future<bool> undoLastLog() async {
+    try {
+      final lastLog = await DBHelper.instance.getLastLogForDate(todayDateString);
+      if (lastLog != null && lastLog.id != null) {
+        await DBHelper.instance.deleteLog(lastLog.id!);
+        await loadTodayData();
+        await loadHistoryStats();
+        await loadInsightsData();
+        return true;
+      }
+      return false;
+    } catch (e, st) {
+      AppLogger.error('HydrationProvider', 'undoLastLog failed: $e', e, st);
+      return false;
+    }
   }
 
   Future<void> deleteLogById(int id) async {
-    await DBHelper.instance.deleteLog(id);
-    await loadTodayData();
-    await loadHistoryStats();
-    await loadInsightsData();
+    try {
+      await DBHelper.instance.deleteLog(id);
+      await loadTodayData();
+      await loadHistoryStats();
+      await loadInsightsData();
+    } catch (e, st) {
+      AppLogger.error('HydrationProvider', 'deleteLogById failed: $e', e, st);
+    }
   }
 
   static List<DayTrendData> generateDefaultSevenDayTrend() {
