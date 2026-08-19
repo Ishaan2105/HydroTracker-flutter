@@ -276,6 +276,7 @@ class HydrationProvider extends ChangeNotifier {
     _lifetimeVolumeMl = await DBHelper.instance.getLifetimeVolume();
     _dailyTotalsMap = await DBHelper.instance.getDailyTotalsMap();
 
+    // 1. Perfect days count (all time)
     int perfect = 0;
     _dailyTotalsMap.forEach((date, total) {
       if (total >= _dailyGoalMl) {
@@ -284,6 +285,7 @@ class HydrationProvider extends ChangeNotifier {
     });
     _perfectDaysCount = perfect;
 
+    // 2. 30-day Success Rate
     int hitCount30 = 0;
     final now = DateTime.now();
     for (int i = 0; i < 30; i++) {
@@ -296,18 +298,77 @@ class HydrationProvider extends ChangeNotifier {
     }
     _successRatePct = (hitCount30 / 30.0) * 100;
 
-    int streakCount = 0;
-    for (int i = 0; i < 30; i++) {
-      final d = now.subtract(Duration(days: i));
-      final dStr = formatDateString(d);
-      final total = _dailyTotalsMap[dStr] ?? 0;
-      if (total >= _dailyGoalMl) {
-        streakCount++;
-      } else if (i > 0) {
+    // 3. Strict Date-Continuity Current Streak Calculation
+    final todayStr = todayDateString;
+    final todayTotal = _dailyTotalsMap[todayStr] ?? _todayIntakeMl;
+    final bool todayCompleted = _dailyGoalMl > 0 && todayTotal >= _dailyGoalMl;
+
+    // Count consecutive completed days strictly backwards starting from yesterday
+    int consecutivePastDays = 0;
+    int dayOffset = 1;
+    while (true) {
+      final pastDate = now.subtract(Duration(days: dayOffset));
+      final pastDateStr = formatDateString(pastDate);
+      final pastTotal = _dailyTotalsMap[pastDateStr] ?? 0;
+      if (_dailyGoalMl > 0 && pastTotal >= _dailyGoalMl) {
+        consecutivePastDays++;
+        dayOffset++;
+      } else {
+        // Break on the first missing/incomplete day — strict continuity!
         break;
       }
     }
-    _isShieldActive = streakCount >= 3;
+
+    if (todayCompleted) {
+      _currentStreak = consecutivePastDays + 1;
+    } else {
+      // Today is in progress; streak from yesterday remains active
+      _currentStreak = consecutivePastDays;
+    }
+    await PrefService.setCurrentStreak(_currentStreak);
+
+    // 4. Best Streak Calculation across all history
+    int maxStreakFound = 0;
+    if (_dailyTotalsMap.isNotEmpty && _dailyGoalMl > 0) {
+      final validDates = <DateTime>{};
+      _dailyTotalsMap.forEach((dateStr, total) {
+        if (total >= _dailyGoalMl) {
+          try {
+            final parsed = DateTime.parse(dateStr);
+            validDates.add(DateTime(parsed.year, parsed.month, parsed.day));
+          } catch (_) {}
+        }
+      });
+      if (todayCompleted) {
+        validDates.add(DateTime(now.year, now.month, now.day));
+      }
+
+      if (validDates.isNotEmpty) {
+        final sortedDates = validDates.toList()..sort();
+        int currentRun = 1;
+        maxStreakFound = 1;
+
+        for (int i = 1; i < sortedDates.length; i++) {
+          final prev = sortedDates[i - 1];
+          final curr = sortedDates[i];
+          final diffDays = curr.difference(prev).inDays;
+          if (diffDays == 1) {
+            currentRun++;
+            if (currentRun > maxStreakFound) {
+              maxStreakFound = currentRun;
+            }
+          } else if (diffDays > 1) {
+            currentRun = 1;
+          }
+        }
+      }
+    }
+
+    final storedBest = await PrefService.getBestStreak();
+    _bestStreak = [storedBest, maxStreakFound, _currentStreak].reduce((a, b) => a > b ? a : b);
+    await PrefService.setBestStreak(_bestStreak);
+
+    _isShieldActive = _currentStreak >= 3;
 
     notifyListeners();
   }
@@ -604,21 +665,6 @@ class HydrationProvider extends ChangeNotifier {
     );
 
     await DBHelper.instance.insertLog(log);
-    _todayIntakeMl += amountMl;
-
-    if (_todayIntakeMl >= _dailyGoalMl) {
-      final todayIntakeBefore = _todayIntakeMl - amountMl;
-      if (todayIntakeBefore < _dailyGoalMl) {
-        _currentStreak++;
-        await PrefService.setCurrentStreak(_currentStreak);
-
-        if (_currentStreak > _bestStreak) {
-          _bestStreak = _currentStreak;
-          await PrefService.setBestStreak(_bestStreak);
-        }
-      }
-    }
-
     await loadTodayData();
     await loadHistoryStats();
     await loadInsightsData();
