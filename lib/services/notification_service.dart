@@ -135,6 +135,39 @@ class NotificationService {
     }
   }
 
+  /// Calculate next DateTime occurrence for a given 12h or 24h string
+  static DateTime calculateNextOccurrence(String timeStr) {
+    DateTime? parsed = _parseTimeString(timeStr);
+    final now = DateTime.now();
+    if (parsed == null) return now.add(const Duration(minutes: 1));
+
+    DateTime target = DateTime(now.year, now.month, now.day, parsed.hour, parsed.minute, 0);
+    if (target.isBefore(now)) {
+      target = target.add(const Duration(days: 1));
+    }
+    return target;
+  }
+
+  /// Format user-friendly confirmation message
+  static String formatAlarmConfirmation(DateTime targetTime) {
+    final now = DateTime.now();
+    final diff = targetTime.difference(now);
+    final timeFormatted = DateFormat('hh:mm:ss a').format(targetTime);
+
+    if (diff.inSeconds <= 60) {
+      final secs = diff.inSeconds > 0 ? diff.inSeconds : 60;
+      return '⏳ Alarm active for $timeFormatted! Lock phone & wait ${secs}s.';
+    } else if (diff.inMinutes < 60) {
+      final mins = diff.inMinutes;
+      final secs = diff.inSeconds % 60;
+      return '⏳ Alarm active for $timeFormatted (in ${mins}m ${secs}s)! Lock phone & wait.';
+    } else {
+      final hours = diff.inHours;
+      final mins = diff.inMinutes % 60;
+      return '⏳ Alarm active for $timeFormatted (in ${hours}h ${mins}m)!';
+    }
+  }
+
   /// Schedule daily recurring notifications for a list of 12h or 24h time strings (e.g., ["08:00 AM", "02:30 PM"])
   static Future<void> scheduleReminders(List<String> reminderTimes, bool enabled) async {
     try {
@@ -145,44 +178,27 @@ class NotificationService {
 
       int id = 100;
       for (String timeStr in reminderTimes) {
-        DateTime? time = _parseTimeString(timeStr);
-        if (time != null) {
-          await _scheduleDailyNotification(
-            id: id++,
-            hour: time.hour,
-            minute: time.minute,
-            title: '💧 Time to Hydrate!',
-            body: 'Stay on top of your goal with a fresh glass of water.',
-          );
-        }
+        final target = calculateNextOccurrence(timeStr);
+        await _schedulePointInTimeAlarm(
+          id: id++,
+          target: target,
+          title: '💧 Time to Hydrate!',
+          body: 'Stay on top of your goal with a fresh glass of water.',
+        );
       }
     } catch (e) {
       debugPrint('Error scheduling reminders: $e');
     }
   }
 
-  /// Schedule a specific daily notification at hour & minute
-  static Future<void> _scheduleDailyNotification({
+  /// Point-in-time exact alarm scheduling identical to the 1-min test alarm
+  static Future<void> _schedulePointInTimeAlarm({
     required int id,
-    required int hour,
-    required int minute,
+    required DateTime target,
     required String title,
     required String body,
   }) async {
-    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    tz.TZDateTime scheduledDate = tz.TZDateTime(
-      tz.local,
-      now.year,
-      now.month,
-      now.day,
-      hour,
-      minute,
-      0,
-    );
-
-    if (scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
-    }
+    final tzTarget = tz.TZDateTime.from(target, tz.local);
 
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       channelId,
@@ -205,30 +221,43 @@ class NotificationService {
         id,
         title,
         body,
-        scheduledDate,
+        tzTarget,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.wallClockTime,
-        matchDateTimeComponents: DateTimeComponents.time,
+            UILocalNotificationDateInterpretation.absoluteTime,
       );
-    } catch (exactErr) {
-      debugPrint('exactAllowWhileIdle fallback to inexact: $exactErr');
+    } catch (e1) {
+      debugPrint('exactAllowWhileIdle fallback to inexact: $e1');
       try {
         await _notificationsPlugin.zonedSchedule(
           id,
           title,
           body,
-          scheduledDate,
+          tzTarget,
           notificationDetails,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
           uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.wallClockTime,
-          matchDateTimeComponents: DateTimeComponents.time,
+              UILocalNotificationDateInterpretation.absoluteTime,
         );
-      } catch (e) {
-        debugPrint('Error in zonedSchedule inexact: $e');
+      } catch (e2) {
+        debugPrint('inexact error: $e2');
       }
+    }
+
+    // Dual-redundancy timer fallback while process is active (if target within 24h)
+    final diff = target.difference(DateTime.now());
+    if (diff.inSeconds > 0 && diff.inHours < 24) {
+      Future.delayed(diff, () async {
+        try {
+          await _notificationsPlugin.show(
+            id,
+            title,
+            body,
+            notificationDetails,
+          );
+        } catch (_) {}
+      });
     }
   }
 

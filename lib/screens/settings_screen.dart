@@ -81,6 +81,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final dt = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
       final timeStr = DateFormat('hh:mm a').format(dt);
       await provider.addReminderTime(timeStr);
+
+      final target = NotificationService.calculateNextOccurrence(timeStr);
+      final banner = NotificationService.formatAlarmConfirmation(target);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(banner),
+            backgroundColor: const Color(0xFF1565C0),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
     }
   }
 
@@ -332,7 +344,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   Switch(
                                     value: isEnabled,
                                     activeColor: const Color(0xFF00E5FF),
-                                    onChanged: (val) => provider.toggleReminderActive(timeStr, val),
+                                    onChanged: (val) async {
+                                      await provider.toggleReminderActive(timeStr, val);
+                                      if (val && context.mounted) {
+                                        final target = NotificationService.calculateNextOccurrence(timeStr);
+                                        final banner = NotificationService.formatAlarmConfirmation(target);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(banner),
+                                            backgroundColor: const Color(0xFF1565C0),
+                                            duration: const Duration(seconds: 4),
+                                          ),
+                                        );
+                                      }
+                                    },
                                   ),
                                   // Delete Button
                                   IconButton(
