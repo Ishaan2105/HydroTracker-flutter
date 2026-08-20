@@ -209,7 +209,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
     return Consumer<HydrationProvider>(
       builder: (context, provider, child) {
         return Scaffold(
-          backgroundColor: const Color(0xFF0B1329),
+          backgroundColor: Colors.transparent,
           body: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),

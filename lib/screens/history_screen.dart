@@ -94,7 +94,7 @@ class HistoryScreen extends StatelessWidget {
         final isSelectedGoalMet = provider.selectedDateProgressRatio >= 1.0;
 
         return Scaffold(
-          backgroundColor: const Color(0xFF0B1329),
+          backgroundColor: Colors.transparent,
           body: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
