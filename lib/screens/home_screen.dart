@@ -132,13 +132,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               color: Colors.white,
                             ),
                           ),
-                          Text(
-                            'Daily Target: ${provider.dailyGoalMl} ml',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: const Color(0xFF94A3B8),
-                            ),
-                          ),
                         ],
                       ),
                       const Spacer(),
@@ -261,49 +254,57 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 12),
 
-                  // Custom ml Row + Undo Button
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _customController,
-                          keyboardType: TextInputType.number,
-                          style: GoogleFonts.poppins(
-                              color: Colors.white, fontSize: 14),
-                          decoration: InputDecoration(
-                            hintText: 'Custom ml...',
-                            hintStyle: GoogleFonts.poppins(
-                                color: Colors.white38, fontSize: 13),
-                            filled: true,
-                            fillColor: const Color(0xFF1E293B),
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide.none,
+                  // Custom ml Input
+                  TextField(
+                    controller: _customController,
+                    keyboardType: TextInputType.number,
+                    style: GoogleFonts.poppins(
+                        color: Colors.white, fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'Custom ml...',
+                      hintStyle: GoogleFonts.poppins(
+                          color: Colors.white38, fontSize: 13),
+                      filled: true,
+                      fillColor: const Color(0xFF1E293B),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    onSubmitted: (_) => _logCustomWater(context),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Add Button below Custom Input (Same UI as quick log buttons + white border + no + symbol)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: Material(
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(14),
+                      child: InkWell(
+                        onTap: () => _logCustomWater(context),
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.white, width: 1.0),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Add',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
                             ),
                           ),
-                          onSubmitted: (_) => _logCustomWater(context),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () => _logCustomWater(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1565C0),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        child: Text(
-                          'Add ➕',
-                          style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
 
                   const SizedBox(height: 10),
