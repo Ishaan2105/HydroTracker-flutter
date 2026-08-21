@@ -7,12 +7,10 @@ import '../screens/about_screen.dart';
 
 class HydroTopBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showBackButton;
-  final VoidCallback? onUndo;
 
   const HydroTopBar({
     super.key,
     this.showBackButton = false,
-    this.onUndo,
   });
 
   @override
@@ -202,31 +200,15 @@ class HydroTopBar extends StatelessWidget implements PreferredSizeWidget {
 
                   // Greeting & User Name
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Hello, ${provider.userName}',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          provider.currentRankName,
-                          style: GoogleFonts.poppins(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: const Color(0xFF00E5FF),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                    child: Text(
+                      'Hello, ${provider.userName}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
 
@@ -260,16 +242,6 @@ class HydroTopBar extends StatelessWidget implements PreferredSizeWidget {
                       ],
                     ),
                   ),
-
-                  // Optional Undo Button
-                  if (onUndo != null) ...[
-                    const SizedBox(width: 4),
-                    IconButton(
-                      icon: const Icon(Icons.undo_rounded, color: Colors.white70, size: 20),
-                      tooltip: 'Undo last sip',
-                      onPressed: onUndo,
-                    ),
-                  ],
                 ],
               ),
             ),

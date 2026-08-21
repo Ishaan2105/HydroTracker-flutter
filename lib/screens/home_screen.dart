@@ -93,9 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, provider, child) {
         return Scaffold(
           backgroundColor: Colors.transparent,
-          appBar: HydroTopBar(
-            onUndo: () => _undoLastLog(context),
-          ),
+          appBar: const HydroTopBar(),
           body: SafeArea(
             top: false,
             child: SingleChildScrollView(
