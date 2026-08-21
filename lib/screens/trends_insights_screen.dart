@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/hydration_provider.dart';
 import '../widgets/hydration_ranks_sheet.dart';
+import '../widgets/hydro_top_bar.dart';
 
 class TrendsInsightsScreen extends StatefulWidget {
   const TrendsInsightsScreen({super.key});
@@ -287,7 +288,9 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
 
         return Scaffold(
           backgroundColor: Colors.transparent,
+          appBar: const HydroTopBar(),
           body: SafeArea(
+            top: false,
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Column(

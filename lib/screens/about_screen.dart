@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../widgets/hydro_top_bar.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -8,23 +9,7 @@ class AboutScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'User Manual & About',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        centerTitle: true,
-      ),
+      appBar: const HydroTopBar(showBackButton: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
@@ -112,7 +97,7 @@ class AboutScreen extends StatelessWidget {
               _buildBullet('Triple-Redundancy Alarm Engine', 'Combines native Android OS AlarmManager (with exact scheduling permissions), background intent receivers, and foreground active process timers to guarantee reminders trigger on time, even under aggressive battery management systems like Samsung One UI.'),
               _buildBullet('Interactive Fluid UI with Waves', 'Powered by a custom rendering canvas inspired by modern web visual standards, featuring real-time responsive wave animations.'),
               _buildBullet('Gamified Rank Progression', 'A 10-tier hydration hierarchy that updates dynamically based on daily target completion percentages.'),
-              _buildBullet('On-Device AI Hydration Coach', 'A heuristic data intelligence engine that analyzes consumption habits, predicts optimal sip windows, and provides tailored feedback without external API calls.'),
+              _buildBullet('Unified Top & Bottom Navigation', 'Consistent top app bar featuring your greeting, rank, settings gear, and streak counter across all primary screens.'),
             ]),
             const SizedBox(height: 20),
 
@@ -149,7 +134,6 @@ class AboutScreen extends StatelessWidget {
               _buildBullet('Quick Log Buttons', 'Instant presets for 250 ml, 500 ml, 750 ml, and 1000 ml.'),
               _buildBullet('Custom Volume Input', 'Type exact milliliter amounts and log with the full-width Add button.'),
               _buildBullet('Undo Action', 'Reverses accidental water logs immediately.'),
-              _buildBullet('Offline AI Coach', 'Floating quick action button to chat with the on-device assistant.'),
               const Divider(color: Colors.white12, height: 24),
 
               _buildSubHeading('3.2 Trends & Insights Screen (TrendsInsightsScreen)'),
@@ -194,22 +178,9 @@ class AboutScreen extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Section 5
-            _buildSectionHeader('5. OFFLINE AI COACH INTERACTION GUIDE'),
+            _buildSectionHeader('5. BATTERY OPTIMIZATION & TROUBLESHOOTING'),
             _buildContentCard([
-              _buildParagraph('The on-device AI Coach uses natural language heuristics to analyze your log database in real time:'),
-              const SizedBox(height: 8),
-              _buildBullet('"How am I doing today?"', 'Evaluates total intake against your goal and provides motivational feedback.'),
-              _buildBullet('"When should I drink next?"', 'Analyzes elapsed time since your last sip and recommends ideal portion sizes.'),
-              _buildBullet('"What is my remaining goal?"', 'Calculates exact remaining milliliters and liters left for today.'),
-              _buildBullet('"How is my streak?"', 'Reports your current active streak and all-time record.'),
-              _buildBullet('"Give me a hydration tip"', 'Rotates through proven metabolic and health benefits of proper fluid balance.'),
-            ]),
-            const SizedBox(height: 20),
-
-            // Section 6
-            _buildSectionHeader('6. BATTERY OPTIMIZATION & TROUBLESHOOTING'),
-            _buildContentCard([
-              _buildSubHeading('6.1 Bypassing OEM Background Restrictions'),
+              _buildSubHeading('5.1 Bypassing OEM Background Restrictions'),
               _buildParagraph(
                 'Android OEMs employ aggressive background task management. To guarantee alarms fire on time:\n\n'
                 '• Samsung One UI: Settings → Apps → Hydro Tracker → Battery → Unrestricted. Background usage limits → Add to Never sleeping apps.\n'
@@ -217,7 +188,7 @@ class AboutScreen extends StatelessWidget {
                 '• OnePlus (OxygenOS): App Info → Battery Usage → Allow background activity.',
               ),
               const SizedBox(height: 12),
-              _buildSubHeading('6.2 Hardware Alarm Verification'),
+              _buildSubHeading('5.2 Hardware Alarm Verification'),
               _buildParagraph(
                 '1. Open Settings → Tap Test 1-Min Alarm.\n'
                 '2. Lock your phone screen and wait 60 seconds.\n'
@@ -226,8 +197,8 @@ class AboutScreen extends StatelessWidget {
             ]),
             const SizedBox(height: 20),
 
-            // Section 7
-            _buildSectionHeader('7. DATA PRIVACY & BACKUP SPECIFICATION'),
+            // Section 6
+            _buildSectionHeader('6. DATA PRIVACY & BACKUP SPECIFICATION'),
             _buildContentCard([
               _buildBullet('Storage Location', 'Local SQLite database file (hydro_tracker.db) stored strictly inside sandboxed app storage.'),
               _buildBullet('Network Security', 'Zero network activity. No data is ever transmitted externally.'),

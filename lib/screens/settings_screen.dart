@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/hydration_provider.dart';
 import '../services/pref_service.dart';
 import '../services/notification_service.dart';
+import '../widgets/hydro_top_bar.dart';
 // import '../widgets/diagnostic_logs_sheet.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -113,8 +114,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Consumer<HydrationProvider>(
       builder: (context, provider, child) {
         return Scaffold(
-          backgroundColor: Colors.transparent,
+          backgroundColor: const Color(0xFF0F172A),
+          appBar: const HydroTopBar(showBackButton: true),
           body: SafeArea(
+            top: false,
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Column(
