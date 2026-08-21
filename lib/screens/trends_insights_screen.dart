@@ -167,32 +167,6 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
     );
   }
 
-  void _pickDate(BuildContext context, HydrationProvider provider) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: provider.selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF1565C0),
-              onPrimary: Colors.white,
-              surface: Color(0xFF1E293B),
-              onSurface: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      await provider.selectDate(picked);
-    }
-  }
-
   void _confirmDeleteLog(BuildContext context, HydrationProvider provider, int logId) {
     showDialog(
       context: context,
@@ -285,6 +259,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
     return Consumer<HydrationProvider>(
       builder: (context, provider, child) {
         final isSelectedGoalMet = provider.selectedDateProgressRatio >= 1.0;
+        final isTodaySelected = provider.selectedDateString == provider.formatDateString(DateTime.now());
 
         return Scaffold(
           backgroundColor: Colors.transparent,
@@ -296,34 +271,24 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Page Header
-                  Row(
+                  // Page Header (Without calendar icon)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Trends and Insights',
-                              style: GoogleFonts.poppins(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            Text(
-                              'Hydration calculator, history logs & analytics',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: const Color(0xFF94A3B8),
-                              ),
-                            ),
-                          ],
+                      Text(
+                        'Trends and Insights',
+                        style: GoogleFonts.poppins(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_month_rounded, color: Color(0xFF00E5FF), size: 26),
-                        onPressed: () => _pickDate(context, provider),
+                      Text(
+                        'Hydration calculator, history logs & activity heatmap',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: const Color(0xFF94A3B8),
+                        ),
                       ),
                     ],
                   ),
@@ -611,44 +576,24 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                   const SizedBox(height: 20),
 
                   // ==========================================
-                  // 2. Rank & Goal Status Overview 2x2 Grid
+                  // 2. Goal Status & Perfect Days Row (Beside each other)
                   // ==========================================
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 2.2,
+                  Row(
                     children: [
-                      // Rank (Selected Date)
-                      InkWell(
-                        onTap: () => _openRanksModal(context, provider.currentSelectedRank),
-                        borderRadius: BorderRadius.circular(16),
+                      Expanded(
                         child: _buildGridCard(
-                          title: 'Rank (Selected Date)',
-                          value: provider.currentSelectedRank,
-                          color: const Color(0xFF00E5FF),
-                          trailingIcon: Icons.info_outline,
+                          title: 'Goal Status',
+                          value: isSelectedGoalMet ? 'Completed' : 'Incomplete',
+                          color: isSelectedGoalMet ? const Color(0xFF10B981) : const Color(0xFFEF4444),
                         ),
                       ),
-                      // Goal Status
-                      _buildGridCard(
-                        title: 'Goal Status',
-                        value: isSelectedGoalMet ? 'Completed' : 'Incomplete',
-                        color: isSelectedGoalMet ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-                      ),
-                      // 30-Day Success
-                      _buildGridCard(
-                        title: '30-Day Success',
-                        value: '${provider.successRatePct.toStringAsFixed(0)}%',
-                        color: const Color(0xFF8B5CF6),
-                      ),
-                      // Perfect Days
-                      _buildGridCard(
-                        title: 'Perfect Days',
-                        value: '${provider.perfectDaysCount} Days',
-                        color: const Color(0xFFF59E0B),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildGridCard(
+                          title: 'Perfect Days',
+                          value: '${provider.perfectDaysCount} Days',
+                          color: const Color(0xFFF59E0B),
+                        ),
                       ),
                     ],
                   ),
@@ -656,76 +601,99 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                   const SizedBox(height: 20),
 
                   // ==========================================
-                  // 3. Rank Roadmap and Next Tier Progress
+                  // 3. Rank Roadmap and Next Tier Progress (Clickable)
                   // ==========================================
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
-                                shape: BoxShape.circle,
+                  InkWell(
+                    onTap: () => _openRanksModal(context, provider.currentSelectedRank),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.3)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.military_tech_rounded, color: Color(0xFF00E5FF), size: 22),
                               ),
-                              child: const Icon(Icons.military_tech_rounded, color: Color(0xFF00E5FF), size: 22),
-                            ),
-                            const SizedBox(width: 10),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Rank Roadmap',
-                                  style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                              const SizedBox(width: 10),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Rank Roadmap',
+                                        style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      const Icon(Icons.info_outline, color: Color(0xFF00E5FF), size: 14),
+                                    ],
+                                  ),
+                                  Text(
+                                    'Current: ${provider.currentRankName}',
+                                    style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF00E5FF), fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                              const Spacer(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0F172A),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.white12),
                                 ),
-                                Text(
-                                  'Current: ${provider.currentRankName}',
-                                  style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF00E5FF), fontWeight: FontWeight.w600),
+                                child: Text(
+                                  'View All',
+                                  style: GoogleFonts.poppins(fontSize: 10, color: const Color(0xFF94A3B8), fontWeight: FontWeight.w500),
                                 ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Next: ${provider.nextRankName}',
-                              style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF94A3B8)),
-                            ),
-                            Text(
-                              '${provider.nextRankNeededMl} ml to unlock',
-                              style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF00E5FF)),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: LinearProgressIndicator(
-                            value: provider.nextRankProgressRatio,
-                            minHeight: 10,
-                            backgroundColor: const Color(0xFF0F172A),
-                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00E5FF)),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 14),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Next: ${provider.nextRankName}',
+                                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF94A3B8)),
+                              ),
+                              Text(
+                                '${provider.nextRankNeededMl} ml to unlock',
+                                style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF00E5FF)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(
+                              value: provider.nextRankProgressRatio,
+                              minHeight: 10,
+                              backgroundColor: const Color(0xFF0F172A),
+                              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00E5FF)),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
                   // ==========================================
-                  // 4. 30-Day Activity Heat Map
+                  // 4. 30-Day Activity Heat Map (With 30-day success & aesthetic shrunk tiles)
                   // ==========================================
                   Container(
                     padding: const EdgeInsets.all(18),
@@ -739,19 +707,32 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              '30-Day Activity Heatmap',
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '30-Day Activity Heatmap',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                Text(
+                                  '30-Day Success Rate: ${provider.successRatePct.toStringAsFixed(0)}%',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF8B5CF6),
+                                  ),
+                                ),
+                              ],
                             ),
                             const Spacer(),
                             Text(
                               'Tap tile to inspect',
                               style: GoogleFonts.poppins(
-                                fontSize: 11,
+                                fontSize: 10.5,
                                 color: const Color(0xFF94A3B8),
                               ),
                             ),
@@ -759,14 +740,14 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                         ),
                         const SizedBox(height: 14),
 
-                        // Heatmap Tiles Grid (30 days)
+                        // Heatmap Tiles Grid (30 days with smaller, cleaner aesthetic tiles)
                         GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 6,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
+                            crossAxisCount: 7,
+                            crossAxisSpacing: 6,
+                            mainAxisSpacing: 6,
                             childAspectRatio: 1.0,
                           ),
                           itemCount: 30,
@@ -776,6 +757,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                             final total = provider.dailyTotalsMap[dateStr] ?? 0;
                             final ratio = provider.dailyGoalMl > 0 ? (total / provider.dailyGoalMl) : 0.0;
                             final isSelected = dateStr == provider.selectedDateString;
+                            final isToday = index == 29;
 
                             Color tileColor;
                             if (ratio >= 1.0) {
@@ -790,25 +772,39 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
 
                             return InkWell(
                               onTap: () => provider.selectDate(date),
-                              borderRadius: BorderRadius.circular(8),
-                              child: Container(
+                              borderRadius: BorderRadius.circular(6),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
                                 decoration: BoxDecoration(
                                   color: tileColor,
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(6),
                                   border: Border.all(
-                                    color: isSelected ? Colors.white : Colors.white12,
-                                    width: isSelected ? 2 : 1,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : (isToday ? const Color(0xFF00E5FF) : Colors.white10),
+                                    width: isSelected ? 2 : (isToday ? 1.5 : 1),
                                   ),
                                 ),
                                 child: Center(
-                                  child: Text(
-                                    '${date.day}',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: ratio > 0 || isSelected ? Colors.white : Colors.white38,
-                                    ),
-                                  ),
+                                  child: isToday
+                                      ? Text(
+                                          '${date.day}',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : (isSelected
+                                          ? Container(
+                                              width: 4,
+                                              height: 4,
+                                              decoration: const BoxDecoration(
+                                                color: Colors.white,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            )
+                                          : const SizedBox.shrink()),
                                 ),
                               ),
                             );
@@ -846,46 +842,23 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  DateFormat('EEEE, MMM d, yyyy').format(provider.selectedDate),
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Text(
-                                  'Intake: ${provider.selectedDateIntakeMl} ml / ${provider.dailyGoalMl} ml (${provider.selectedDateProgressPercentage}%)',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 11,
-                                    color: const Color(0xFF00E5FF),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isSelectedGoalMet ? const Color(0xFF10B981).withValues(alpha: 0.2) : const Color(0xFFEF4444).withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSelectedGoalMet ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-                                ),
+                            Text(
+                              DateFormat('EEEE, MMM d, yyyy').format(provider.selectedDate),
+                              style: GoogleFonts.poppins(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
-                              child: Text(
-                                isSelectedGoalMet ? 'Met' : 'Missed',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: isSelectedGoalMet ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-                                ),
+                            ),
+                            Text(
+                              'Intake: ${provider.selectedDateIntakeMl} ml / ${provider.dailyGoalMl} ml (${provider.selectedDateProgressPercentage}%)',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: const Color(0xFF00E5FF),
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
@@ -947,10 +920,12 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                       ],
                                     ),
                                     const Spacer(),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete_outline, color: Colors.white38, size: 20),
-                                      onPressed: () => _confirmDeleteLog(context, provider, log.id!),
-                                    ),
+                                    // Can only delete logs of current day
+                                    if (isTodaySelected)
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline, color: Colors.white38, size: 20),
+                                        onPressed: () => _confirmDeleteLog(context, provider, log.id!),
+                                      ),
                                   ],
                                 ),
                               );
@@ -964,366 +939,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                   const SizedBox(height: 20),
 
                   // ==========================================
-                  // 6. 7-Day Hydration Trend (Main Chart)
-                  // ==========================================
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.25),
-                          blurRadius: 18,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '7-Day Hydration Trend',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 16.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Daily intake breakdown against target',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 11.5,
-                                      color: const Color(0xFF94A3B8),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Quick Stat Badges Row
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF0F172A),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.25)),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'DAILY AVG',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF94A3B8),
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '${(provider.weeklyAverageMl / 1000).toStringAsFixed(1)} L/day',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF00E5FF),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF0F172A),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.25)),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'TOTAL VOLUME',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF94A3B8),
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '${(provider.weeklyTotalMl / 1000).toStringAsFixed(1)} L',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF10B981),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF0F172A),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'TARGET HIT',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF94A3B8),
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      provider.hitRateFraction,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF818CF8),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Spacious Bar Chart Area
-                        Container(
-                          height: 200,
-                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0F172A),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-                          ),
-                          child: Stack(
-                            children: [
-                              // 100% Target Reference Line
-                              Positioned(
-                                top: 38,
-                                left: 8,
-                                right: 8,
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Container(
-                                        height: 1,
-                                        color: const Color(0xFF10B981).withValues(alpha: 0.35),
-                                      ),
-                                    ),
-                                    Container(
-                                      margin: const EdgeInsets.only(left: 6),
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        '100% Target',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 8.5,
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF10B981),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // Bar Columns
-                              Positioned.fill(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: (provider.sevenDayTrend.isNotEmpty
-                                          ? provider.sevenDayTrend
-                                          : HydrationProvider.generateDefaultSevenDayTrend())
-                                      .map((dayData) {
-                                    final ratio = dayData.ratio;
-                                    final barHeight = (ratio * 100).clamp(14.0, 115.0);
-                                    final isToday = dayData.label == 'Today';
-
-                                    List<Color> gradientColors;
-                                    Color glowColor;
-                                    if (ratio >= 1.0) {
-                                      gradientColors = [const Color(0xFF34D399), const Color(0xFF059669)];
-                                      glowColor = const Color(0xFF10B981);
-                                    } else if (ratio >= 0.7) {
-                                      gradientColors = [const Color(0xFF00E5FF), const Color(0xFF0284C7)];
-                                      glowColor = const Color(0xFF00E5FF);
-                                    } else if (ratio >= 0.4) {
-                                      gradientColors = [const Color(0xFF60A5FA), const Color(0xFF2563EB)];
-                                      glowColor = const Color(0xFF3B82F6);
-                                    } else {
-                                      gradientColors = [const Color(0xFFFBBF24), const Color(0xFFEA580C)];
-                                      glowColor = const Color(0xFFEF4444);
-                                    }
-
-                                    return Column(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        // Intake Liters Text
-                                        Text(
-                                          '${(dayData.totalMl / 1000).toStringAsFixed(1)}L',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 9.5,
-                                            fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
-                                            color: isToday ? const Color(0xFF00E5FF) : const Color(0xFF94A3B8),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-
-                                        // Capsule Bar
-                                        AnimatedContainer(
-                                          duration: const Duration(milliseconds: 500),
-                                          width: 22,
-                                          height: barHeight,
-                                          decoration: BoxDecoration(
-                                            gradient: LinearGradient(
-                                              begin: Alignment.topCenter,
-                                              end: Alignment.bottomCenter,
-                                              colors: gradientColors,
-                                            ),
-                                            borderRadius: BorderRadius.circular(11),
-                                            boxShadow: isToday
-                                                ? [
-                                                    BoxShadow(
-                                                      color: glowColor.withValues(alpha: 0.5),
-                                                      blurRadius: 8,
-                                                      spreadRadius: 1,
-                                                    ),
-                                                  ]
-                                                : [],
-                                            border: isToday
-                                                ? Border.all(color: Colors.white, width: 1.5)
-                                                : null,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-
-                                        // Day Label
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: isToday
-                                                ? const Color(0xFF00E5FF).withValues(alpha: 0.2)
-                                                : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Text(
-                                            dayData.label,
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 10,
-                                              fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                                              color: isToday ? const Color(0xFF00E5FF) : const Color(0xFFCBD5E1),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  }).toList(),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Chart Color Legend
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _buildLegendDot(const Color(0xFF10B981), '100%+ Met'),
-                            const SizedBox(width: 14),
-                            _buildLegendDot(const Color(0xFF00E5FF), '70–99%'),
-                            const SizedBox(width: 14),
-                            _buildLegendDot(const Color(0xFF3B82F6), '40–69%'),
-                            const SizedBox(width: 14),
-                            _buildLegendDot(const Color(0xFFEA580C), '<40%'),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // ==========================================
-                  // 7. 7-Day Hydration Analytics (AI Trend Analysis)
-                  // ==========================================
-                  _buildTrendAnalysisCard(provider),
-
-                  const SizedBox(height: 16),
-
-                  // ==========================================
-                  // 8. Best Day | Lowest Day | Goal Hit Rate
-                  // ==========================================
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildHighlightCard(
-                          title: 'Best Day',
-                          value: provider.bestDayLabel,
-                          color: const Color(0xFF10B981),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _buildHighlightCard(
-                          title: 'Lowest Day',
-                          value: provider.worstDayLabel,
-                          color: const Color(0xFFF97316),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _buildHighlightCard(
-                          title: 'Goal Hit Rate',
-                          value: '${provider.hitRateFraction} (${provider.hitRatePct.toStringAsFixed(0)}%)',
-                          color: const Color(0xFF00E5FF),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // ==========================================
-                  // 9. Meal Times Schedule
+                  // 6. Meal Times Schedule
                   // ==========================================
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -1428,7 +1044,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
     IconData? trailingIcon,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: const Color(0xFF1E293B),
         borderRadius: BorderRadius.circular(16),
@@ -1443,7 +1059,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
               Expanded(
                 child: Text(
                   title,
-                  style: GoogleFonts.poppins(fontSize: 10.5, color: const Color(0xFF94A3B8)),
+                  style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF94A3B8)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1455,7 +1071,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
           Text(
             value,
             style: GoogleFonts.poppins(
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -1471,8 +1087,8 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
     return Row(
       children: [
         Container(
-          width: 10,
-          height: 10,
+          width: 8,
+          height: 8,
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(2),
@@ -1484,74 +1100,6 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
           style: GoogleFonts.poppins(fontSize: 10, color: const Color(0xFF94A3B8)),
         ),
       ],
-    );
-  }
-
-  Widget _buildLegendDot(Color color, String label) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 7,
-          height: 7,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 10,
-            color: const Color(0xFF94A3B8),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHighlightCard({required String title, required String value, required Color color}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title.toUpperCase(),
-            style: GoogleFonts.poppins(
-              fontSize: 9.5,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF94A3B8),
-              letterSpacing: 0.4,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.poppins(
-              fontSize: 13.5,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -1576,115 +1124,6 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                 style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF00E5FF)),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTrendAnalysisCard(HydrationProvider provider) {
-    final avgL = (provider.weeklyAverageMl / 1000).toStringAsFixed(2);
-    final goalL = (provider.dailyGoalMl / 1000).toStringAsFixed(1);
-    final isGoalMetAvg = provider.weeklyAverageMl >= provider.dailyGoalMl;
-
-    String headline;
-    String desc;
-    Color color;
-
-    if (provider.hitRatePct >= 70) {
-      headline = 'Excellent Consistency';
-      desc = 'You met your target on ${provider.hitRateFraction} days this week (${provider.hitRatePct.toStringAsFixed(0)}% hit rate). Your body is operating at peak hydration!';
-      color = const Color(0xFF10B981);
-    } else if (provider.hitRatePct >= 40) {
-      headline = 'Steady Hydration Pattern';
-      desc = 'You hit your target on ${provider.hitRateFraction} days. Setting post-meal alarms will help you close the gap on quiet days.';
-      color = const Color(0xFF00E5FF);
-    } else {
-      headline = 'Low Intake Alert';
-      desc = 'You hit your goal on ${provider.hitRateFraction} days. Try drinking 250ml of water first thing every morning to kickstart your daily target.';
-      color = const Color(0xFFF97316);
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.35), width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.auto_awesome_rounded, color: Color(0xFF00E5FF), size: 18),
-              const SizedBox(width: 8),
-              Text(
-                '7-Day Hydration Analytics',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            headline,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            desc,
-            style: GoogleFonts.poppins(
-              fontSize: 11.5,
-              color: const Color(0xFFCBD5E1),
-              height: 1.4,
-            ),
-          ),
-          const Divider(color: Colors.white10, height: 16),
-          Row(
-            children: [
-              Icon(
-                isGoalMetAvg ? Icons.trending_up : Icons.trending_down,
-                color: isGoalMetAvg ? const Color(0xFF10B981) : const Color(0xFFF97316),
-                size: 16,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  isGoalMetAvg
-                      ? 'Weekly avg of $avgL L exceeds your target of $goalL L/day!'
-                      : 'Weekly avg is $avgL L/day (target: $goalL L/day).',
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    color: const Color(0xFF94A3B8),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              const Icon(Icons.star_outline_rounded, color: Color(0xFFEAB308), size: 16),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  'Peak day: ${provider.bestDayLabel} • Lowest day: ${provider.worstDayLabel}.',
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    color: const Color(0xFF94A3B8),
-                  ),
-                ),
-              ),
-            ],
           ),
         ],
       ),
