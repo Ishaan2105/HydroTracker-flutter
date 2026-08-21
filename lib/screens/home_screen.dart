@@ -300,44 +300,66 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 24),
 
                   // ==========================================
-                  // 5. 7-Day Hydration Trend (Proper Bar Graph)
+                  // 5. 7-Day Hydration Trend (Enhanced Blue UI)
                   // ==========================================
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1E293B),
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white12),
+                      border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.2)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.25),
-                          blurRadius: 18,
-                          offset: const Offset(0, 8),
+                          color: const Color(0xFF00E5FF).withValues(alpha: 0.08),
+                          blurRadius: 24,
+                          offset: const Offset(0, 10),
+                        ),
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
                         ),
                       ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '7-Day Hydration Trend',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16.5,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Daily intake breakdown against target',
-                          style: GoogleFonts.poppins(
-                            fontSize: 11.5,
-                            color: const Color(0xFF94A3B8),
-                          ),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.bar_chart_rounded, color: Color(0xFF00E5FF), size: 20),
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '7-Day Hydration Trend',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                Text(
+                                  'Daily intake breakdown against target',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 11,
+                                    color: const Color(0xFF94A3B8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
 
-                        // Quick Stat Badges Row
+                        // Quick Stat Badges Row (All Blue Shades)
                         Row(
                           children: [
                             Expanded(
@@ -346,7 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF0F172A),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.25)),
+                                  border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.3)),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,7 +402,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF0F172A),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.25)),
+                                  border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.3)),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -400,7 +422,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       style: GoogleFonts.poppins(
                                         fontSize: 13,
                                         fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF10B981),
+                                        color: const Color(0xFF38BDF8),
                                       ),
                                     ),
                                   ],
@@ -414,7 +436,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF0F172A),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
+                                  border: Border.all(color: const Color(0xFF60A5FA).withValues(alpha: 0.3)),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -434,7 +456,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       style: GoogleFonts.poppins(
                                         fontSize: 13,
                                         fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF6366F1),
+                                        color: const Color(0xFF60A5FA),
                                       ),
                                     ),
                                   ],
@@ -445,12 +467,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 24),
 
-                        // Proper Bar Graph Canvas
+                        // Enhanced Blue Bar Graph Canvas
                         SizedBox(
-                          height: 210,
+                          height: 215,
                           child: Stack(
                             children: [
-                              // 100% Target Goal Baseline Line
+                              // 100% Target Goal Line (Neon Cyan Glow)
                               Positioned(
                                 top: 38,
                                 left: 0,
@@ -458,16 +480,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: Row(
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.4)),
+                                        border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.5)),
                                       ),
                                       child: Text(
                                         '100% Target',
                                         style: GoogleFonts.poppins(
-                                          fontSize: 9,
+                                          fontSize: 9.5,
                                           fontWeight: FontWeight.bold,
                                           color: const Color(0xFF00E5FF),
                                         ),
@@ -476,15 +498,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Container(
-                                        height: 1,
-                                        color: const Color(0xFF00E5FF).withValues(alpha: 0.3),
+                                        height: 1.2,
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              const Color(0xFF00E5FF).withValues(alpha: 0.6),
+                                              const Color(0xFF00E5FF).withValues(alpha: 0.1),
+                                            ],
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
 
-                              // 7 Bar Columns
+                              // 7 Bar Columns (All Blue Gradients)
                               Positioned.fill(
                                 top: 50,
                                 bottom: 0,
@@ -499,22 +528,47 @@ class _HomeScreenState extends State<HomeScreen> {
                                     final ratio = provider.dailyGoalMl > 0 ? (total / provider.dailyGoalMl) : 0.0;
                                     final isToday = index == 6;
 
-                                    // Bar height calculation (clamped to max 130px)
-                                    final double maxBarHeight = 120.0;
-                                    final double barHeight = (ratio.clamp(0.0, 1.2) / 1.0 * (maxBarHeight * 0.85)).clamp(6.0, maxBarHeight);
+                                    // Bar height calculation (clamped to max 125px)
+                                    final double maxBarHeight = 125.0;
+                                    final double barHeight = (ratio.clamp(0.0, 1.2) / 1.0 * (maxBarHeight * 0.85)).clamp(8.0, maxBarHeight);
 
                                     final isGoalAchieved = ratio >= 1.0;
+
+                                    // All-Blue Gradient Palette
+                                    List<Color> barColors;
+                                    List<BoxShadow>? barShadow;
+
+                                    if (isGoalAchieved) {
+                                      // 100%+ : Electric Neon Cyan to Vivid Ocean Blue
+                                      barColors = [const Color(0xFF00E5FF), const Color(0xFF0284C7)];
+                                      barShadow = [
+                                        BoxShadow(
+                                          color: const Color(0xFF00E5FF).withValues(alpha: 0.45),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, -3),
+                                        ),
+                                      ];
+                                    } else if (ratio >= 0.5) {
+                                      // 50% - 99% : Sapphire Blue to Deep Royal Blue
+                                      barColors = [const Color(0xFF38BDF8), const Color(0xFF1D4ED8)];
+                                    } else if (ratio > 0) {
+                                      // 1% - 49% : Deep Marine / Cobalt Blue
+                                      barColors = [const Color(0xFF2563EB), const Color(0xFF1E3A8A)];
+                                    } else {
+                                      // 0% : Midnight Slate-Blue
+                                      barColors = [const Color(0xFF1E293B), const Color(0xFF0F172A)];
+                                    }
 
                                     return Column(
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
                                         // Amount text above bar
                                         Text(
-                                          total > 0 ? '${(total / 1000).toStringAsFixed(1)}L' : '-',
+                                          total > 0 ? '${(total / 1000).toStringAsFixed(1)}L' : '0L',
                                           style: GoogleFonts.poppins(
                                             fontSize: 9.5,
                                             fontWeight: isGoalAchieved ? FontWeight.bold : FontWeight.w500,
-                                            color: isGoalAchieved ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                                            color: isGoalAchieved ? const Color(0xFF00E5FF) : const Color(0xFF94A3B8),
                                           ),
                                         ),
                                         const SizedBox(height: 6),
@@ -527,42 +581,40 @@ class _HomeScreenState extends State<HomeScreen> {
                                             gradient: LinearGradient(
                                               begin: Alignment.topCenter,
                                               end: Alignment.bottomCenter,
-                                              colors: isGoalAchieved
-                                                  ? [const Color(0xFF10B981), const Color(0xFF059669)]
-                                                  : (ratio >= 0.5
-                                                      ? [const Color(0xFF00E5FF), const Color(0xFF1565C0)]
-                                                      : (ratio > 0
-                                                          ? [const Color(0xFFF97316), const Color(0xFFEA580C)]
-                                                          : [const Color(0xFF334155), const Color(0xFF1E293B)])),
+                                              colors: barColors,
                                             ),
                                             borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                                             border: isToday
                                                 ? Border.all(color: Colors.white, width: 1.5)
-                                                : null,
-                                            boxShadow: isGoalAchieved
-                                                ? [
-                                                    BoxShadow(
-                                                      color: const Color(0xFF10B981).withValues(alpha: 0.35),
-                                                      blurRadius: 8,
-                                                      offset: const Offset(0, -2),
-                                                    ),
-                                                  ]
-                                                : null,
+                                                : Border.all(
+                                                    color: isGoalAchieved
+                                                        ? const Color(0xFF00E5FF).withValues(alpha: 0.6)
+                                                        : Colors.white10,
+                                                    width: 1,
+                                                  ),
+                                            boxShadow: barShadow,
                                           ),
                                         ),
                                         const SizedBox(height: 8),
 
                                         // Day label badge
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
                                           decoration: BoxDecoration(
-                                            color: isToday ? const Color(0xFF00E5FF).withValues(alpha: 0.2) : Colors.transparent,
+                                            color: isToday
+                                                ? const Color(0xFF00E5FF).withValues(alpha: 0.2)
+                                                : const Color(0xFF0F172A),
                                             borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(
+                                              color: isToday
+                                                  ? const Color(0xFF00E5FF)
+                                                  : Colors.white.withValues(alpha: 0.05),
+                                            ),
                                           ),
                                           child: Text(
                                             dayLabel,
                                             style: GoogleFonts.poppins(
-                                              fontSize: 11,
+                                              fontSize: 10.5,
                                               fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
                                               color: isToday ? const Color(0xFF00E5FF) : const Color(0xFF94A3B8),
                                             ),
@@ -577,17 +629,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
 
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 16),
 
-                        // Chart Color Legend
+                        // Chart All-Blue Color Legend
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildLegendItem('Goal Met (100%+)', const Color(0xFF10B981)),
+                            _buildLegendItem('Goal Met (100%+)', const Color(0xFF00E5FF)),
                             const SizedBox(width: 14),
-                            _buildLegendItem('50–99%', const Color(0xFF00E5FF)),
+                            _buildLegendItem('50–99%', const Color(0xFF38BDF8)),
                             const SizedBox(width: 14),
-                            _buildLegendItem('<50%', const Color(0xFFF97316)),
+                            _buildLegendItem('<50%', const Color(0xFF2563EB)),
                           ],
                         ),
                       ],

@@ -693,13 +693,13 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                   const SizedBox(height: 20),
 
                   // ==========================================
-                  // 4. 30-Day Activity Heat Map (With 30-day success & aesthetic shrunk tiles)
+                  // 4. 30-Day Activity Heat Map (Shrunk by 35%)
                   // ==========================================
                   Container(
-                    padding: const EdgeInsets.all(18),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1E293B),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: Colors.white10),
                     ),
                     child: Column(
@@ -707,113 +707,112 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                       children: [
                         Row(
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '30-Day Activity Heatmap',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Text(
-                                  '30-Day Success Rate: ${provider.successRatePct.toStringAsFixed(0)}%',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF8B5CF6),
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              '30-Day Activity Heatmap',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                             const Spacer(),
-                            Text(
-                              'Tap tile to inspect',
-                              style: GoogleFonts.poppins(
-                                fontSize: 10.5,
-                                color: const Color(0xFF94A3B8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.4)),
+                              ),
+                              child: Text(
+                                'Success: ${provider.successRatePct.toStringAsFixed(0)}%',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF8B5CF6),
+                                ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 10),
 
-                        // Heatmap Tiles Grid (30 days with smaller, cleaner aesthetic tiles)
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 7,
-                            crossAxisSpacing: 6,
-                            mainAxisSpacing: 6,
-                            childAspectRatio: 1.0,
-                          ),
-                          itemCount: 30,
-                          itemBuilder: (context, index) {
-                            final date = DateTime.now().subtract(Duration(days: 29 - index));
-                            final dateStr = provider.formatDateString(date);
-                            final total = provider.dailyTotalsMap[dateStr] ?? 0;
-                            final ratio = provider.dailyGoalMl > 0 ? (total / provider.dailyGoalMl) : 0.0;
-                            final isSelected = dateStr == provider.selectedDateString;
-                            final isToday = index == 29;
+                        // Heatmap Tiles Grid (Shrunk by 35% with compact horizontal padding and smaller tiles)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 7,
+                              crossAxisSpacing: 4.5,
+                              mainAxisSpacing: 4.5,
+                              childAspectRatio: 1.0,
+                            ),
+                            itemCount: 30,
+                            itemBuilder: (context, index) {
+                              final date = DateTime.now().subtract(Duration(days: 29 - index));
+                              final dateStr = provider.formatDateString(date);
+                              final total = provider.dailyTotalsMap[dateStr] ?? 0;
+                              final ratio = provider.dailyGoalMl > 0 ? (total / provider.dailyGoalMl) : 0.0;
+                              final isSelected = dateStr == provider.selectedDateString;
+                              final isToday = index == 29;
 
-                            Color tileColor;
-                            if (ratio >= 1.0) {
-                              tileColor = const Color(0xFF10B981); // 100%+
-                            } else if (ratio >= 0.5) {
-                              tileColor = const Color(0xFF3B82F6); // 50-99%
-                            } else if (ratio > 0) {
-                              tileColor = const Color(0xFFF97316); // 1-49%
-                            } else {
-                              tileColor = const Color(0xFF0F172A); // 0%
-                            }
+                              Color tileColor;
+                              if (ratio >= 1.0) {
+                                tileColor = const Color(0xFF10B981); // 100%+
+                              } else if (ratio >= 0.5) {
+                                tileColor = const Color(0xFF3B82F6); // 50-99%
+                              } else if (ratio > 0) {
+                                tileColor = const Color(0xFFF97316); // 1-49%
+                              } else {
+                                tileColor = const Color(0xFF0F172A); // 0%
+                              }
 
-                            return InkWell(
-                              onTap: () => provider.selectDate(date),
-                              borderRadius: BorderRadius.circular(6),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                decoration: BoxDecoration(
-                                  color: tileColor,
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? Colors.white
-                                        : (isToday ? const Color(0xFF00E5FF) : Colors.white10),
-                                    width: isSelected ? 2 : (isToday ? 1.5 : 1),
+                              return InkWell(
+                                onTap: () => provider.selectDate(date),
+                                borderRadius: BorderRadius.circular(4),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  decoration: BoxDecoration(
+                                    color: tileColor,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : (isToday ? const Color(0xFF00E5FF) : Colors.white10),
+                                      width: isSelected ? 1.5 : (isToday ? 1.2 : 0.6),
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: isToday
+                                        ? Text(
+                                            '${date.day}',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : (isSelected
+                                            ? Container(
+                                                width: 3,
+                                                height: 3,
+                                                decoration: const BoxDecoration(
+                                                  color: Colors.white,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              )
+                                            : const SizedBox.shrink()),
                                   ),
                                 ),
-                                child: Center(
-                                  child: isToday
-                                      ? Text(
-                                          '${date.day}',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 10.5,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                        )
-                                      : (isSelected
-                                          ? Container(
-                                              width: 4,
-                                              height: 4,
-                                              decoration: const BoxDecoration(
-                                                color: Colors.white,
-                                                shape: BoxShape.circle,
-                                              ),
-                                            )
-                                          : const SizedBox.shrink()),
-                                ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
 
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 10),
 
-                        // Heatmap Legend
+                        // Heatmap Legend (Compact)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
