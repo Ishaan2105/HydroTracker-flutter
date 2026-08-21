@@ -21,7 +21,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     HomeScreen(),
     HistoryScreen(),
     InsightsScreen(),
-    SettingsScreen(),
   ];
 
   @override
@@ -86,10 +85,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.lightbulb_outline_rounded),
             label: 'Insights',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_rounded),
-            label: 'Settings',
           ),
         ],
       ),

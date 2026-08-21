@@ -23,7 +23,6 @@ class _InsightsScreenState extends State<InsightsScreen> {
   int? _calculatedGoalMl;
 
   // Accordion Toggles
-  bool _isReviewExpanded = false;
   bool _isMealsExpanded = false;
 
   // Meal Schedule Controllers
@@ -995,19 +994,6 @@ class _InsightsScreenState extends State<InsightsScreen> {
           _showConfirmationBanner('$fieldLabel updated to $val');
         }
       },
-    );
-  }
-
-  Widget _buildReviewRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF94A3B8))),
-          Text(value, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
-        ],
-      ),
     );
   }
 
