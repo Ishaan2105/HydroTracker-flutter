@@ -3,8 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/hydration_provider.dart';
 import '../widgets/waves_background.dart';
 import 'home_screen.dart';
-import 'history_screen.dart';
-import 'insights_screen.dart';
+import 'trends_insights_screen.dart';
 import 'settings_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -19,8 +18,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   final List<Widget> _screens = const [
     HomeScreen(),
-    HistoryScreen(),
-    InsightsScreen(),
+    TrendsInsightsScreen(),
   ];
 
   @override
@@ -37,19 +35,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   /// Called every time the user taps a bottom-nav tab.
-  ///
-  /// History (1) and Insights (2) re-fetch their data from the DB on every
-  /// visit so they always reflect the latest state — even if water was logged
-  /// on another tab without triggering a full rebuild.
   void _onTabTapped(int index) {
     final provider = context.read<HydrationProvider>();
 
     if (index == 1) {
-      // History tab: reload today's data + all history stats
+      // Trends & Insights tab: reload today's data, history stats, and insights data
       provider.loadTodayData();
-      provider.loadHistoryStats();
-    } else if (index == 2) {
-      // Insights tab: history stats are a dependency for trend computation
       provider.loadHistoryStats().then((_) => provider.loadInsightsData());
     }
 
@@ -79,12 +70,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month_rounded),
-            label: 'History',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.lightbulb_outline_rounded),
-            label: 'Insights',
+            icon: Icon(Icons.auto_graph_rounded),
+            label: 'Trends & Insights',
           ),
         ],
       ),
