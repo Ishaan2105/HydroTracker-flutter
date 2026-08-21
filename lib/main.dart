@@ -62,7 +62,7 @@ class HydroTrackerApp extends StatelessWidget {
       title: 'Hydro Tracker',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0B1329),
+        scaffoldBackgroundColor: Colors.black,
         colorScheme: const ColorScheme.dark(
           primary: Color(0xFF1565C0),
           secondary: Color(0xFF00E5FF),

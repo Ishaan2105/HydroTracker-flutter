@@ -124,7 +124,7 @@ class WavesBackground extends StatefulWidget {
   const WavesBackground({
     super.key,
     this.lineColor = const Color(0x1F00E5FF),
-    this.backgroundColor = const Color(0xFF0B1329),
+    this.backgroundColor = Colors.black,
     this.waveSpeedX = 0.0125,
     this.waveSpeedY = 0.005,
     this.waveAmpX = 32.0,

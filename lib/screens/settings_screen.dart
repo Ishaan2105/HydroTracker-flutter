@@ -114,7 +114,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Consumer<HydrationProvider>(
       builder: (context, provider, child) {
         return Scaffold(
-          backgroundColor: const Color(0xFF0F172A),
+          backgroundColor: Colors.black,
           appBar: const HydroTopBar(showBackButton: true),
           body: SafeArea(
             top: false,
