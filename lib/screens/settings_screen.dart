@@ -50,7 +50,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '👤 Name updated to $name',
+              'Name updated to $name',
               style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
             ),
             backgroundColor: const Color(0xFF1565C0),
@@ -72,7 +72,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '🎯 Daily Goal updated to ${goalLiters}L ($goalMl ml)',
+            'Daily Goal updated to ${goalLiters}L ($goalMl ml)',
             style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
           ),
           backgroundColor: const Color(0xFF1565C0),
@@ -122,7 +122,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   // Header
                   Text(
-                    'Settings ⚙️',
+                    'Settings',
                     style: GoogleFonts.poppins(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -139,7 +139,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   const SizedBox(height: 20),
 
-                  // ⚡ Battery Optimization Warning Banner
+                  // Battery Optimization Warning Banner
                   if (!_isBatteryExempt) ...[
                     _BatteryGuidanceBanner(
                       onFixed: _checkBatteryStatus,
@@ -147,9 +147,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 16),
                   ],
 
-                  // 1. 👤 User Profile Section
+                  // 1. User Profile Section
                   _buildCard(
-                    title: '👤 User Profile',
+                    title: 'User Profile',
                     subtitle: 'Update your display name',
                     child: Row(
                       children: [
@@ -192,9 +192,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   const SizedBox(height: 16),
 
-                  // 2. 🎯 Daily Goal Target Section
+                  // 2. Daily Goal Target Section
                   _buildCard(
-                    title: '🎯 Daily Goal Target',
+                    title: 'Daily Goal Target',
                     subtitle: 'Set daily intake target in Liters',
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,9 +249,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   const SizedBox(height: 16),
 
-                  // 4. 🔔 Notifications & Scheduled Reminders Section
+                  // 4. Notifications & Scheduled Reminders Section
                   _buildCard(
-                    title: '🔔 Offline Notifications & Reminders',
+                    title: 'Offline Notifications & Reminders',
                     subtitle: 'Manage local hydration alarm times',
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,7 +326,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                               ? () async {
                                                   await provider.toggleReminderDaily(timeStr, !isDaily);
                                                   if (context.mounted) {
-                                                    final label = !isDaily ? 'daily 🔁' : 'one-time only 1️⃣';
+                                                    final label = !isDaily ? 'daily' : 'one-time only';
                                                     ScaffoldMessenger.of(context).showSnackBar(
                                                       SnackBar(
                                                         content: Text('$displayTime set to repeat $label'),
@@ -352,7 +352,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                               ),
                                             ),
                                             child: Text(
-                                              isDaily ? '🔁 Daily' : '1️⃣ Once',
+                                              isDaily ? 'Daily' : 'Once',
                                               style: GoogleFonts.poppins(
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.w600,
@@ -386,7 +386,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         } else {
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
-                                              content: Text('🔕 Alarm for $displayTime turned off & cancelled.'),
+                                              content: Text('Alarm for $displayTime turned off & cancelled.'),
                                               duration: const Duration(seconds: 2),
                                             ),
                                           );
@@ -402,7 +402,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       if (context.mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
-                                            content: Text('🗑️ Alarm for $displayTime deleted & cancelled.'),
+                                            content: Text('Alarm for $displayTime deleted & cancelled.'),
                                             backgroundColor: const Color(0xFFEF4444),
                                             duration: const Duration(seconds: 2),
                                           ),
@@ -425,7 +425,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('🔔 Instant notification sent to status bar!'),
+                                        content: Text('Instant notification sent to status bar!'),
                                         duration: Duration(seconds: 2),
                                       ),
                                     );

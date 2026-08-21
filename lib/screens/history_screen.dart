@@ -109,7 +109,7 @@ class HistoryScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Activity & History 📅',
+                              'Activity & History',
                               style: GoogleFonts.poppins(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
@@ -149,7 +149,7 @@ class HistoryScreen extends StatelessWidget {
                         onTap: () => _openRanksModal(context, provider.currentSelectedRank),
                         borderRadius: BorderRadius.circular(16),
                         child: _buildStatCard(
-                          title: '🧜‍♂️ Rank (Selected Date)',
+                          title: 'Rank (Selected Date)',
                           value: provider.currentSelectedRank,
                           color: const Color(0xFF00E5FF),
                           trailingIcon: Icons.info_outline,
@@ -157,32 +157,32 @@ class HistoryScreen extends StatelessWidget {
                       ),
                       // Goal Met Card
                       _buildStatCard(
-                        title: '🎯 Goal Status',
-                        value: isSelectedGoalMet ? '✅ Completed' : '❌ Incomplete',
+                        title: 'Goal Status',
+                        value: isSelectedGoalMet ? 'Completed' : 'Incomplete',
                         color: isSelectedGoalMet ? const Color(0xFF10B981) : const Color(0xFFEF4444),
                       ),
                       // Lifetime Volume Card
                       _buildStatCard(
-                        title: '💧 Lifetime Volume',
+                        title: 'Lifetime Volume',
                         value: '$lifetimeL L',
                         color: const Color(0xFF3B82F6),
                       ),
                       // Perfect Days Card
                       _buildStatCard(
-                        title: '🏆 Perfect Days (100%+)',
+                        title: 'Perfect Days (100%+)',
                         value: '${provider.perfectDaysCount} Days',
                         color: const Color(0xFFF59E0B),
                       ),
                       // 30-Day Success Rate
                       _buildStatCard(
-                        title: '📈 30-Day Success',
+                        title: '30-Day Success',
                         value: '${provider.successRatePct.toStringAsFixed(0)}%',
                         color: const Color(0xFF8B5CF6),
                       ),
                       // Anti-Wrinkle Shield
                       _buildStatCard(
-                        title: '🛡️ Anti-Wrinkle Shield',
-                        value: provider.isShieldActive ? 'ACTIVE 🔥' : 'INACTIVE',
+                        title: 'Anti-Wrinkle Shield',
+                        value: provider.isShieldActive ? 'ACTIVE' : 'INACTIVE',
                         color: provider.isShieldActive ? const Color(0xFF10B981) : const Color(0xFF64748B),
                       ),
                     ],
@@ -204,7 +204,7 @@ class HistoryScreen extends StatelessWidget {
                         Row(
                           children: [
                             Text(
-                              '🔥 30-Day Activity Heatmap',
+                              '30-Day Activity Heatmap',
                               style: GoogleFonts.poppins(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
@@ -299,7 +299,7 @@ class HistoryScreen extends StatelessWidget {
 
                   // 4. Daily Log Timeline Section
                   Text(
-                    'Timeline Log (${DateFormat('MMM d, yyyy').format(provider.selectedDate)}) 🕒',
+                    'Timeline Log (${DateFormat('MMM d, yyyy').format(provider.selectedDate)})',
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -318,7 +318,7 @@ class HistoryScreen extends StatelessWidget {
                       ),
                       child: Column(
                         children: [
-                          const Text('💧', style: TextStyle(fontSize: 32)),
+                          const Icon(Icons.water_drop_outlined, size: 36, color: Color(0xFF00E5FF)),
                           const SizedBox(height: 8),
                           Text(
                             'No water logs recorded for this day.',
@@ -355,7 +355,7 @@ class HistoryScreen extends StatelessWidget {
                                   color: const Color(0xFF1565C0).withValues(alpha: 0.2),
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Text('🥤', style: TextStyle(fontSize: 18)),
+                                child: const Icon(Icons.water_drop_rounded, size: 18, color: Color(0xFF00E5FF)),
                               ),
                               const SizedBox(width: 14),
                               Column(

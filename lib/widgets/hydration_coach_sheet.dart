@@ -34,7 +34,7 @@ class _HydrationCoachSheetState extends State<HydrationCoachSheet> {
     // Welcome message from Coach
     _messages.add(
       ChatMessage(
-        text: "Hello! I am your Offline Hydration Coach 🤖. Ask me anything about your intake, streak, or schedule!",
+        text: "Hello! I am your Offline Hydration Coach. Ask me anything about your intake, streak, or schedule!",
         isUser: false,
         timestamp: DateTime.now(),
       ),
@@ -108,7 +108,7 @@ class _HydrationCoachSheetState extends State<HydrationCoachSheet> {
                     color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Text('🤖', style: TextStyle(fontSize: 22)),
+                  child: const Icon(Icons.smart_toy_outlined, color: Color(0xFF00E5FF), size: 22),
                 ),
                 const SizedBox(width: 12),
                 Column(
@@ -207,11 +207,11 @@ class _HydrationCoachSheetState extends State<HydrationCoachSheet> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    _buildQuickChip('📊 How am I doing today?'),
-                    _buildQuickChip('⏰ When should I drink next?'),
-                    _buildQuickChip('🎯 What is my remaining goal?'),
-                    _buildQuickChip('🔥 How is my streak?'),
-                    _buildQuickChip('💡 Give me a hydration tip'),
+                    _buildQuickChip('How am I doing today?'),
+                    _buildQuickChip('When should I drink next?'),
+                    _buildQuickChip('What is my remaining goal?'),
+                    _buildQuickChip('How is my streak?'),
+                    _buildQuickChip('Give me a hydration tip'),
                   ],
                 ),
               ),
@@ -251,7 +251,7 @@ class _HydrationCoachSheetState extends State<HydrationCoachSheet> {
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('🎤 Offline voice input module ready!'),
+                        content: Text('Offline voice input module ready!'),
                         duration: Duration(seconds: 1),
                       ),
                     );

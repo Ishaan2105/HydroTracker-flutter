@@ -13,61 +13,61 @@ class HydrationRanksSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final ranks = [
       {
-        'title': '🔱 Ocean Master',
+        'title': 'Ocean Master',
         'range': '90% – 100%+',
         'desc': 'Godlike hydration master! Goal accomplished!',
         'color': const Color(0xFF00E5FF),
       },
       {
-        'title': '🛡️ Shield Guardian',
+        'title': 'Shield Guardian',
         'range': '80% – 89%',
         'desc': 'Guarding your health with high hydration.',
         'color': const Color(0xFF10B981),
       },
       {
-        'title': '🏄 Wave Rider',
+        'title': 'Wave Rider',
         'range': '70% – 79%',
         'desc': 'Riding the wave smoothly to your target.',
         'color': const Color(0xFF06B6D4),
       },
       {
-        'title': '🌊 Current Commander',
+        'title': 'Current Commander',
         'range': '60% – 69%',
         'desc': 'Commanding the fluid flow effectively.',
         'color': const Color(0xFF3B82F6),
       },
       {
-        'title': '🚣 River Guide',
+        'title': 'River Guide',
         'range': '50% – 59%',
         'desc': 'Halfway there! Guiding your daily intake.',
         'color': const Color(0xFF6366F1),
       },
       {
-        'title': '🛶 Stream Sailor',
+        'title': 'Stream Sailor',
         'range': '40% – 49%',
         'desc': 'Sailing steadily along the water stream.',
         'color': const Color(0xFF8B5CF6),
       },
       {
-        'title': '💧 Puddle Jumper',
+        'title': 'Puddle Jumper',
         'range': '30% – 39%',
         'desc': 'Jumping over puddles, making steady progress.',
         'color': const Color(0xFFEC4899),
       },
       {
-        'title': '🧊 Dew Dropper',
+        'title': 'Dew Dropper',
         'range': '20% – 29%',
         'desc': 'Fresh dew drops collected. Keep sipping!',
         'color': const Color(0xFFF97316),
       },
       {
-        'title': '🌫️ Mist Seeker',
+        'title': 'Mist Seeker',
         'range': '10% – 19%',
         'desc': 'Emerging from the mist. Drink a full glass!',
         'color': const Color(0xFFEAB308),
       },
       {
-        'title': '🌵 Desert Dweller',
+        'title': 'Desert Dweller',
         'range': '0% – 9%',
         'desc': 'Dry climate! Low fluid levels, drink water now!',
         'color': const Color(0xFFEF4444),
@@ -96,7 +96,7 @@ class HydrationRanksSheet extends StatelessWidget {
 
           Row(
             children: [
-              const Text('🧜‍♂️', style: TextStyle(fontSize: 26)),
+              const Icon(Icons.military_tech_rounded, size: 28, color: Color(0xFF00E5FF)),
               const SizedBox(width: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,7 +139,7 @@ class HydrationRanksSheet extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Text('🎯', style: TextStyle(fontSize: 22)),
+                const Icon(Icons.workspace_premium_rounded, size: 24, color: Colors.white),
                 const SizedBox(width: 12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

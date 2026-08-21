@@ -29,14 +29,9 @@ class _HomeScreenState extends State<HomeScreen> {
       messenger.clearSnackBars();
       messenger.showSnackBar(
         SnackBar(
-          content: Row(
-            children: [
-              const Text('💧 ', style: TextStyle(fontSize: 18)),
-              Text(
-                'Added ${amountMl}ml of water!',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-              ),
-            ],
+          content: Text(
+            'Added ${amountMl}ml of water!',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
           ),
           backgroundColor: const Color(0xFF1565C0),
           behavior: SnackBarBehavior.floating,
@@ -57,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
         messenger.showSnackBar(
           SnackBar(
             content: Text(
-              '↩️ Undone last water log',
+              'Undone last water log',
               style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
             ),
             backgroundColor: const Color(0xFFD97706),
@@ -125,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Hello, ${provider.userName} 👋',
+                            'Hello, ${provider.userName}',
                             style: GoogleFonts.poppins(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -148,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Text('🔥', style: TextStyle(fontSize: 16)),
+                            const Icon(Icons.local_fire_department_rounded, size: 16, color: Color(0xFFF59E0B)),
                             const SizedBox(width: 4),
                             Text(
                               '${provider.currentStreak} Days',
@@ -179,7 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Text('⚠️', style: TextStyle(fontSize: 20)),
+                          const Icon(Icons.warning_amber_rounded, size: 20, color: Color(0xFFF97316)),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -215,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // 4. Quick Log Section
                   Text(
-                    'Quick Log ⏱️',
+                    'Quick Log',
                     style: GoogleFonts.poppins(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
@@ -234,19 +229,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     childAspectRatio: 2.5,
                     children: [
                       _buildQuickLogBtn(
-                        label: '250ml 🥛',
+                        label: '250 ml',
                         onTap: () => _logWater(context, 250),
                       ),
                       _buildQuickLogBtn(
-                        label: '500ml 🥤',
+                        label: '500 ml',
                         onTap: () => _logWater(context, 500),
                       ),
                       _buildQuickLogBtn(
-                        label: '750ml 🍶',
+                        label: '750 ml',
                         onTap: () => _logWater(context, 750),
                       ),
                       _buildQuickLogBtn(
-                        label: '1000ml 💧',
+                        label: '1000 ml',
                         onTap: () => _logWater(context, 1000),
                       ),
                     ],
@@ -321,7 +316,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       child: Text(
-                        'Undo Last Log ↩️',
+                        'Undo Last Log',
                         style: GoogleFonts.poppins(
                             color: const Color(0xFFCBD5E1),
                             fontWeight: FontWeight.w600),
@@ -336,7 +331,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Expanded(
                         child: _buildStatCard(
-                          title: '🔥 Streak',
+                          title: 'Current Streak',
                           value: '${provider.currentStreak} Days',
                           color: const Color(0xFFF59E0B),
                         ),
@@ -344,7 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildStatCard(
-                          title: '🏆 Best',
+                          title: 'Best Streak',
                           value: '${provider.bestStreak} Days',
                           color: const Color(0xFF00E5FF),
                         ),

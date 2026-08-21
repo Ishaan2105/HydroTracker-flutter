@@ -148,16 +148,16 @@ class HydrationProvider extends ChangeNotifier {
   String get currentRankName => getRankForRatio(progressRatio);
 
   String get nextRankName {
-    if (progressRatio >= 0.90) return '🔱 Max Rank Achieved!';
-    if (progressRatio >= 0.80) return '🔱 Ocean Master';
-    if (progressRatio >= 0.70) return '🛡️ Shield Guardian';
-    if (progressRatio >= 0.60) return '🏄 Wave Rider';
-    if (progressRatio >= 0.50) return '🌊 Current Commander';
-    if (progressRatio >= 0.40) return '🚣 River Guide';
-    if (progressRatio >= 0.30) return '🛶 Stream Sailor';
-    if (progressRatio >= 0.20) return '💧 Puddle Jumper';
-    if (progressRatio >= 0.10) return '🧊 Dew Dropper';
-    return '🌫️ Mist Seeker';
+    if (progressRatio >= 0.90) return 'Max Rank Achieved!';
+    if (progressRatio >= 0.80) return 'Ocean Master';
+    if (progressRatio >= 0.70) return 'Shield Guardian';
+    if (progressRatio >= 0.60) return 'Wave Rider';
+    if (progressRatio >= 0.50) return 'Current Commander';
+    if (progressRatio >= 0.40) return 'River Guide';
+    if (progressRatio >= 0.30) return 'Stream Sailor';
+    if (progressRatio >= 0.20) return 'Puddle Jumper';
+    if (progressRatio >= 0.10) return 'Dew Dropper';
+    return 'Mist Seeker';
   }
 
   int get nextRankTargetMl {
@@ -769,16 +769,16 @@ class HydrationProvider extends ChangeNotifier {
   }
 
   String getRankForRatio(double ratio) {
-    if (ratio >= 0.90) return '🔱 Ocean Master';
-    if (ratio >= 0.80) return '🛡️ Shield Guardian';
-    if (ratio >= 0.70) return '🏄 Wave Rider';
-    if (ratio >= 0.60) return '🌊 Current Commander';
-    if (ratio >= 0.50) return '🚣 River Guide';
-    if (ratio >= 0.40) return '🛶 Stream Sailor';
-    if (ratio >= 0.30) return '💧 Puddle Jumper';
-    if (ratio >= 0.20) return '🧊 Dew Dropper';
-    if (ratio >= 0.10) return '🌫️ Mist Seeker';
-    return '🌵 Desert Dweller';
+    if (ratio >= 0.90) return 'Ocean Master';
+    if (ratio >= 0.80) return 'Shield Guardian';
+    if (ratio >= 0.70) return 'Wave Rider';
+    if (ratio >= 0.60) return 'Current Commander';
+    if (ratio >= 0.50) return 'River Guide';
+    if (ratio >= 0.40) return 'Stream Sailor';
+    if (ratio >= 0.30) return 'Puddle Jumper';
+    if (ratio >= 0.20) return 'Dew Dropper';
+    if (ratio >= 0.10) return 'Mist Seeker';
+    return 'Desert Dweller';
   }
 
   String get currentSelectedRank => getRankForRatio(selectedDateProgressRatio);
@@ -788,52 +788,52 @@ class HydrationProvider extends ChangeNotifier {
 
     if (prompt.contains('how am i doing') || prompt.contains('progress') || prompt.contains('status')) {
       if (progressRatio >= 1.0) {
-        return "🎉 Fantastic job, $_userName! You've achieved 100% of your daily goal (${_todayIntakeMl}ml). Stay refreshed!";
+        return "Fantastic job, $_userName! You've achieved 100% of your daily goal (${_todayIntakeMl}ml). Stay refreshed!";
       } else if (progressRatio >= 0.5) {
-        return "👍 Doing great! You are at $progressPercentage% of your daily goal with ${_todayIntakeMl}ml logged. Keep sipping!";
+        return "Doing great! You are at $progressPercentage% of your daily goal with ${_todayIntakeMl}ml logged. Keep sipping!";
       } else {
-        return "⏰ You've consumed ${_todayIntakeMl}ml so far ($progressPercentage%). You still need ${remainingMl}ml to hit your goal. Time for a glass of water!";
+        return "You've consumed ${_todayIntakeMl}ml so far ($progressPercentage%). You still need ${remainingMl}ml to hit your goal. Time for a glass of water!";
       }
     }
 
     if (prompt.contains('when should i drink') || prompt.contains('next')) {
       if (remainingMl == 0) {
-        return "✨ You've met your daily intake! Have a small glass of water before bedtime or after physical activity.";
+        return "You've met your daily intake! Have a small glass of water before bedtime or after physical activity.";
       }
       if (isStreakAtRisk) {
-        return "🚨 Right now! You're behind on your target for today. Drink at least 500ml now to keep your streak alive!";
+        return "Right now! You're behind on your target for today. Drink at least 500ml now to keep your streak alive!";
       }
-      return "🥤 Based on your remaining ${remainingMl}ml goal, I recommend drinking 250ml every 1.5 to 2 hours.";
+      return "Based on your remaining ${remainingMl}ml goal, I recommend drinking 250ml every 1.5 to 2 hours.";
     }
 
     if (prompt.contains('remaining goal') || prompt.contains('remaining') || prompt.contains('left')) {
       if (remainingMl == 0) {
-        return "🎯 Daily goal achieved! You've hit ${dailyGoalMl}ml today!";
+        return "Daily goal achieved! You've hit ${dailyGoalMl}ml today!";
       }
       final remainingL = (remainingMl / 1000).toStringAsFixed(2);
-      return "🎯 You need ${remainingMl}ml ($remainingL L) more to reach your target of ${dailyGoalMl}ml today.";
+      return "You need ${remainingMl}ml ($remainingL L) more to reach your target of ${dailyGoalMl}ml today.";
     }
 
     if (prompt.contains('streak')) {
       if (_currentStreak > 0) {
-        return "🔥 You're on a $_currentStreak-day hydration streak! Your all-time best is $_bestStreak days. Keep it up!";
+        return "You're on a $_currentStreak-day hydration streak! Your all-time best is $_bestStreak days. Keep it up!";
       } else {
-        return "🔥 No active streak today. Hit your ${dailyGoalMl}ml target today to ignite a new streak!";
+        return "No active streak today. Hit your ${dailyGoalMl}ml target today to ignite a new streak!";
       }
     }
 
     if (prompt.contains('tip') || prompt.contains('advice')) {
       final tips = [
-        "💡 Tip: Drink a glass of water first thing in the morning to kickstart your metabolism!",
-        "💡 Tip: Drink water 30 minutes before meals to aid digestion.",
-        "💡 Tip: Keep a water bottle on your desk or nearby as a visual reminder.",
-        "💡 Tip: If you feel tired during the day, try drinking water—dehydration causes fatigue!",
-        "💡 Tip: Electrolytes & natural water help absorb hydration faster."
+        "Tip: Drink a glass of water first thing in the morning to kickstart your metabolism!",
+        "Tip: Drink water 30 minutes before meals to aid digestion.",
+        "Tip: Keep a water bottle on your desk or nearby as a visual reminder.",
+        "Tip: If you feel tired during the day, try drinking water—dehydration causes fatigue!",
+        "Tip: Electrolytes & natural water help absorb hydration faster."
       ];
       tips.shuffle();
       return tips.first;
     }
 
-    return "💧 Offline Coach: You've drunk ${_todayIntakeMl}ml / ${_dailyGoalMl}ml ($progressPercentage%) today. Remaining: ${remainingMl}ml. Stay hydrated!";
+    return "Offline Coach: You've drunk ${_todayIntakeMl}ml / ${_dailyGoalMl}ml ($progressPercentage%) today. Remaining: ${remainingMl}ml. Stay hydrated!";
   }
 }

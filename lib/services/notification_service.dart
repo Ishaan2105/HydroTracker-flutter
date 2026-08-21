@@ -173,15 +173,15 @@ class NotificationService {
 
     if (diff.inSeconds <= 60) {
       final secs = diff.inSeconds > 0 ? diff.inSeconds : 60;
-      return '⏳ Alarm set for $timeFormatted (in ${secs}s)';
+      return 'Alarm set for $timeFormatted (in ${secs}s)';
     } else if (diff.inMinutes < 60) {
       final mins = diff.inMinutes;
       final secs = diff.inSeconds % 60;
-      return '⏳ Alarm set for $timeFormatted (in ${mins}m ${secs}s)';
+      return 'Alarm set for $timeFormatted (in ${mins}m ${secs}s)';
     } else {
       final hours = diff.inHours;
       final mins = diff.inMinutes % 60;
-      return '⏳ Alarm set for $timeFormatted (in ${hours}h ${mins}m)';
+      return 'Alarm set for $timeFormatted (in ${hours}h ${mins}m)';
     }
   }
 
@@ -259,7 +259,7 @@ class NotificationService {
           id: id++,
           target: target,
           timeStr: timeStr,
-          title: '💧 Time to Hydrate!',
+          title: 'Time to Hydrate!',
           body: 'Stay on top of your goal with a fresh glass of water.',
           isDaily: isDaily,
         );
@@ -310,7 +310,7 @@ class NotificationService {
           id: meal['id'] as int,
           target: target,
           timeStr: postMealTimeStr,
-          title: '🍽️ Post-${meal['name']} Hydration 💧',
+          title: 'Post-${meal['name']} Hydration',
           body: 'It’s been 30 minutes since ${meal['name']}. Drink a glass of water for optimal digestion!',
           isDaily: true,
         );
@@ -578,7 +578,7 @@ class NotificationService {
 
       await _notificationsPlugin.show(
         0,
-        '💧 Hydro Tracker Alarm Active!',
+        'Hydro Tracker Alarm Active!',
         'Your scheduled hydration reminders are configured and working smoothly.',
         notificationDetails,
       );

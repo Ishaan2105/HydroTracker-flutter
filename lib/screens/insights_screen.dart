@@ -108,7 +108,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
     if (weight <= 0 && age <= 0 && heightCm <= 0) {
       _showConfirmationBanner(
-        '⚠️ Please enter your height, weight & age to calculate your goal',
+        'Please enter your height, weight & age to calculate your goal',
         color: const Color(0xFFD97706),
       );
       return;
@@ -126,7 +126,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
     });
 
     _showConfirmationBanner(
-      '⚖️ Goal Calculated: ${(suggested / 1000).toStringAsFixed(1)}L ($suggested ml)',
+      'Goal Calculated: ${(suggested / 1000).toStringAsFixed(1)}L ($suggested ml)',
       color: const Color(0xFF1565C0),
     );
   }
@@ -142,7 +142,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
       _calculatedGoalMl = null;
     });
     _showConfirmationBanner(
-      '🔄 Calculator values reset to 0',
+      'Calculator values reset to 0',
       color: const Color(0xFFD97706),
     );
   }
@@ -151,7 +151,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
     if (_calculatedGoalMl != null) {
       await provider.updateGoal(_calculatedGoalMl!);
       _showConfirmationBanner(
-        '🎯 Daily Goal set to ${(_calculatedGoalMl! / 1000).toStringAsFixed(1)}L ($_calculatedGoalMl ml)!',
+        'Daily Goal set to ${(_calculatedGoalMl! / 1000).toStringAsFixed(1)}L ($_calculatedGoalMl ml)!',
         color: const Color(0xFF10B981),
       );
     }
@@ -188,7 +188,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
           _dinnerTime = picked;
         }
       });
-      _showConfirmationBanner('⏰ $mealName time set to $timeFormatted');
+      _showConfirmationBanner('$mealName time set to $timeFormatted');
     }
   }
 
@@ -199,7 +199,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
     await provider.saveMealSchedule(bfast, lunch, dinner);
     _showConfirmationBanner(
-      '🍽️ Meal Schedule Saved ($bfast, $lunch, $dinner)!',
+      'Meal Schedule Saved (Breakfast: $bfast, Lunch: $lunch, Dinner: $dinner)',
       color: const Color(0xFF10B981),
     );
   }
@@ -218,7 +218,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                 children: [
                   // 1. Header
                   Text(
-                    'Health Insights 💡',
+                    'Health Insights',
                     style: GoogleFonts.poppins(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -235,7 +235,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
                   const SizedBox(height: 20),
 
-                  // 2. ⚖️ Personalized Goal Calculator Card
+                  // 2. Personalized Goal Calculator Card
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -249,7 +249,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                         Row(
                           children: [
                             Text(
-                              '⚖️ Personalized Goal Calculator',
+                              'Personalized Goal Calculator',
                               style: GoogleFonts.poppins(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
@@ -270,7 +270,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                               onChanged: (val) {
                                 if (val != null) {
                                   setState(() => _useCm = val);
-                                  _showConfirmationBanner('📏 Height unit changed to ${val ? "cm" : "ft + in"}');
+                                  _showConfirmationBanner('Height unit changed to ${val ? "cm" : "ft + in"}');
                                 }
                               },
                             ),
@@ -370,7 +370,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                                         onChanged: (val) {
                                           if (val != null) {
                                             setState(() => _gender = val);
-                                            _showConfirmationBanner('👤 Gender set to $val');
+                                            _showConfirmationBanner('Gender set to $val');
                                           }
                                         },
                                       ),
@@ -449,7 +449,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                       ),
                                       child: Text(
-                                        'Reset 🔄',
+                                        'Reset',
                                         style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: const Color(0xFFEF4444), fontSize: 13),
                                       ),
                                     ),
@@ -465,7 +465,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
                   const SizedBox(height: 20),
 
-                  // 3. 🚀 Rank Roadmap & Next Tier Progress Card
+                  // 3. Rank Roadmap & Next Tier Progress Card
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -477,7 +477,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '🚀 Rank Roadmap & Next Tier Progress',
+                          'Rank Roadmap & Next Tier Progress',
                           style: GoogleFonts.poppins(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -498,7 +498,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                                 color: const Color(0xFF1565C0).withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Text('🧜‍♂️', style: TextStyle(fontSize: 24)),
+                              child: const Icon(Icons.military_tech_rounded, color: Color(0xFF00E5FF), size: 24),
                             ),
                             const SizedBox(width: 12),
                             Column(
@@ -549,17 +549,17 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
                   const SizedBox(height: 20),
 
-                  // 4. 📈 7-Day Hydration Analytics Section (Premium UI Redesign)
+                  // 4. 7-Day Hydration Analytics Section (Spacious Modern UI)
                   Container(
-                    padding: const EdgeInsets.all(18),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1E293B),
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: Colors.white12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          blurRadius: 16,
+                          color: Colors.black.withValues(alpha: 0.25),
+                          blurRadius: 18,
                           offset: const Offset(0, 8),
                         ),
                       ],
@@ -567,7 +567,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Header + Badges
+                        // Section Header
                         Row(
                           children: [
                             Expanded(
@@ -575,39 +575,19 @@ class _InsightsScreenState extends State<InsightsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '📈 7-Day Hydration Analytics',
+                                    '7-Day Hydration Trend',
                                     style: GoogleFonts.poppins(
-                                      fontSize: 16,
+                                      fontSize: 16.5,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,
                                     ),
                                   ),
+                                  const SizedBox(height: 2),
                                   Text(
-                                    'Visual weekly trend & pattern breakdown',
+                                    'Daily intake breakdown against target',
                                     style: GoogleFonts.poppins(
-                                      fontSize: 11,
+                                      fontSize: 11.5,
                                       color: const Color(0xFF94A3B8),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1565C0).withValues(alpha: 0.25),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.4)),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Text('💧 ', style: TextStyle(fontSize: 12)),
-                                  Text(
-                                    '${(provider.weeklyAverageMl / 1000).toStringAsFixed(1)}L/day',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF00E5FF),
                                     ),
                                   ),
                                 ],
@@ -615,32 +595,151 @@ class _InsightsScreenState extends State<InsightsScreen> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 16),
+
+                        // Quick Stat Badges Row
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0F172A),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.25)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'DAILY AVG',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF94A3B8),
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${(provider.weeklyAverageMl / 1000).toStringAsFixed(1)} L/day',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF00E5FF),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0F172A),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.25)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'TOTAL VOLUME',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF94A3B8),
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${(provider.weeklyTotalMl / 1000).toStringAsFixed(1)} L',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF10B981),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0F172A),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'TARGET HIT',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF94A3B8),
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      provider.hitRateFraction,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF818CF8),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 20),
 
-                        // Enhanced Bar Chart with 100% Goal Baseline
-                        SizedBox(
-                          height: 160,
+                        // Spacious Bar Chart Area
+                        Container(
+                          height: 200,
+                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F172A),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                          ),
                           child: Stack(
                             children: [
-                              // 100% Dotted Goal Baseline
+                              // 100% Target Reference Line
                               Positioned(
-                                top: 40,
-                                left: 0,
-                                right: 0,
+                                top: 38,
+                                left: 8,
+                                right: 8,
                                 child: Row(
                                   children: [
                                     Expanded(
                                       child: Container(
                                         height: 1,
-                                        color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                                        color: const Color(0xFF10B981).withValues(alpha: 0.35),
                                       ),
                                     ),
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 6),
+                                    Container(
+                                      margin: const EdgeInsets.only(left: 6),
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
                                       child: Text(
                                         '100% Target',
                                         style: GoogleFonts.poppins(
-                                          fontSize: 9,
+                                          fontSize: 8.5,
                                           fontWeight: FontWeight.bold,
                                           color: const Color(0xFF10B981),
                                         ),
@@ -653,14 +752,14 @@ class _InsightsScreenState extends State<InsightsScreen> {
                               // Bar Columns
                               Positioned.fill(
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: (provider.sevenDayTrend.isNotEmpty
                                           ? provider.sevenDayTrend
                                           : HydrationProvider.generateDefaultSevenDayTrend())
                                       .map((dayData) {
                                     final ratio = dayData.ratio;
-                                    final barHeight = (ratio * 90).clamp(12.0, 100.0);
+                                    final barHeight = (ratio * 100).clamp(14.0, 115.0);
                                     final isToday = dayData.label == 'Today';
 
                                     List<Color> gradientColors;
@@ -669,42 +768,34 @@ class _InsightsScreenState extends State<InsightsScreen> {
                                       gradientColors = [const Color(0xFF34D399), const Color(0xFF059669)];
                                       glowColor = const Color(0xFF10B981);
                                     } else if (ratio >= 0.7) {
-                                      gradientColors = [const Color(0xFF00E5FF), const Color(0xFF1565C0)];
+                                      gradientColors = [const Color(0xFF00E5FF), const Color(0xFF0284C7)];
                                       glowColor = const Color(0xFF00E5FF);
                                     } else if (ratio >= 0.4) {
-                                      gradientColors = [const Color(0xFF60A5FA), const Color(0xFF1E40AF)];
+                                      gradientColors = [const Color(0xFF60A5FA), const Color(0xFF2563EB)];
                                       glowColor = const Color(0xFF3B82F6);
                                     } else {
-                                      gradientColors = [const Color(0xFFFBBF24), const Color(0xFFDC2626)];
+                                      gradientColors = [const Color(0xFFFBBF24), const Color(0xFFEA580C)];
                                       glowColor = const Color(0xFFEF4444);
                                     }
 
                                     return Column(
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
-                                        // Liters Pill
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF0F172A),
-                                            borderRadius: BorderRadius.circular(6),
-                                            border: Border.all(color: Colors.white10),
-                                          ),
-                                          child: Text(
-                                            '${(dayData.totalMl / 1000).toStringAsFixed(1)}L',
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 9.5,
-                                              fontWeight: FontWeight.bold,
-                                              color: isToday ? const Color(0xFF00E5FF) : const Color(0xFF94A3B8),
-                                            ),
+                                        // Intake Liters Text
+                                        Text(
+                                          '${(dayData.totalMl / 1000).toStringAsFixed(1)}L',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 9.5,
+                                            fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
+                                            color: isToday ? const Color(0xFF00E5FF) : const Color(0xFF94A3B8),
                                           ),
                                         ),
                                         const SizedBox(height: 6),
 
-                                        // Bar Container
+                                        // Capsule Bar
                                         AnimatedContainer(
                                           duration: const Duration(milliseconds: 500),
-                                          width: 20,
+                                          width: 22,
                                           height: barHeight,
                                           decoration: BoxDecoration(
                                             gradient: LinearGradient(
@@ -712,11 +803,11 @@ class _InsightsScreenState extends State<InsightsScreen> {
                                               end: Alignment.bottomCenter,
                                               colors: gradientColors,
                                             ),
-                                            borderRadius: BorderRadius.circular(10),
+                                            borderRadius: BorderRadius.circular(11),
                                             boxShadow: isToday
                                                 ? [
                                                     BoxShadow(
-                                                      color: glowColor.withValues(alpha: 0.6),
+                                                      color: glowColor.withValues(alpha: 0.5),
                                                       blurRadius: 8,
                                                       spreadRadius: 1,
                                                     ),
@@ -741,9 +832,9 @@ class _InsightsScreenState extends State<InsightsScreen> {
                                           child: Text(
                                             dayData.label,
                                             style: GoogleFonts.poppins(
-                                              fontSize: 10.5,
+                                              fontSize: 10,
                                               fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                                              color: isToday ? const Color(0xFF00E5FF) : Colors.white70,
+                                              color: isToday ? const Color(0xFF00E5FF) : const Color(0xFFCBD5E1),
                                             ),
                                           ),
                                         ),
@@ -755,75 +846,54 @@ class _InsightsScreenState extends State<InsightsScreen> {
                             ],
                           ),
                         ),
-
-                        const SizedBox(height: 18),
-
-                        // AI Trend Analysis Card
-                        _buildTrendAnalysisCard(provider),
-
                         const SizedBox(height: 14),
 
-                        // Collapsible Weekly Performance Review
-                        InkWell(
-                          onTap: () => setState(() => _isReviewExpanded = !_isReviewExpanded),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: Row(
-                              children: [
-                                Text(
-                                  '📊 Detailed Weekly Metrics',
-                                  style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF00E5FF)),
-                                ),
-                                const Spacer(),
-                                Icon(
-                                  _isReviewExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                                  color: const Color(0xFF00E5FF),
-                                ),
-                              ],
-                            ),
-                          ),
+                        // Chart Color Legend
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildLegendDot(const Color(0xFF10B981), '100%+ Met'),
+                            const SizedBox(width: 14),
+                            _buildLegendDot(const Color(0xFF00E5FF), '70–99%'),
+                            const SizedBox(width: 14),
+                            _buildLegendDot(const Color(0xFF3B82F6), '40–69%'),
+                            const SizedBox(width: 14),
+                            _buildLegendDot(const Color(0xFFEA580C), '<40%'),
+                          ],
                         ),
-
-                        if (_isReviewExpanded) ...[
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            margin: const EdgeInsets.only(top: 8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0F172A),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildReviewRow('Weekly Average', '${(provider.weeklyAverageMl / 1000).toStringAsFixed(2)} L / day'),
-                                _buildReviewRow('Total Volume', '${(provider.weeklyTotalMl / 1000).toStringAsFixed(1)} L'),
-                                _buildReviewRow('Best Peak Day', provider.bestDayLabel),
-                                _buildReviewRow('Lowest Dip Day', provider.worstDayLabel),
-                                _buildReviewRow('Goal Hit Rate', '${provider.hitRateFraction} (${provider.hitRatePct.toStringAsFixed(0)}%)'),
-                              ],
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-                  // 5. 📅 Best & Worst Day + Goal Hit Rate Cards
+                  // 5. Standalone AI Trend Analysis Card
+                  _buildTrendAnalysisCard(provider),
+
+                  const SizedBox(height: 16),
+
+                  // 6. Highlight Metrics Row (Best Day, Lowest Day, Hit Rate)
                   Row(
                     children: [
                       Expanded(
                         child: _buildInfoBox(
-                          title: '🏆 Best Day',
+                          title: 'Best Day',
                           value: provider.bestDayLabel,
                           color: const Color(0xFF10B981),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: _buildInfoBox(
-                          title: '🎯 Goal Hit Rate',
+                          title: 'Lowest Day',
+                          value: provider.worstDayLabel,
+                          color: const Color(0xFFF97316),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _buildInfoBox(
+                          title: 'Goal Hit Rate',
                           value: '${provider.hitRateFraction} (${provider.hitRatePct.toStringAsFixed(0)}%)',
                           color: const Color(0xFF00E5FF),
                         ),
@@ -833,7 +903,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
                   const SizedBox(height: 20),
 
-                  // 6. 🍽️ Meal Times Schedule (Collapsible Accordion)
+                  // 6. Meal Times Schedule (Collapsible Accordion)
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -851,7 +921,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '🍽️ Meal Times Schedule',
+                                    'Meal Times Schedule',
                                     style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                                   ),
                                   Text(
@@ -871,9 +941,9 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
                         if (_isMealsExpanded) ...[
                           const SizedBox(height: 16),
-                          _buildMealRow(context, '🍳 Breakfast', 'bfast', _bfastTime),
-                          _buildMealRow(context, '🥗 Lunch', 'lunch', _lunchTime),
-                          _buildMealRow(context, '🍽️ Dinner', 'dinner', _dinnerTime),
+                          _buildMealRow(context, 'Breakfast', 'bfast', _bfastTime),
+                          _buildMealRow(context, 'Lunch', 'lunch', _lunchTime),
+                          _buildMealRow(context, 'Dinner', 'dinner', _dinnerTime),
                           const SizedBox(height: 12),
                           SizedBox(
                             width: double.infinity,
@@ -922,7 +992,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
       ),
       onSubmitted: (val) {
         if (fieldLabel != null && val.trim().isNotEmpty) {
-          _showConfirmationBanner('✏️ $fieldLabel updated to $val');
+          _showConfirmationBanner('$fieldLabel updated to $val');
         }
       },
     );
@@ -941,20 +1011,69 @@ class _InsightsScreenState extends State<InsightsScreen> {
     );
   }
 
+  Widget _buildLegendDot(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 10,
+            color: const Color(0xFF94A3B8),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildInfoBox({required String title, required String value, required Color color}) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
       decoration: BoxDecoration(
         color: const Color(0xFF1E293B),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF94A3B8))),
+          Text(
+            title.toUpperCase(),
+            style: GoogleFonts.poppins(
+              fontSize: 9.5,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF94A3B8),
+              letterSpacing: 0.4,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(value, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              fontSize: 13.5,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
         ],
       ),
     );
@@ -997,15 +1116,15 @@ class _InsightsScreenState extends State<InsightsScreen> {
     Color color;
 
     if (provider.hitRatePct >= 70) {
-      headline = '🌟 Excellent Consistency!';
+      headline = 'Excellent Consistency';
       desc = 'You met your target on ${provider.hitRateFraction} days this week (${provider.hitRatePct.toStringAsFixed(0)}% hit rate). Your body is operating at peak hydration!';
       color = const Color(0xFF10B981);
     } else if (provider.hitRatePct >= 40) {
-      headline = '👍 Steady Hydration Pattern';
+      headline = 'Steady Hydration Pattern';
       desc = 'You hit your target on ${provider.hitRateFraction} days. Setting post-meal alarms will help you close the gap on quiet days.';
       color = const Color(0xFF00E5FF);
     } else {
-      headline = '⚠️ Low Intake Alert';
+      headline = 'Low Intake Alert';
       desc = 'You hit your goal on ${provider.hitRateFraction} days. Try drinking 250ml of water first thing every morning to kickstart your daily target.';
       color = const Color(0xFFF97316);
     }
@@ -1023,7 +1142,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
         children: [
           Row(
             children: [
-              const Text('🧠', style: TextStyle(fontSize: 18)),
+              const Icon(Icons.auto_awesome_rounded, color: Color(0xFF00E5FF), size: 18),
               const SizedBox(width: 8),
               Text(
                 '7-Day AI Trend Analysis',
