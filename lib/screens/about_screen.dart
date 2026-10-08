@@ -103,7 +103,7 @@ class AboutScreen extends StatelessWidget {
               const SizedBox(height: 12),
               _buildSubHeading('1.2 Core Architectural Highlights'),
               _buildBullet('100% Offline-First Architecture', 'Your health data, logs, profile settings, and reminder schedules never leave your device.'),
-              _buildBullet('Triple-Redundancy Alarm Engine', 'Combines native Android OS AlarmManager (with exact scheduling permissions), background intent receivers, and foreground active process timers to guarantee reminders trigger on time, even under aggressive battery management systems like Samsung One UI.'),
+              _buildBullet('Precision Alarm Engine', 'Utilizes native Android OS AlarmManager with exact scheduling permissions to guarantee reminders trigger on time without duplicate alerts, even under aggressive battery management systems like Samsung One UI.'),
               _buildBullet('Interactive Fluid UI with Waves', 'Powered by a custom rendering canvas inspired by modern web visual standards, featuring real-time responsive wave animations.'),
               _buildBullet('Gamified Rank Progression', 'A 10-tier hydration hierarchy that updates dynamically based on daily target completion percentages.'),
               _buildBullet('Unified Top & Bottom Navigation', 'Consistent top app bar featuring your greeting, rank, settings gear, and streak counter across all primary screens.'),

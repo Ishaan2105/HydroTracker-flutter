@@ -1,4 +1,4 @@
-package com.hydrotracker.hydro_flutter
+package com.threestack.hydrotracker
 
 import android.content.Context
 import android.content.Intent

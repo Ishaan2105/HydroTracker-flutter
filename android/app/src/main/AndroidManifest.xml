@@ -58,26 +58,7 @@
             android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver"
             android:exported="false"/>
 
-        <!-- Native boot receiver — fully independent of Flutter engine.
-             Reads saved alarm times from SharedPreferences and schedules via AlarmManager.
-             Acts as a second-layer backup if flutter_local_notifications receiver is delayed. -->
-        <receiver
-            android:name=".BootReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
-                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED"/>
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
-                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
-                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
-            </intent-filter>
-        </receiver>
 
-        <!-- Fires when a native BootReceiver alarm triggers — shows the notification
-             without initialising the Flutter engine. -->
-        <receiver
-            android:name=".AlarmNotificationReceiver"
-            android:exported="false"/>
 
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

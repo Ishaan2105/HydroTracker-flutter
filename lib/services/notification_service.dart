@@ -185,38 +185,27 @@ class NotificationService {
     }
   }
 
-  /// Per-alarm in-memory timers keyed by notification ID.
-  /// Allows cancelling one alarm's timer without touching others.
-  static final Map<int, Timer> _activeTimers = {};
-
-  /// Cancel ALL scheduled system alarms and in-memory timers.
+  /// Cancel ALL scheduled system alarms.
   /// Use this when notifications are globally disabled or on a full reset.
   static Future<void> cancelAllAlarms() async {
     try {
       await init();
-      for (final timer in _activeTimers.values) {
-        timer.cancel();
-      }
-      _activeTimers.clear();
       await _notificationsPlugin.cancelAll();
-      AppLogger.info('NotificationService', 'Cancelled all alarms and cleared all timers.');
+      AppLogger.info('NotificationService', 'Cancelled all alarms.');
     } catch (e, st) {
       AppLogger.error('NotificationService', 'Error canceling all alarms', e, st);
     }
   }
 
   /// Cancel a single alarm by its notification [id] without touching other alarms.
-  /// Also cancels the backup one-shot ID (id + 500) used for daily alarm redundancy.
+  /// Also cancels any legacy backup ID (id + 500) if it was previously scheduled.
   static Future<void> cancelAlarm(int id) async {
     try {
       await init();
-      // Cancel in-memory timer for this ID (and backup ID if present)
-      _activeTimers.remove(id)?.cancel();
-      _activeTimers.remove(id + 500)?.cancel();
-      // Cancel OS-level AlarmManager entries
+      // Cancel OS-level AlarmManager entries (including legacy backup ID if present)
       await _notificationsPlugin.cancel(id);
       await _notificationsPlugin.cancel(id + 500);
-      AppLogger.info('NotificationService', 'Cancelled alarm ID $id (and backup ID ${id + 500}).');
+      AppLogger.info('NotificationService', 'Cancelled alarm ID $id.');
     } catch (e, st) {
       AppLogger.error('NotificationService', 'Error canceling alarm $id', e, st);
     }
@@ -271,14 +260,13 @@ class NotificationService {
   }
 
   /// Schedule post-meal reminders (30 minutes after each meal).
-  /// Uses the exact same dual-redundancy and triple-layer AlarmManager + Timer engine as the 1-min test alarm.
   static Future<void> schedulePostMealReminders(
     Map<String, String> mealSchedule,
     bool enabled,
   ) async {
     try {
       await init();
-      // Cancel previous post-meal alarms (IDs 300, 301, 302 and backups 800, 801, 802)
+      // Cancel previous post-meal alarms (IDs 300, 301, 302)
       for (int i = 0; i < 3; i++) {
         await cancelAlarm(300 + i);
       }
@@ -325,8 +313,8 @@ class NotificationService {
 
   /// Point-in-time alarm scheduling.
   /// For [isDaily] = true: registers a native daily-repeating alarm (wallClockTime +
-  /// matchDateTimeComponents) PLUS an absoluteTime one-shot backup for today.
-  /// For [isDaily] = false: one-shot absoluteTime only.
+  /// matchDateTimeComponents).
+  /// For [isDaily] = false: one-shot absoluteTime alarm.
   static Future<void> _schedulePointInTimeAlarm({
     required int id,
     required tz.TZDateTime target,
@@ -355,9 +343,9 @@ class NotificationService {
     );
 
     if (isDaily) {
-      // --- Strategy for DAILY alarms ---
-      // 1. Try native daily-repeating alarm (wallClockTime + matchDateTimeComponents.time)
-      //    This handles recurrence at the OS level.
+      // --- Clean single schedule for DAILY alarms ---
+      // Registers native daily-repeating alarm (wallClockTime + matchDateTimeComponents.time).
+      // Handled cleanly by the OS without duplicate backup alarms or timers.
       try {
         await _notificationsPlugin.zonedSchedule(
           id,
@@ -386,37 +374,9 @@ class NotificationService {
           );
         } catch (_) {}
       }
-
-      // 2. One-shot absoluteTime backup for today (same engine as 1-min test alarm)
-      //    Uses a different notification ID (+500) to avoid conflicts with recurring alarm.
-      final backupId = id + 500;
-      try {
-        await _notificationsPlugin.zonedSchedule(
-          backupId,
-          title,
-          body,
-          target,
-          notificationDetails,
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-          uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
-        );
-      } catch (_) {}
-
-      // 3. In-memory timer fallback while process is alive
-      final diff = target.difference(tz.TZDateTime.now(tz.local));
-      if (diff.inSeconds > 0 && diff.inHours < 24) {
-        _activeTimers[id]?.cancel(); // cancel any previous timer for this slot
-        _activeTimers[id] = Timer(diff, () async {
-          _activeTimers.remove(id);
-          try {
-            await _notificationsPlugin.show(id, title, body, notificationDetails);
-          } catch (_) {}
-        });
-      }
     } else {
-      // --- Strategy for ONE-TIME alarms ---
-      // absoluteTime exact alarm only (same as 1-min test alarm).
+      // --- Clean single schedule for ONE-TIME alarms ---
+      // Single absoluteTime alarm without duplicate timers.
       try {
         await _notificationsPlugin.zonedSchedule(
           id,
@@ -441,18 +401,6 @@ class NotificationService {
                 UILocalNotificationDateInterpretation.absoluteTime,
           );
         } catch (_) {}
-      }
-
-      // In-memory timer fallback
-      final diff = target.difference(tz.TZDateTime.now(tz.local));
-      if (diff.inSeconds > 0 && diff.inHours < 24) {
-        _activeTimers[id]?.cancel();
-        _activeTimers[id] = Timer(diff, () async {
-          _activeTimers.remove(id);
-          try {
-            await _notificationsPlugin.show(id, title, body, notificationDetails);
-          } catch (_) {}
-        });
       }
     }
   }
@@ -511,18 +459,6 @@ class NotificationService {
         debugPrint('zonedSchedule inexact error: $e2');
       }
     }
-
-    // Dual-redundancy timer fallback while process is active
-    Future.delayed(const Duration(seconds: 60), () async {
-      try {
-        await _notificationsPlugin.show(
-          999,
-          '⏰ Hydro Tracker 1-Min Test Alarm!',
-          'Scheduled alarm test succeeded! Background notification working.',
-          notificationDetails,
-        );
-      } catch (_) {}
-    });
 
     return DateTime.now().add(const Duration(seconds: 60));
   }
