@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/hydration_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/hydration_ranks_sheet.dart';
@@ -23,6 +24,10 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
   String _gender = 'Male';
+  double _pal = 1.75; // Physical activity level (1.4: Sedentary, 1.6: Light, 1.75: Moderate, 2.0: Active, 2.2: Very Active)
+  bool _isAthlete = false;
+  static const double _tempC = 28.0;
+  static const double _humidityPct = 50.0;
   int? _calculatedGoalMl;
 
   // Accordion Toggles
@@ -101,26 +106,40 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
 
     double? heightCm;
     if (_useCm) {
-      heightCm = double.tryParse(_cmController.text) ?? 0.0;
+      heightCm = double.tryParse(_cmController.text);
     } else {
       final ft = double.tryParse(_ftController.text) ?? 0.0;
       final inches = double.tryParse(_inController.text) ?? 0.0;
-      heightCm = (ft * 30.48) + (inches * 2.54);
+      if (ft > 0 || inches > 0) {
+        heightCm = (ft * 30.48) + (inches * 2.54);
+      }
     }
 
-    if (weight <= 0 && age <= 0 && heightCm <= 0) {
+    if (weight <= 0) {
       _showConfirmationBanner(
-        'Please enter your height, weight & age to calculate your goal',
+        'Please enter your weight in kg to calculate your goal',
+        color: const Color(0xFFD97706),
+      );
+      return;
+    }
+
+    if (age <= 0) {
+      _showConfirmationBanner(
+        'Please enter your age in years to calculate your goal',
         color: const Color(0xFFD97706),
       );
       return;
     }
 
     final suggested = provider.calculateSuggestedGoal(
-      heightCm: heightCm > 0 ? heightCm : 170.0,
-      weightKg: weight > 0 ? weight : 70.0,
-      age: age > 0 ? age : 25,
+      weightKg: weight,
+      age: age,
       gender: _gender,
+      pal: _pal,
+      isAthlete: _isAthlete,
+      tempC: _tempC,
+      humidityPct: _humidityPct,
+      heightCm: heightCm,
     );
 
     setState(() {
@@ -141,12 +160,35 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
       _weightController.clear();
       _ageController.clear();
       _gender = 'Male';
+      _pal = 1.75;
+      _isAthlete = false;
       _calculatedGoalMl = null;
     });
     _showConfirmationBanner(
       'Calculator values reset',
       color: const Color(0xFFD97706),
     );
+  }
+
+  Future<void> _launchScienceReferenceUrl() async {
+    final uri = Uri.parse('https://www.gov-online.go.jp/hlj/en/april_2026/april_2026-09.html');
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) {
+        _showConfirmationBanner(
+          'Could not open browser for reference link',
+          color: const Color(0xFFEF4444),
+        );
+      }
+    } catch (e) {
+      _showConfirmationBanner(
+        'Unable to open link: $e',
+        color: const Color(0xFFEF4444),
+      );
+    }
   }
 
   void _applyGoal(HydrationProvider provider) async {
@@ -479,6 +521,89 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                             );
                           }).toList(),
                         ),
+                        const SizedBox(height: 12),
+
+                        // Physical Activity Level (PAL)
+                        Text('Activity Level (PAL)', style: GoogleFonts.poppins(fontSize: 12, color: colors.textSecondary)),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: colors.cardBgAlt,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: colors.surfaceBorder),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<double>(
+                              value: _pal,
+                              isExpanded: true,
+                              dropdownColor: colors.cardBg,
+                              icon: Icon(Icons.keyboard_arrow_down, color: colors.textSecondary),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 1.4,
+                                  child: Text('Sedentary (1.4 • Desk job, minimal exercise)'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 1.6,
+                                  child: Text('Light (1.6 • Light activity 1–3 days/wk)'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 1.75,
+                                  child: Text('Moderate (1.75 • Exercise 3–5 days/wk)'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 2.0,
+                                  child: Text('Active (2.0 • Daily workout 6–7 days/wk)'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 2.2,
+                                  child: Text('Very Active (2.2 • Heavy athletic training)'),
+                                ),
+                              ],
+                              style: GoogleFonts.poppins(
+                                color: colors.textPrimary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              onChanged: (val) {
+                                if (val != null) setState(() => _pal = val);
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Athlete Switch
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: colors.cardBgAlt,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: colors.surfaceBorder),
+                          ),
+                          child: SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              'Competitive / Endurance Athlete',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: colors.textPrimary,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '+1,070 mL turnover adjustment',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                color: colors.textSecondary,
+                              ),
+                            ),
+                            value: _isAthlete,
+                            activeColor: colors.cyanAccent,
+                            onChanged: (val) => setState(() => _isAthlete = val),
+                          ),
+                        ),
                         const SizedBox(height: 16),
 
                         // Calculate Button
@@ -576,6 +701,56 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                             ),
                           ),
                         ],
+
+                        const SizedBox(height: 14),
+
+                        // Science citation & clickable reference banner
+                        InkWell(
+                          onTap: _launchScienceReferenceUrl,
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: colors.cardBgAlt,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: colors.cyanAccent.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(Icons.science_rounded, size: 16, color: colors.cyanAccent),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Based on the human water turnover model published in Science (Yamada et al., 2022). Calculates direct drinking water intake, subtracting ~20% food moisture. Clamped to safe 1,500 – 4,000 mL bounds. Calibrated for adults (18+); pregnant or nursing individuals should consult a physician.',
+                                        style: GoogleFonts.poppins(fontSize: 10, color: colors.textMuted, height: 1.35),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            'Tap to view research article & details',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: colors.cyanAccent,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Icon(Icons.open_in_new_rounded, size: 11, color: colors.cyanAccent),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),

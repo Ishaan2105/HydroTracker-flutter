@@ -486,19 +486,76 @@ class HydrationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Calculates the ideal daily drinking water goal in mL based on the
+  /// landmark human water turnover model published in Science:
+  /// Yamada et al., Science 378, 909–915 (2022).
+  ///
+  /// Step 1: Estimate water turnover (mL/day)
+  /// WT = 1076 * PAL
+  ///    + 14.34 * weight_kg
+  ///    + 374.9 * sex (female = 0, male = 1)
+  ///    + 5.823 * humidity_%
+  ///    + 1070 * athlete (no = 0, yes = 1)
+  ///    + 104.6 * HDI (0 = High, 1 = Medium e.g. India, 2 = Low)
+  ///    + 0.4726 * altitude_m
+  ///    - 0.3529 * age^2 + 24.78 * age
+  ///    + 1.865 * temp^2 - 19.66 * temp
+  ///    - 713.1
+  ///
+  /// Step 2: Convert to a drinks-only goal
+  /// daily_goal_mL = WT * 0.85 * 0.8  (approx WT * 0.68)
+  /// (0.85 turnover -> total intake; 0.8 removes ~20% moisture from food)
+  ///
+  /// Step 3: Apply safety limits & round to nearest 50 mL
+  /// Clamped between 1500 mL and 4000 mL, rounded to nearest 50 mL.
   int calculateSuggestedGoal({
-    double? heightCm,
     required double weightKg,
     required int age,
     required String gender,
+    double pal = 1.75,
+    bool isAthlete = false,
+    double tempC = 28.0,
+    double humidityPct = 50.0,
+    double altitudeM = 0.0,
+    int hdi = 1,
+    double? heightCm,
   }) {
-    double base = weightKg * 35.0;
-    double hAdj = (heightCm ?? 170.0) * 2.0;
-    double aAdj = age < 30 ? 200.0 : (age > 55 ? -150.0 : 0.0);
-    double gAdj = gender.toLowerCase() == 'male' ? 250.0 : 0.0;
+    // sex: female = 0, male = 1, other/unspecified = 0.5
+    final double sex;
+    final gLower = gender.toLowerCase();
+    if (gLower == 'female') {
+      sex = 0.0;
+    } else if (gLower == 'male') {
+      sex = 1.0;
+    } else {
+      sex = 0.5;
+    }
 
-    int total = (base + hAdj + aAdj + gAdj).round();
-    return total.clamp(1500, 5000);
+    final double athlete = isAthlete ? 1.0 : 0.0;
+    // Model calibrated for adult physiology (18+)
+    final double safeAge = (age < 18 ? 18 : age).toDouble();
+    final double safeWeight = weightKg > 0 ? weightKg : 60.0;
+
+    // Step 1: Estimate water turnover (mL/day)
+    final double wt = 1076.0 * pal
+        + 14.34 * safeWeight
+        + 374.9 * sex
+        + 5.823 * humidityPct
+        + 1070.0 * athlete
+        + 104.6 * hdi.toDouble()
+        + 0.4726 * altitudeM
+        - 0.3529 * (safeAge * safeAge) + 24.78 * safeAge
+        + 1.865 * (tempC * tempC) - 19.66 * tempC
+        - 713.1;
+
+    // Step 2: Convert to drinks-only goal
+    final double drinksGoal = wt * 0.85 * 0.8;
+
+    // Step 3: Apply safety limits & round to nearest 50 mL
+    final double clamped = drinksGoal.clamp(1500.0, 4000.0);
+    final int rounded = (clamped / 50.0).round() * 50;
+
+    return rounded;
   }
 
   Future<void> toggleNotif(bool enabled) async {
