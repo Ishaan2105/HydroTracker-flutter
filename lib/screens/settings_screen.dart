@@ -5,7 +5,9 @@ import 'package:provider/provider.dart';
 import '../providers/hydration_provider.dart';
 import '../services/pref_service.dart';
 import '../services/notification_service.dart';
+import '../theme/app_colors.dart';
 import '../widgets/hydro_top_bar.dart';
+import '../widgets/waves_background.dart';
 // import '../widgets/diagnostic_logs_sheet.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -19,6 +21,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _nameController;
   late TextEditingController _goalController;
   bool _isBatteryExempt = true; // assume OK until checked
+  bool _isThemeExpanded = true;
 
   @override
   void initState() {
@@ -113,30 +116,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Consumer<HydrationProvider>(
       builder: (context, provider, child) {
+        final colors = AppColors(isDark: provider.isDarkMode);
+
         return Scaffold(
-          backgroundColor: Colors.black,
+          backgroundColor: colors.scaffoldBg,
           appBar: const HydroTopBar(showBackButton: true),
-          body: SafeArea(
-            top: false,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          body: WavesBackground(
+            backgroundColor: colors.wavesBg,
+            lineColor: colors.wavesLine,
+            child: SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   // Header
                   Text(
                     'Settings',
                     style: GoogleFonts.poppins(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: colors.textPrimary,
                     ),
                   ),
                   Text(
                     'Configure user profile, hydration targets, notifications & privacy',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: const Color(0xFF94A3B8),
+                      color: colors.textSecondary,
                     ),
                   ),
 
@@ -154,6 +162,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildCard(
                     title: 'User Profile',
                     subtitle: 'Update your display name',
+                    colors: colors,
                     child: Row(
                       children: [
                         CircleAvatar(
@@ -168,12 +177,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Expanded(
                           child: TextField(
                             controller: _nameController,
-                            style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+                            style: GoogleFonts.poppins(color: colors.textPrimary, fontSize: 14),
                             decoration: InputDecoration(
                               hintText: 'Enter name...',
-                              hintStyle: GoogleFonts.poppins(color: Colors.white38, fontSize: 13),
+                              hintStyle: GoogleFonts.poppins(color: colors.textMuted, fontSize: 13),
                               filled: true,
-                              fillColor: const Color(0xFF0F172A),
+                              fillColor: colors.cardBgAlt,
                               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                             ),
@@ -199,6 +208,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildCard(
                     title: 'Daily Goal Target',
                     subtitle: 'Set daily intake target in Liters',
+                    colors: colors,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -208,12 +218,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               child: TextField(
                                 controller: _goalController,
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+                                style: GoogleFonts.poppins(color: colors.textPrimary, fontSize: 14),
                                 decoration: InputDecoration(
                                   suffixText: 'L',
-                                  suffixStyle: GoogleFonts.poppins(color: const Color(0xFF00E5FF), fontWeight: FontWeight.bold),
+                                  suffixStyle: GoogleFonts.poppins(color: colors.cyanAccent, fontWeight: FontWeight.bold),
                                   filled: true,
-                                  fillColor: const Color(0xFF0F172A),
+                                  fillColor: colors.cardBgAlt,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                                 ),
@@ -240,10 +250,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         // Presets
                         Row(
                           children: [
-                            _buildPresetChip(provider, 2.0),
-                            _buildPresetChip(provider, 2.5),
-                            _buildPresetChip(provider, 3.0),
-                            _buildPresetChip(provider, 3.5),
+                            _buildPresetChip(provider, 2.0, colors),
+                            _buildPresetChip(provider, 2.5, colors),
+                            _buildPresetChip(provider, 3.0, colors),
+                            _buildPresetChip(provider, 3.5, colors),
                           ],
                         ),
                       ],
@@ -252,37 +262,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   const SizedBox(height: 16),
 
+                  // 3. Appearance & Theme Section (Dark Mode vs Light Mode)
+                  _buildThemeCard(provider, colors),
+
+                  const SizedBox(height: 16),
+
                   // 4. Notifications & Scheduled Reminders Section
                   _buildCard(
                     title: 'Offline Notifications & Reminders',
                     subtitle: 'Manage local hydration alarm times',
+                    colors: colors,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: Text('Enable Hydration Alerts', style: GoogleFonts.poppins(fontSize: 13, color: Colors.white)),
-                          subtitle: Text('Receive offline reminders during the day', style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF94A3B8))),
+                          title: Text('Enable Hydration Alerts', style: GoogleFonts.poppins(fontSize: 13, color: colors.textPrimary)),
+                          subtitle: Text('Receive offline reminders during the day', style: GoogleFonts.poppins(fontSize: 11, color: colors.textSecondary)),
                           value: provider.isNotifEnabled,
-                          activeColor: const Color(0xFF00E5FF),
+                          activeColor: colors.cyanAccent,
                           onChanged: (val) => provider.toggleNotif(val),
                         ),
-                        const Divider(color: Colors.white10),
+                        Divider(color: colors.surfaceBorder),
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: Text('Post-Meal Reminder (30 mins)', style: GoogleFonts.poppins(fontSize: 13, color: Colors.white)),
-                          subtitle: Text('Alert 30 minutes after scheduled meals', style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF94A3B8))),
+                          title: Text('Post-Meal Reminder (30 mins)', style: GoogleFonts.poppins(fontSize: 13, color: colors.textPrimary)),
+                          subtitle: Text('Alert 30 minutes after scheduled meals', style: GoogleFonts.poppins(fontSize: 11, color: colors.textSecondary)),
                           value: provider.isPostMealNotifEnabled,
-                          activeColor: const Color(0xFF00E5FF),
+                          activeColor: colors.cyanAccent,
                           onChanged: (val) => provider.togglePostMealNotif(val),
                         ),
                         const SizedBox(height: 10),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Scheduled Alarms & Reminders:', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                            Text('Scheduled Alarms & Reminders:', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: colors.textPrimary)),
                             IconButton(
-                              icon: const Icon(Icons.add_alarm_rounded, color: Color(0xFF00E5FF)),
+                              icon: Icon(Icons.add_alarm_rounded, color: colors.cyanAccent),
                               onPressed: () => _addReminderTime(context, provider),
                             ),
                           ],
@@ -297,10 +313,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               margin: const EdgeInsets.only(bottom: 8),
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF0F172A),
+                                color: colors.cardBgAlt,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: isEnabled ? const Color(0xFF00E5FF).withValues(alpha: 0.4) : Colors.white10,
+                                  color: isEnabled ? colors.cyanAccent.withValues(alpha: 0.4) : colors.surfaceBorder,
                                 ),
                               ),
                               child: Row(
@@ -308,7 +324,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   Icon(
                                     Icons.alarm_rounded,
                                     size: 18,
-                                    color: isEnabled ? const Color(0xFF00E5FF) : Colors.white38,
+                                    color: isEnabled ? colors.cyanAccent : colors.textMuted,
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
@@ -320,7 +336,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           style: GoogleFonts.poppins(
                                             fontSize: 13,
                                             fontWeight: FontWeight.bold,
-                                            color: isEnabled ? Colors.white : Colors.white38,
+                                            color: isEnabled ? colors.textPrimary : colors.textMuted,
                                           ),
                                         ),
                                         // Daily / Once chip
@@ -345,12 +361,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                             decoration: BoxDecoration(
                                               color: isDaily
-                                                  ? const Color(0xFF00E5FF).withValues(alpha: 0.12)
+                                                  ? colors.cyanAccent.withValues(alpha: 0.12)
                                                   : Colors.orange.withValues(alpha: 0.12),
                                               borderRadius: BorderRadius.circular(6),
                                               border: Border.all(
                                                 color: isDaily
-                                                    ? const Color(0xFF00E5FF).withValues(alpha: 0.35)
+                                                    ? colors.cyanAccent.withValues(alpha: 0.35)
                                                     : Colors.orange.withValues(alpha: 0.35),
                                               ),
                                             ),
@@ -360,7 +376,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.w600,
                                                 color: isDaily
-                                                    ? const Color(0xFF00E5FF)
+                                                    ? colors.cyanAccent
                                                     : Colors.orange,
                                               ),
                                             ),
@@ -372,7 +388,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   // On / Off Toggle Switch
                                   Switch(
                                     value: isEnabled,
-                                    activeColor: const Color(0xFF00E5FF),
+                                    activeColor: colors.cyanAccent,
                                     onChanged: (val) async {
                                       await provider.toggleReminderActive(timeStr, val);
                                       if (context.mounted) {
@@ -399,7 +415,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                   // Delete Button
                                   IconButton(
-                                    icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.white60),
+                                    icon: Icon(Icons.delete_outline_rounded, size: 18, color: colors.textSecondary),
                                     onPressed: () async {
                                       await provider.removeReminderTime(timeStr);
                                       if (context.mounted) {
@@ -434,14 +450,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     );
                                   }
                                 },
-                                icon: const Icon(Icons.notifications_active_rounded, size: 16, color: Color(0xFF00E5FF)),
+                                icon: Icon(Icons.notifications_active_rounded, size: 16, color: colors.cyanAccent),
                                 label: Text(
                                   'Instant Test',
-                                  style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFF00E5FF)),
+                                  style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: colors.cyanAccent),
                                 ),
                                 style: OutlinedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                                  side: const BorderSide(color: Color(0xFF00E5FF)),
+                                  side: BorderSide(color: colors.cyanAccent),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                 ),
                               ),
@@ -525,25 +541,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ),
-        );
+        ),
+      );
       },
     );
   }
 
-  Widget _buildCard({required String title, required String subtitle, required Widget child}) {
+  Widget _buildCard({
+    required String title,
+    required String subtitle,
+    required Widget child,
+    required AppColors colors,
+  }) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: colors.cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: colors.surfaceBorder),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadowColor,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
-          Text(subtitle, style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF94A3B8))),
+          Text(title, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: colors.textPrimary)),
+          Text(subtitle, style: GoogleFonts.poppins(fontSize: 11, color: colors.textSecondary)),
           const SizedBox(height: 12),
           child,
         ],
@@ -551,16 +580,382 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildPresetChip(HydrationProvider provider, double liters) {
+  Widget _buildPresetChip(HydrationProvider provider, double liters, AppColors colors) {
     final isSelected = (provider.dailyGoalMl / 1000).toStringAsFixed(1) == liters.toStringAsFixed(1);
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: ChoiceChip(
-        label: Text('${liters}L', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: isSelected ? Colors.black : Colors.white)),
+        label: Text(
+          '${liters}L',
+          style: GoogleFonts.poppins(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: isSelected ? (colors.isDark ? Colors.black : Colors.white) : colors.textPrimary,
+          ),
+        ),
         selected: isSelected,
-        selectedColor: const Color(0xFF00E5FF),
-        backgroundColor: const Color(0xFF0F172A),
+        selectedColor: colors.cyanAccent,
+        backgroundColor: colors.cardBgAlt,
         onSelected: (_) => _saveGoal(provider, liters),
+      ),
+    );
+  }
+
+  Widget _buildThemeCard(HydrationProvider provider, AppColors colors) {
+    final mode = provider.themeMode;
+    final isAuto = mode == 'auto';
+    final isLight = mode == 'light';
+    final isDark = mode == 'dark';
+    final isDay = HydrationProvider.isDaytime();
+
+    String currentModeLabel;
+    if (isAuto) {
+      currentModeLabel = isDay
+          ? 'Auto Schedule • Currently Light (Daytime)'
+          : 'Auto Schedule • Currently Dark (Nighttime)';
+    } else if (isLight) {
+      currentModeLabel = 'Always Light Mode (Day & Night)';
+    } else {
+      currentModeLabel = 'Always Dark Mode (Day & Night)';
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.surfaceBorder),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadowColor,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () => setState(() => _isThemeExpanded = !_isThemeExpanded),
+            borderRadius: BorderRadius.circular(12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Appearance & Theme',
+                            style: GoogleFonts.poppins(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                          if (isAuto) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1565C0),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'DEFAULT',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      Text(
+                        currentModeLabel,
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  _isThemeExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  color: colors.textSecondary,
+                ),
+              ],
+            ),
+          ),
+          if (_isThemeExpanded) ...[
+            const SizedBox(height: 16),
+
+            // Option 1: Auto Schedule Card (6:30 AM Light / 6:30 PM Dark)
+            InkWell(
+              onTap: () => provider.setThemeMode('auto'),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isAuto
+                      ? colors.cyanAccent.withValues(alpha: 0.12)
+                      : colors.cardBgAlt,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isAuto ? colors.cyanAccent : colors.surfaceBorder,
+                    width: isAuto ? 1.8 : 1.0,
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: isAuto
+                            ? colors.cyanAccent.withValues(alpha: 0.18)
+                            : colors.surfaceBorder.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.schedule_rounded,
+                        color: isAuto ? colors.cyanAccent : colors.textSecondary,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'Auto Schedule',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: isAuto ? colors.cyanAccent : colors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1565C0),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'DEFAULT',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            'Light Mode: 6:30 AM – 6:30 PM\nDark Mode: 6:30 PM – 6:30 AM',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: colors.textSecondary,
+                              height: 1.3,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: colors.cardBg,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: colors.surfaceBorderSubtle),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isDay ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+                                  size: 13,
+                                  color: isDay ? Colors.amber : colors.cyanAccent,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  isDay
+                                      ? 'Active now: Light Mode (Daytime)'
+                                      : 'Active now: Dark Mode (Nighttime)',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: colors.textPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      isAuto ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
+                      color: isAuto ? colors.cyanAccent : colors.textMuted,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // Option 2 & 3: Fixed Themes Header & Chips
+            Text(
+              'OR CHOOSE A FIXED THEME',
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.8,
+                color: colors.textMuted,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildThemeOption(
+                    title: 'Always Light',
+                    subtitle: 'Clean daytime 24/7',
+                    icon: Icons.light_mode_rounded,
+                    isSelected: isLight,
+                    colors: colors,
+                    onTap: () => provider.setThemeMode('light'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildThemeOption(
+                    title: 'Always Dark',
+                    subtitle: 'Sleek OLED 24/7',
+                    icon: Icons.dark_mode_rounded,
+                    isSelected: isDark,
+                    colors: colors,
+                    onTap: () => provider.setThemeMode('dark'),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: colors.cardBgAlt,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: colors.surfaceBorderSubtle),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    provider.isDarkMode ? Icons.nightlight_round : Icons.wb_sunny_rounded,
+                    size: 16,
+                    color: colors.cyanAccent,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      isAuto
+                          ? 'Automatic schedule enabled. Day runs in Light Mode (6:30 AM – 6:30 PM), then switches to Dark Mode at night.'
+                          : (isLight
+                              ? 'Always Light Mode active: overrides schedule, remains bright 24/7.'
+                              : 'Always Dark Mode active: overrides schedule, remains dark 24/7.'),
+                      style: GoogleFonts.poppins(fontSize: 11, color: colors.textSecondary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemeOption({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool isSelected,
+    required AppColors colors,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? colors.cyanAccent.withValues(alpha: 0.12)
+              : colors.cardBgAlt,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? colors.cyanAccent : colors.surfaceBorder,
+            width: isSelected ? 1.8 : 1.0,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(
+                  icon,
+                  size: 22,
+                  color: isSelected ? colors.cyanAccent : colors.textSecondary,
+                ),
+                if (isSelected)
+                  Icon(Icons.check_circle_rounded, size: 18, color: colors.cyanAccent)
+                else
+                  Container(
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: colors.textMuted, width: 1.5),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? colors.cyanAccent : colors.textPrimary,
+              ),
+            ),
+            Text(
+              subtitle,
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                color: colors.textSecondary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -584,12 +979,17 @@ class _BatteryGuidanceBannerState extends State<_BatteryGuidanceBanner> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<HydrationProvider>().isDarkMode;
+    final primaryTextColor = isDark ? Colors.white : Colors.black;
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.black87;
+    final mutedTextColor = isDark ? Colors.white60 : Colors.black54;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: 0.10),
+        color: isDark ? Colors.orange.withValues(alpha: 0.10) : Colors.orange.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
+        border: Border.all(color: Colors.orange.withValues(alpha: isDark ? 0.5 : 0.6)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -602,7 +1002,7 @@ class _BatteryGuidanceBannerState extends State<_BatteryGuidanceBanner> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: Row(
                 children: [
-                  const Icon(Icons.battery_alert_rounded, color: Colors.orange, size: 22),
+                  Icon(Icons.battery_alert_rounded, color: isDark ? Colors.orange : const Color(0xFFC2410C), size: 22),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -613,20 +1013,20 @@ class _BatteryGuidanceBannerState extends State<_BatteryGuidanceBanner> {
                           style: GoogleFonts.poppins(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: Colors.orange,
+                            color: isDark ? Colors.orange : Colors.black,
                           ),
                         ),
                         if (!_isExpanded)
                           Text(
                             'Tap to fix background alarm delivery on Samsung',
-                            style: GoogleFonts.poppins(fontSize: 10, color: Colors.white60),
+                            style: GoogleFonts.poppins(fontSize: 10, color: mutedTextColor),
                           ),
                       ],
                     ),
                   ),
                   Icon(
                     _isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                    color: Colors.orange,
+                    color: isDark ? Colors.orange : const Color(0xFFC2410C),
                     size: 24,
                   ),
                 ],
@@ -640,19 +1040,19 @@ class _BatteryGuidanceBannerState extends State<_BatteryGuidanceBanner> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Divider(color: Colors.orangeAccent, height: 1, thickness: 0.3),
+                  Divider(color: isDark ? Colors.orangeAccent : Colors.orange.withValues(alpha: 0.5), height: 1, thickness: 0.3),
                   const SizedBox(height: 10),
                   Text(
                     'Samsung One UI can kill background alarms even with all permissions granted. '
                     'Two settings need to be fixed for reliable delivery:',
-                    style: GoogleFonts.poppins(fontSize: 11, color: Colors.white70),
+                    style: GoogleFonts.poppins(fontSize: 11, color: secondaryTextColor),
                   ),
                   const SizedBox(height: 12),
 
           // Fix 1 — Standard Android exemption
           Text(
             'Fix 1 — Unrestricted Battery Mode',
-            style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+            style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: primaryTextColor),
           ),
           const SizedBox(height: 4),
           SizedBox(
@@ -682,12 +1082,12 @@ class _BatteryGuidanceBannerState extends State<_BatteryGuidanceBanner> {
           // Fix 2 — Samsung Device Care / App Sleep
           Text(
             'Fix 2 — Samsung App Sleep (Never Sleeping Apps)',
-            style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+            style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: primaryTextColor),
           ),
           const SizedBox(height: 4),
           Text(
             'Samsung\'s "App Sleep" can suppress alarms separately from battery optimization.',
-            style: GoogleFonts.poppins(fontSize: 10, color: Colors.white54),
+            style: GoogleFonts.poppins(fontSize: 10, color: mutedTextColor),
           ),
           const SizedBox(height: 6),
           SizedBox(
@@ -696,13 +1096,17 @@ class _BatteryGuidanceBannerState extends State<_BatteryGuidanceBanner> {
               onPressed: () async {
                 await NotificationService.openSamsungDeviceCare();
               },
-              icon: const Icon(Icons.phone_android_rounded, size: 16, color: Colors.orange),
+              icon: Icon(Icons.phone_android_rounded, size: 16, color: isDark ? Colors.orange : const Color(0xFFC2410C)),
               label: Text(
                 'Open Samsung Device Care',
-                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.orange),
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.orange : const Color(0xFFC2410C),
+                ),
               ),
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.orange.withValues(alpha: 0.6)),
+                side: BorderSide(color: (isDark ? Colors.orange : const Color(0xFFC2410C)).withValues(alpha: 0.6)),
                 padding: const EdgeInsets.symmetric(vertical: 9),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
@@ -718,13 +1122,13 @@ class _BatteryGuidanceBannerState extends State<_BatteryGuidanceBanner> {
               children: [
                 Icon(
                   _showManualSteps ? Icons.expand_less_rounded : Icons.expand_more_rounded,
-                  color: Colors.white38,
+                  color: mutedTextColor,
                   size: 18,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   _showManualSteps ? 'Hide manual steps' : 'Show manual steps (if buttons don\'t work)',
-                  style: GoogleFonts.poppins(fontSize: 10, color: Colors.white38),
+                  style: GoogleFonts.poppins(fontSize: 10, color: mutedTextColor),
                 ),
               ],
             ),
@@ -735,19 +1139,20 @@ class _BatteryGuidanceBannerState extends State<_BatteryGuidanceBanner> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFF0F172A),
+                color: isDark ? const Color(0xFF0F172A) : Colors.orange.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: isDark ? Colors.white12 : Colors.orange.withValues(alpha: 0.25)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _manualStep('1', 'Open Samsung Settings'),
-                  _manualStep('2', 'Tap Battery → Background usage limits'),
-                  _manualStep('3', 'Tap Never sleeping apps → + (Add)'),
-                  _manualStep('4', 'Find and select Hydro Tracker'),
-                  const Divider(color: Colors.white12, height: 14),
-                  _manualStep('A', 'Also go to: Settings → Apps → Hydro Tracker'),
-                  _manualStep('B', 'Tap Battery → Select Unrestricted'),
+                  _manualStep('1', 'Open Samsung Settings', secondaryTextColor),
+                  _manualStep('2', 'Tap Battery → Background usage limits', secondaryTextColor),
+                  _manualStep('3', 'Tap Never sleeping apps → + (Add)', secondaryTextColor),
+                  _manualStep('4', 'Find and select Hydro Tracker', secondaryTextColor),
+                  Divider(color: isDark ? Colors.white12 : Colors.black12, height: 14),
+                  _manualStep('A', 'Also go to: Settings → Apps → Hydro Tracker', secondaryTextColor),
+                  _manualStep('B', 'Tap Battery → Select Unrestricted', secondaryTextColor),
                 ],
               ),
             ),
@@ -761,7 +1166,7 @@ class _BatteryGuidanceBannerState extends State<_BatteryGuidanceBanner> {
     );
   }
 
-  Widget _manualStep(String number, String text) {
+  Widget _manualStep(String number, String text, Color textColor) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -782,7 +1187,7 @@ class _BatteryGuidanceBannerState extends State<_BatteryGuidanceBanner> {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(text, style: GoogleFonts.poppins(fontSize: 11, color: Colors.white70)),
+            child: Text(text, style: GoogleFonts.poppins(fontSize: 11, color: textColor)),
           ),
         ],
       ),

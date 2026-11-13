@@ -17,19 +17,22 @@ class HydroTopBar extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(66);
 
   static void showSettingsMenu(BuildContext context) {
+    final provider = Provider.of<HydrationProvider>(context, listen: false);
+    final isDark = provider.isDarkMode;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (modalContext) {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          decoration: const BoxDecoration(
-            color: Color(0xFF0F172A),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF0F172A) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             border: Border(
-              top: BorderSide(color: Colors.white12),
-              left: BorderSide(color: Colors.white12),
-              right: BorderSide(color: Colors.white12),
+              top: BorderSide(color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+              left: BorderSide(color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+              right: BorderSide(color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
             ),
           ),
           child: Column(
@@ -40,7 +43,7 @@ class HydroTopBar extends StatelessWidget implements PreferredSizeWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: isDark ? Colors.white24 : Colors.black12,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -51,9 +54,9 @@ class HydroTopBar extends StatelessWidget implements PreferredSizeWidget {
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: Colors.white10),
+                  side: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
                 ),
-                tileColor: const Color(0xFF1E293B),
+                tileColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
@@ -67,17 +70,17 @@ class HydroTopBar extends StatelessWidget implements PreferredSizeWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
                   ),
                 ),
                 subtitle: Text(
-                  'Profile, goals, reminders & diagnostics',
+                  'Profile, goals, theme & diagnostics',
                   style: GoogleFonts.poppins(
                     fontSize: 11.5,
-                    color: const Color(0xFF94A3B8),
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                   ),
                 ),
-                trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white54, size: 16),
+                trailing: Icon(Icons.arrow_forward_ios_rounded, color: isDark ? Colors.white54 : Colors.black45, size: 16),
                 onTap: () {
                   Navigator.pop(modalContext);
                   Navigator.push(
@@ -93,9 +96,9 @@ class HydroTopBar extends StatelessWidget implements PreferredSizeWidget {
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: Colors.white10),
+                  side: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
                 ),
-                tileColor: const Color(0xFF1E293B),
+                tileColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
@@ -109,17 +112,17 @@ class HydroTopBar extends StatelessWidget implements PreferredSizeWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
                   ),
                 ),
                 subtitle: Text(
                   'Comprehensive operating guide & specs',
                   style: GoogleFonts.poppins(
                     fontSize: 11.5,
-                    color: const Color(0xFF94A3B8),
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                   ),
                 ),
-                trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white54, size: 16),
+                trailing: Icon(Icons.arrow_forward_ios_rounded, color: isDark ? Colors.white54 : Colors.black45, size: 16),
                 onTap: () {
                   Navigator.pop(modalContext);
                   Navigator.push(
@@ -140,18 +143,19 @@ class HydroTopBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return Consumer<HydrationProvider>(
       builder: (context, provider, child) {
+        final isDark = provider.isDarkMode;
         return Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF0F172A),
+            color: isDark ? const Color(0xFF0F172A) : Colors.white,
             border: Border(
               bottom: BorderSide(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
                 width: 1,
               ),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.35),
+                color: isDark ? Colors.black.withValues(alpha: 0.35) : const Color(0x0F0F172A),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
@@ -166,7 +170,11 @@ class HydroTopBar extends StatelessWidget implements PreferredSizeWidget {
                   // Left: Back button or Settings Gear Icon
                   if (showBackButton)
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        size: 20,
+                      ),
                       onPressed: () => Navigator.pop(context),
                     )
                   else
@@ -177,20 +185,23 @@ class HydroTopBar extends StatelessWidget implements PreferredSizeWidget {
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
+                          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white24, width: 1),
+                          border: Border.all(
+                            color: isDark ? Colors.white24 : const Color(0xFFCBD5E1),
+                            width: 1,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
+                              color: isDark ? Colors.black.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.04),
                               blurRadius: 6,
                               offset: const Offset(0, 2),
                             ),
                           ],
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.settings_rounded,
-                          color: Color(0xFF00E5FF),
+                          color: isDark ? const Color(0xFF00E5FF) : const Color(0xFF0284C7),
                           size: 20,
                         ),
                       ),
@@ -205,7 +216,7 @@ class HydroTopBar extends StatelessWidget implements PreferredSizeWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -216,10 +227,10 @@ class HydroTopBar extends StatelessWidget implements PreferredSizeWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
+                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFFEF3C7),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: const Color(0xFFF59E0B).withValues(alpha: 0.5),
+                        color: const Color(0xFFF59E0B).withValues(alpha: isDark ? 0.5 : 0.7),
                       ),
                     ),
                     child: Row(
@@ -236,7 +247,7 @@ class HydroTopBar extends StatelessWidget implements PreferredSizeWidget {
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: isDark ? Colors.white : const Color(0xFF92400E),
                           ),
                         ),
                       ],

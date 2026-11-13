@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/hydration_provider.dart';
+import '../theme/app_colors.dart';
 import '../widgets/wave_progress_ring.dart';
 import '../widgets/hydro_top_bar.dart';
 
@@ -92,6 +93,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Consumer<HydrationProvider>(
       builder: (context, provider, child) {
+        final colors = AppColors(isDark: provider.isDarkMode);
+
         return Scaffold(
           backgroundColor: Colors.transparent,
           appBar: const HydroTopBar(),
@@ -144,6 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       currentMl: provider.todayIntakeMl,
                       goalMl: provider.dailyGoalMl,
                       size: 240,
+                      isDark: provider.isDarkMode,
                     ),
                   ),
 
@@ -155,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -167,6 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: _buildQuickLogBtn(
                           label: '250 ml',
                           onTap: () => _logWater(context, 250),
+                          colors: colors,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -174,6 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: _buildQuickLogBtn(
                           label: '500 ml',
                           onTap: () => _logWater(context, 500),
+                          colors: colors,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -181,6 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: _buildQuickLogBtn(
                           label: '750 ml',
                           onTap: () => _logWater(context, 750),
+                          colors: colors,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -188,6 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: _buildQuickLogBtn(
                           label: '1000 ml',
                           onTap: () => _logWater(context, 1000),
+                          colors: colors,
                         ),
                       ),
                     ],
@@ -200,18 +208,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     controller: _customController,
                     keyboardType: TextInputType.number,
                     style: GoogleFonts.poppins(
-                        color: Colors.white, fontSize: 14),
+                        color: colors.textPrimary, fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'Custom ml...',
                       hintStyle: GoogleFonts.poppins(
-                          color: Colors.white38, fontSize: 13),
+                          color: colors.textMuted, fontSize: 13),
                       filled: true,
-                      fillColor: const Color(0xFF1E293B),
+                      fillColor: colors.cardBg,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 14),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide.none,
+                        borderSide: BorderSide(color: colors.surfaceBorder),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: colors.surfaceBorder),
                       ),
                     ),
                     onSubmitted: (_) => _logCustomWater(context),
@@ -219,12 +231,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 10),
 
-                  // Add Button (Border 40% darker)
+                  // Add Button
                   SizedBox(
                     width: double.infinity,
                     height: 48,
                     child: Material(
-                      color: const Color(0xFF1E293B),
+                      color: colors.cardBg,
                       borderRadius: BorderRadius.circular(14),
                       child: InkWell(
                         onTap: () => _logCustomWater(context),
@@ -233,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.6), // 40% darker border
+                              color: colors.surfaceBorder,
                               width: 1.0,
                             ),
                           ),
@@ -243,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: GoogleFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              color: colors.textPrimary,
                             ),
                           ),
                         ),
@@ -259,7 +271,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: OutlinedButton(
                       onPressed: () => _undoLastLog(context),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.white24),
+                        side: BorderSide(color: colors.surfaceBorder),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
@@ -268,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Text(
                         'Undo Last Log',
                         style: GoogleFonts.poppins(
-                            color: const Color(0xFFCBD5E1),
+                            color: colors.textSecondary,
                             fontWeight: FontWeight.w600),
                       ),
                     ),
@@ -284,6 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           title: 'Current Streak',
                           value: '${provider.currentStreak} Days',
                           color: const Color(0xFFF59E0B),
+                          colors: colors,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -292,6 +305,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           title: 'Best Streak',
                           value: '${provider.bestStreak} Days',
                           color: const Color(0xFF00E5FF),
+                          colors: colors,
                         ),
                       ),
                     ],
@@ -305,17 +319,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
+                      color: colors.cardBg,
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.2)),
+                      border: Border.all(color: colors.surfaceBorder),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF00E5FF).withValues(alpha: 0.08),
-                          blurRadius: 24,
-                          offset: const Offset(0, 10),
-                        ),
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
+                          color: colors.shadowColor,
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
@@ -343,14 +352,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   style: GoogleFonts.poppins(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                    color: colors.textPrimary,
                                   ),
                                 ),
                                 Text(
                                   'Daily intake breakdown against target',
                                   style: GoogleFonts.poppins(
                                     fontSize: 11,
-                                    color: const Color(0xFF94A3B8),
+                                    color: colors.textSecondary,
                                   ),
                                 ),
                               ],
@@ -366,9 +375,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF0F172A),
+                                  color: colors.statBadgeBg,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.3)),
+                                  border: Border.all(color: colors.statBadgeBorder),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -378,7 +387,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       style: GoogleFonts.poppins(
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF94A3B8),
+                                        color: colors.textSecondary,
                                         letterSpacing: 0.5,
                                       ),
                                     ),
@@ -388,7 +397,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       style: GoogleFonts.poppins(
                                         fontSize: 13,
                                         fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF00E5FF),
+                                        color: colors.cyanAccent,
                                       ),
                                     ),
                                   ],
@@ -400,9 +409,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF0F172A),
+                                  color: colors.statBadgeBg,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.3)),
+                                  border: Border.all(color: colors.statBadgeBorder),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -412,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       style: GoogleFonts.poppins(
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF94A3B8),
+                                        color: colors.textSecondary,
                                         letterSpacing: 0.5,
                                       ),
                                     ),
@@ -434,9 +443,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF0F172A),
+                                  color: colors.statBadgeBg,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFF60A5FA).withValues(alpha: 0.3)),
+                                  border: Border.all(color: colors.statBadgeBorder),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -446,7 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       style: GoogleFonts.poppins(
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF94A3B8),
+                                        color: colors.textSecondary,
                                         letterSpacing: 0.5,
                                       ),
                                     ),
@@ -555,8 +564,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                       // 1% - 49% : Deep Marine / Cobalt Blue
                                       barColors = [const Color(0xFF2563EB), const Color(0xFF1E3A8A)];
                                     } else {
-                                      // 0% : Midnight Slate-Blue
-                                      barColors = [const Color(0xFF1E293B), const Color(0xFF0F172A)];
+                                      // 0% : Midnight Slate-Blue in Dark, soft sky-blue in Light Mode
+                                      barColors = colors.isDark
+                                          ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                                          : [const Color(0xFFBAE6FD), const Color(0xFFE0F2FE)];
                                     }
 
                                     return Column(
@@ -568,7 +579,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           style: GoogleFonts.poppins(
                                             fontSize: 9.5,
                                             fontWeight: isGoalAchieved ? FontWeight.bold : FontWeight.w500,
-                                            color: isGoalAchieved ? const Color(0xFF00E5FF) : const Color(0xFF94A3B8),
+                                            color: isGoalAchieved ? colors.cyanAccent : colors.textSecondary,
                                           ),
                                         ),
                                         const SizedBox(height: 6),
@@ -585,11 +596,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ),
                                             borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                                             border: isToday
-                                                ? Border.all(color: Colors.white, width: 1.5)
+                                                ? Border.all(color: colors.cyanAccent, width: 1.5)
                                                 : Border.all(
                                                     color: isGoalAchieved
-                                                        ? const Color(0xFF00E5FF).withValues(alpha: 0.6)
-                                                        : Colors.white10,
+                                                        ? colors.cyanAccent.withValues(alpha: 0.6)
+                                                        : (colors.isDark ? Colors.white10 : const Color(0xFFBAE6FD)),
                                                     width: 1,
                                                   ),
                                             boxShadow: barShadow,
@@ -602,13 +613,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
                                           decoration: BoxDecoration(
                                             color: isToday
-                                                ? const Color(0xFF00E5FF).withValues(alpha: 0.2)
-                                                : const Color(0xFF0F172A),
+                                                ? colors.cyanAccent.withValues(alpha: 0.2)
+                                                : colors.dayBadgeBg,
                                             borderRadius: BorderRadius.circular(6),
                                             border: Border.all(
                                               color: isToday
-                                                  ? const Color(0xFF00E5FF)
-                                                  : Colors.white.withValues(alpha: 0.05),
+                                                  ? colors.cyanAccent
+                                                  : colors.dayBadgeBorder,
                                             ),
                                           ),
                                           child: Text(
@@ -616,7 +627,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             style: GoogleFonts.poppins(
                                               fontSize: 10.5,
                                               fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
-                                              color: isToday ? const Color(0xFF00E5FF) : const Color(0xFF94A3B8),
+                                              color: isToday ? colors.cyanAccent : colors.dayBadgeText,
                                             ),
                                           ),
                                         ),
@@ -635,11 +646,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildLegendItem('Goal Met (100%+)', const Color(0xFF00E5FF)),
+                            _buildLegendItem('Goal Met (100%+)', const Color(0xFF00E5FF), colors),
                             const SizedBox(width: 14),
-                            _buildLegendItem('50–99%', const Color(0xFF38BDF8)),
+                            _buildLegendItem('50–99%', const Color(0xFF38BDF8), colors),
                             const SizedBox(width: 14),
-                            _buildLegendItem('<50%', const Color(0xFF2563EB)),
+                            _buildLegendItem('<50%', const Color(0xFF2563EB), colors),
                           ],
                         ),
                       ],
@@ -651,7 +662,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   // ==========================================
                   // 6. Weekly Analytics Card
                   // ==========================================
-                  _buildWeeklyAnalyticsCard(provider),
+                  _buildWeeklyAnalyticsCard(provider, colors),
 
                   const SizedBox(height: 24),
 
@@ -665,6 +676,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           title: 'Best Day',
                           value: provider.bestDayLabel,
                           color: const Color(0xFF10B981),
+                          colors: colors,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -673,6 +685,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           title: 'Lowest Day',
                           value: provider.worstDayLabel,
                           color: const Color(0xFFEF4444),
+                          colors: colors,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -681,6 +694,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           title: 'Goal Hit Rate',
                           value: '${provider.hitRatePct.toStringAsFixed(0)}%',
                           color: const Color(0xFF00E5FF),
+                          colors: colors,
                         ),
                       ),
                     ],
@@ -699,9 +713,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildQuickLogBtn({
     required String label,
     required VoidCallback onTap,
+    required AppColors colors,
   }) {
     return Material(
-      color: const Color(0xFF1E293B),
+      color: colors.cardBg,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
@@ -710,7 +725,14 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white10),
+            border: Border.all(color: colors.surfaceBorder),
+            boxShadow: [
+              BoxShadow(
+                color: colors.shadowColor,
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           alignment: Alignment.center,
           child: Text(
@@ -718,7 +740,7 @@ class _HomeScreenState extends State<HomeScreen> {
             style: GoogleFonts.poppins(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: colors.textPrimary,
             ),
           ),
         ),
@@ -730,13 +752,21 @@ class _HomeScreenState extends State<HomeScreen> {
     required String title,
     required String value,
     required Color color,
+    required AppColors colors,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: colors.cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadowColor,
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -745,7 +775,7 @@ class _HomeScreenState extends State<HomeScreen> {
             title,
             style: GoogleFonts.poppins(
               fontSize: 12,
-              color: const Color(0xFF94A3B8),
+              color: colors.textSecondary,
             ),
           ),
           const SizedBox(height: 4),
@@ -766,13 +796,21 @@ class _HomeScreenState extends State<HomeScreen> {
     required String title,
     required String value,
     required Color color,
+    required AppColors colors,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: colors.cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadowColor,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -781,7 +819,7 @@ class _HomeScreenState extends State<HomeScreen> {
             title,
             style: GoogleFonts.poppins(
               fontSize: 10.5,
-              color: const Color(0xFF94A3B8),
+              color: colors.textSecondary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -802,7 +840,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildLegendItem(String label, Color color) {
+  Widget _buildLegendItem(String label, Color color, AppColors colors) {
     return Row(
       children: [
         Container(
@@ -816,13 +854,13 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(width: 4),
         Text(
           label,
-          style: GoogleFonts.poppins(fontSize: 10, color: const Color(0xFF94A3B8)),
+          style: GoogleFonts.poppins(fontSize: 10, color: colors.textSecondary),
         ),
       ],
     );
   }
 
-  Widget _buildWeeklyAnalyticsCard(HydrationProvider provider) {
+  Widget _buildWeeklyAnalyticsCard(HydrationProvider provider, AppColors colors) {
     final avgL = (provider.weeklyAverageMl / 1000).toStringAsFixed(2);
     final goalL = (provider.dailyGoalMl / 1000).toStringAsFixed(1);
     final isGoalMetAvg = provider.weeklyAverageMl >= provider.dailyGoalMl;
@@ -848,9 +886,16 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: colors.cardBg,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadowColor,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -871,7 +916,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: colors.textPrimary,
                 ),
               ),
             ],
@@ -890,11 +935,11 @@ class _HomeScreenState extends State<HomeScreen> {
             desc,
             style: GoogleFonts.poppins(
               fontSize: 12.5,
-              color: const Color(0xFFCBD5E1),
+              color: colors.textSecondary,
               height: 1.4,
             ),
           ),
-          const Divider(color: Colors.white10, height: 18),
+          Divider(color: colors.surfaceBorder, height: 18),
           Row(
             children: [
               Icon(
@@ -910,7 +955,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       : 'Weekly avg is $avgL L/day (target: $goalL L/day).',
                   style: GoogleFonts.poppins(
                     fontSize: 11,
-                    color: const Color(0xFF94A3B8),
+                    color: colors.textSecondary,
                   ),
                 ),
               ),

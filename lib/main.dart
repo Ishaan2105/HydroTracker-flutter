@@ -58,21 +58,38 @@ class HydroTrackerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Hydro Tracker',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: Colors.black,
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF1565C0),
-          secondary: Color(0xFF00E5FF),
-          surface: Color(0xFF1E293B),
-        ),
-        textTheme: GoogleFonts.poppinsTextTheme(
-          ThemeData.dark().textTheme,
-        ),
-      ),
-      home: const MainNavigationScreen(),
+    return Consumer<HydrationProvider>(
+      builder: (context, provider, child) {
+        final isDark = provider.isDarkMode;
+        return MaterialApp(
+          title: 'Hydro Tracker',
+          debugShowCheckedModeBanner: false,
+          themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+          darkTheme: ThemeData.dark().copyWith(
+            scaffoldBackgroundColor: Colors.black,
+            colorScheme: const ColorScheme.dark(
+              primary: Color(0xFF1565C0),
+              secondary: Color(0xFF00E5FF),
+              surface: Color(0xFF1E293B),
+            ),
+            textTheme: GoogleFonts.poppinsTextTheme(
+              ThemeData.dark().textTheme,
+            ),
+          ),
+          theme: ThemeData.light().copyWith(
+            scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF1565C0),
+              secondary: Color(0xFF0284C7),
+              surface: Colors.white,
+            ),
+            textTheme: GoogleFonts.poppinsTextTheme(
+              ThemeData.light().textTheme,
+            ),
+          ),
+          home: const MainNavigationScreen(),
+        );
+      },
     );
   }
 }

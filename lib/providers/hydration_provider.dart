@@ -5,6 +5,7 @@ import '../services/db_helper.dart';
 import '../services/pref_service.dart';
 import '../services/notification_service.dart';
 import '../services/app_logger.dart';
+import '../services/widget_service.dart';
 
 class DayTrendData {
   final String label;
@@ -63,6 +64,8 @@ class HydrationProvider extends ChangeNotifier {
   /// Times that should fire only ONCE (not repeat daily). Default = empty → all daily.
   List<String> _oneTimeReminderTimes = [];
   bool _isSoloOptIn = true;
+  String _themeMode = 'auto'; // 'auto' (schedule: 6:30 AM Light / 6:30 PM Dark), 'light', 'dark'
+  bool _isDarkMode = true;
 
   int get todayIntakeMl => _todayIntakeMl;
   int get dailyGoalMl => _dailyGoalMl;
@@ -71,6 +74,26 @@ class HydrationProvider extends ChangeNotifier {
   String get userName => _userName;
   List<WaterLog> get todayLogs => _todayLogs;
   bool get isStreakBannerDismissed => _isStreakBannerDismissed;
+  String get themeMode => _themeMode;
+
+  /// Returns true if [dt] (or DateTime.now()) falls within the daytime window:
+  /// from 6:30 AM (390 min) up to 6:30 PM / 18:30 (1110 min).
+  static bool isDaytime([DateTime? dt]) {
+    final now = dt ?? DateTime.now();
+    final minutes = now.hour * 60 + now.minute;
+    return minutes >= 390 && minutes < 1110;
+  }
+
+  /// Evaluates whether the app should render in Dark Mode:
+  /// - If user selected 'dark' -> true
+  /// - If user selected 'light' -> false
+  /// - If user selected 'auto' -> Daytime (6:30 AM to 6:30 PM) is Light Mode (false);
+  ///                               Nighttime (6:30 PM to 6:30 AM) is Dark Mode (true).
+  bool get isDarkMode {
+    if (_themeMode == 'dark') return true;
+    if (_themeMode == 'light') return false;
+    return !isDaytime();
+  }
 
   DateTime get selectedDate => _selectedDate;
   List<WaterLog> get selectedDateLogs => _selectedDateLogs;
@@ -199,6 +222,8 @@ class HydrationProvider extends ChangeNotifier {
       _disabledReminderTimes = await PrefService.getDisabledReminderTimes();
       _oneTimeReminderTimes = await PrefService.getOneTimeReminderTimes();
       _isSoloOptIn = await PrefService.getSoloOptIn();
+      _themeMode = await PrefService.getThemeMode();
+      _isDarkMode = isDarkMode;
 
       await checkMidnightReset();
       await loadTodayData();
@@ -253,12 +278,34 @@ class HydrationProvider extends ChangeNotifier {
   }
 
   Future<void> loadTodayData() async {
+    // 1. Drain pending logs recorded directly from the Android AppWidget
+    final pendingLogs = await PrefService.getAndClearPendingWidgetLogs();
+    if (pendingLogs.isNotEmpty) {
+      for (final item in pendingLogs) {
+        final amount = item['amount'] as int;
+        final timestamp = item['timestamp'] as DateTime;
+        final dateStr = formatDateString(timestamp);
+        await DBHelper.instance.insertLog(WaterLog(
+          amountMl: amount,
+          timestamp: timestamp,
+          dateString: dateStr,
+        ));
+      }
+      await loadHistoryStats();
+      await loadInsightsData();
+    }
+
+    // 2. Fetch all logs for today directly from SQLite (Single Source of Truth)
     _todayLogs = await DBHelper.instance.getLogsForDate(todayDateString);
     _todayIntakeMl = 0;
     for (var log in _todayLogs) {
       _todayIntakeMl += log.amountMl;
     }
+
+    // 3. Keep SharedPreferences and AppWidget synchronized with SQLite
+    await PrefService.setTodayIntake(_todayIntakeMl);
     await loadSelectedDateData();
+    WidgetService.updateWidgetData(_todayIntakeMl, _dailyGoalMl);
     notifyListeners();
   }
 
@@ -707,9 +754,17 @@ class HydrationProvider extends ChangeNotifier {
       final lastLog = await DBHelper.instance.getLastLogForDate(todayDateString);
       if (lastLog != null && lastLog.id != null) {
         await DBHelper.instance.deleteLog(lastLog.id!);
-        await loadTodayData();
+        _todayLogs = await DBHelper.instance.getLogsForDate(todayDateString);
+        _todayIntakeMl = 0;
+        for (var log in _todayLogs) {
+          _todayIntakeMl += log.amountMl;
+        }
+        await PrefService.setTodayIntake(_todayIntakeMl);
+        await WidgetService.updateWidgetData(_todayIntakeMl, _dailyGoalMl);
         await loadHistoryStats();
         await loadInsightsData();
+        await loadSelectedDateData();
+        notifyListeners();
         return true;
       }
       return false;
@@ -722,9 +777,17 @@ class HydrationProvider extends ChangeNotifier {
   Future<void> deleteLogById(int id) async {
     try {
       await DBHelper.instance.deleteLog(id);
-      await loadTodayData();
+      _todayLogs = await DBHelper.instance.getLogsForDate(todayDateString);
+      _todayIntakeMl = 0;
+      for (var log in _todayLogs) {
+        _todayIntakeMl += log.amountMl;
+      }
+      await PrefService.setTodayIntake(_todayIntakeMl);
+      await WidgetService.updateWidgetData(_todayIntakeMl, _dailyGoalMl);
       await loadHistoryStats();
       await loadInsightsData();
+      await loadSelectedDateData();
+      notifyListeners();
     } catch (e, st) {
       AppLogger.error('HydrationProvider', 'deleteLogById failed: $e', e, st);
     }
@@ -756,10 +819,32 @@ class HydrationProvider extends ChangeNotifier {
 
   Future<void> updateGoal(int newGoalMl) async {
     _dailyGoalMl = newGoalMl;
+    WidgetService.updateWidgetData(_todayIntakeMl, _dailyGoalMl);
     notifyListeners(); // Notify instantly so UI updates in 0ms!
     await PrefService.setGoal(newGoalMl);
     await loadHistoryStats();
     await loadInsightsData();
+  }
+
+  Future<void> setThemeMode(String mode) async {
+    _themeMode = mode;
+    _isDarkMode = isDarkMode;
+    await PrefService.setThemeMode(mode);
+    notifyListeners();
+  }
+
+  Future<void> toggleTheme(bool isDark) async {
+    await setThemeMode(isDark ? 'dark' : 'light');
+  }
+
+  void checkThemeSchedule() {
+    if (_themeMode == 'auto') {
+      final currentIsDark = isDarkMode;
+      if (_isDarkMode != currentIsDark) {
+        _isDarkMode = currentIsDark;
+        notifyListeners();
+      }
+    }
   }
 
   Future<void> updateUserName(String name) async {

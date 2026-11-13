@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hydro Tracker</string>
+    <string name="widget_description">Quick-log hydration and track daily progress right from your Home or Lock Screen.</string>
+</resources>
+

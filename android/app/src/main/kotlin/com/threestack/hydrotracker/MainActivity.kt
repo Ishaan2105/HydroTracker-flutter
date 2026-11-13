@@ -1,5 +1,7 @@
 package com.threestack.hydrotracker
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -13,10 +15,50 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         private const val CHANNEL = "hydro_flutter/battery"
+        private const val WIDGET_CHANNEL = "hydro_flutter/widget"
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        // Android Home & Lock Screen Widget Channel
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, WIDGET_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "isPinSupported" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        val appWidgetManager = AppWidgetManager.getInstance(this)
+                        result.success(appWidgetManager.isRequestPinAppWidgetSupported)
+                    } else {
+                        result.success(false)
+                    }
+                }
+                "requestPinWidget" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        val appWidgetManager = AppWidgetManager.getInstance(this)
+                        if (appWidgetManager.isRequestPinAppWidgetSupported) {
+                            val myProvider = ComponentName(this, HydroWidgetProvider::class.java)
+                            appWidgetManager.requestPinAppWidget(myProvider, null, null)
+                            result.success(true)
+                        } else {
+                            result.success(false)
+                        }
+                    } else {
+                        result.success(false)
+                    }
+                }
+                "updateWidget", "updateWidgetData" -> {
+                    val intake = call.argument<Int>("todayIntakeMl")
+                        ?: call.argument<Int>("todayIntake")
+                        ?: 0
+                    val goal = call.argument<Int>("dailyGoalMl")
+                        ?: call.argument<Int>("dailyGoal")
+                        ?: 2500
+                    HydroWidgetProvider.updateAllWidgets(this, intake, goal)
+                    result.success(true)
+                }
+                else -> result.notImplemented()
+            }
+        }
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {

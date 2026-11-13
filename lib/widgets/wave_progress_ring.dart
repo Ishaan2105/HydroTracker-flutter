@@ -7,6 +7,8 @@ class WaveProgressRing extends StatefulWidget {
   final int currentMl;
   final int goalMl;
   final double size;
+  final bool? isDark;
+  final bool showPercentage;
 
   const WaveProgressRing({
     super.key,
@@ -14,6 +16,8 @@ class WaveProgressRing extends StatefulWidget {
     required this.currentMl,
     required this.goalMl,
     this.size = 230,
+    this.isDark,
+    this.showPercentage = true,
   });
 
   @override
@@ -41,6 +45,7 @@ class _WaveProgressRingState extends State<WaveProgressRing>
 
   @override
   Widget build(BuildContext context) {
+    final effectiveIsDark = widget.isDark ?? (Theme.of(context).brightness == Brightness.dark);
     final percentage = (widget.progress * 100).clamp(0, 100).toInt();
     final currentLters = (widget.currentMl / 1000).toStringAsFixed(2);
     final goalLiters = (widget.goalMl / 1000).toStringAsFixed(1);
@@ -75,45 +80,64 @@ class _WaveProgressRingState extends State<WaveProgressRing>
             size: Size(widget.size, widget.size),
             painter: ProgressRingPainter(
               progress: widget.progress,
-              ringWidth: 10,
-              backgroundColor: const Color(0xFF1E293B),
-              progressColor: const Color(0xFF00E5FF),
+              ringWidth: widget.size > 140 ? 10 : 7,
+              backgroundColor: effectiveIsDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+              progressColor: effectiveIsDark ? const Color(0xFF00E5FF) : const Color(0xFF0284C7),
             ),
           ),
 
-          // Center Text Info
+          // Center Info
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                '$percentage%',
-                style: GoogleFonts.poppins(
-                  fontSize: 42,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  shadows: [
-                    const Shadow(
-                      color: Colors.black45,
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
+              if (widget.showPercentage) ...[
+                Text(
+                  '$percentage%',
+                  style: GoogleFonts.poppins(
+                    fontSize: widget.size > 140 ? 42 : 22,
+                    fontWeight: FontWeight.w900,
+                    color: effectiveIsDark ? Colors.white : const Color(0xFF0F172A),
+                    shadows: effectiveIsDark
+                        ? [
+                            const Shadow(
+                              color: Colors.black45,
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ]
+                        : null,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
+                const SizedBox(height: 2),
+              ] else ...[
+                Icon(
+                  Icons.water_drop_rounded,
+                  color: effectiveIsDark ? const Color(0xFF00E5FF) : const Color(0xFF0284C7),
+                  size: widget.size > 140 ? 36 : 24,
+                ),
+                const SizedBox(height: 2),
+              ],
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: EdgeInsets.symmetric(
+                  horizontal: widget.size > 140 ? 10 : 6,
+                  vertical: widget.size > 140 ? 4 : 2,
+                ),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.35),
+                  color: effectiveIsDark
+                      ? Colors.black.withValues(alpha: 0.35)
+                      : Colors.white.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white24, width: 0.5),
+                  border: Border.all(
+                    color: effectiveIsDark ? Colors.white24 : const Color(0xFFCBD5E1),
+                    width: 0.5,
+                  ),
                 ),
                 child: Text(
                   '$currentLters / $goalLiters L',
                   style: GoogleFonts.poppins(
-                    fontSize: 14,
+                    fontSize: widget.size > 140 ? 14 : 10.5,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFFE2E8F0),
+                    color: effectiveIsDark ? const Color(0xFFE2E8F0) : const Color(0xFF0F172A),
                   ),
                 ),
               ),

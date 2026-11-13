@@ -218,4 +218,93 @@ class PrefService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(keyBatteryPromptShown, shown);
   }
+
+  // --- Theme Mode: 'auto' (Schedule: 6:30 AM Light / 6:30 PM Dark), 'light', 'dark' ---
+  static const String keyThemeMode = 'theme_mode';
+  static const String keyIsDarkMode = 'is_dark_mode';
+
+  static Future<String> getThemeMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final mode = prefs.getString(keyThemeMode);
+    if (mode != null && (mode == 'auto' || mode == 'light' || mode == 'dark')) {
+      return mode;
+    }
+    // Backward compatibility for existing users who already toggled
+    if (prefs.containsKey(keyIsDarkMode)) {
+      final isDark = prefs.getBool(keyIsDarkMode) ?? true;
+      return isDark ? 'dark' : 'light';
+    }
+    return 'auto';
+  }
+
+  static Future<void> setThemeMode(String mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(keyThemeMode, mode);
+    if (mode == 'dark') {
+      await prefs.setBool(keyIsDarkMode, true);
+    } else if (mode == 'light') {
+      await prefs.setBool(keyIsDarkMode, false);
+    }
+  }
+
+  static Future<bool> getIsDarkMode() async {
+    final mode = await getThemeMode();
+    if (mode == 'dark') return true;
+    if (mode == 'light') return false;
+    final now = DateTime.now();
+    final minutes = now.hour * 60 + now.minute;
+    return minutes < 390 || minutes >= 1110;
+  }
+
+  static Future<void> setIsDarkMode(bool isDark) async {
+    await setThemeMode(isDark ? 'dark' : 'light');
+  }
+
+  // --- Today's intake cache for Android AppWidget ---
+  static const String keyTodayIntake = 'today_intake_ml';
+  static const String keyPendingWidgetLogs = 'pending_widget_logs';
+  static const String keyWidgetLastActiveDate = 'widget_last_active_date';
+
+  static Future<int> getTodayIntake() async {
+    final prefs = await SharedPreferences.getInstance();
+    try {
+      await prefs.reload();
+    } catch (_) {}
+    return prefs.getInt(keyTodayIntake) ?? 0;
+  }
+
+  static Future<void> setTodayIntake(int ml) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(keyTodayIntake, ml);
+  }
+
+  /// Retrieve and clear any pending water logs recorded directly from the Android AppWidget
+  static Future<List<Map<String, dynamic>>> getAndClearPendingWidgetLogs() async {
+    final prefs = await SharedPreferences.getInstance();
+    try {
+      await prefs.reload();
+    } catch (_) {}
+    final raw = prefs.getString(keyPendingWidgetLogs);
+    if (raw == null || raw.trim().isEmpty) return [];
+
+    await prefs.remove(keyPendingWidgetLogs);
+    final list = <Map<String, dynamic>>[];
+    final items = raw.split(';');
+    for (final item in items) {
+      final parts = item.trim().split('|');
+      if (parts.isNotEmpty) {
+        final amount = int.tryParse(parts[0]) ?? 0;
+        final ts = parts.length > 1 ? int.tryParse(parts[1]) : null;
+        if (amount > 0) {
+          list.add({
+            'amount': amount,
+            'timestamp': ts != null
+                ? DateTime.fromMillisecondsSinceEpoch(ts)
+                : DateTime.now(),
+          });
+        }
+      }
+    }
+    return list;
+  }
 }

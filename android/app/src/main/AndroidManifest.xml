@@ -58,6 +58,19 @@
             android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver"
             android:exported="false"/>
 
+        <!-- Android Home & Lock Screen App Widget Receiver -->
+        <receiver
+            android:name=".HydroWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.threestack.hydrotracker.ACTION_ADD_WATER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_hydro_info" />
+        </receiver>
+
 
 
         <!-- Don't delete the meta-data below.

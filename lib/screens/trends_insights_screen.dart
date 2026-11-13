@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/hydration_provider.dart';
+import '../theme/app_colors.dart';
 import '../widgets/hydration_ranks_sheet.dart';
 import '../widgets/hydro_top_bar.dart';
 
@@ -14,13 +15,13 @@ class TrendsInsightsScreen extends StatefulWidget {
 }
 
 class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
-  // Goal Calculator State (initialized to 0)
+  // Goal Calculator State
   bool _useCm = false;
-  final TextEditingController _ftController = TextEditingController(text: '0');
-  final TextEditingController _inController = TextEditingController(text: '0');
-  final TextEditingController _cmController = TextEditingController(text: '0');
-  final TextEditingController _weightController = TextEditingController(text: '0');
-  final TextEditingController _ageController = TextEditingController(text: '0');
+  final TextEditingController _ftController = TextEditingController();
+  final TextEditingController _inController = TextEditingController();
+  final TextEditingController _cmController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
   String _gender = 'Male';
   int? _calculatedGoalMl;
 
@@ -134,16 +135,16 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
 
   void _resetGoalCalculator() {
     setState(() {
-      _ftController.text = '0';
-      _inController.text = '0';
-      _cmController.text = '0';
-      _weightController.text = '0';
-      _ageController.text = '0';
+      _ftController.clear();
+      _inController.clear();
+      _cmController.clear();
+      _weightController.clear();
+      _ageController.clear();
       _gender = 'Male';
       _calculatedGoalMl = null;
     });
     _showConfirmationBanner(
-      'Calculator values reset to 0',
+      'Calculator values reset',
       color: const Color(0xFFD97706),
     );
   }
@@ -258,6 +259,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
   Widget build(BuildContext context) {
     return Consumer<HydrationProvider>(
       builder: (context, provider, child) {
+        final colors = AppColors(isDark: provider.isDarkMode);
         final isSelectedGoalMet = provider.selectedDateProgressRatio >= 1.0;
         final isTodaySelected = provider.selectedDateString == provider.formatDateString(DateTime.now());
 
@@ -280,14 +282,14 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                         style: GoogleFonts.poppins(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: colors.textPrimary,
                         ),
                       ),
                       Text(
                         'Hydration calculator, history logs & activity heatmap',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: const Color(0xFF94A3B8),
+                          color: colors.textSecondary,
                         ),
                       ),
                     ],
@@ -301,12 +303,12 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
+                      color: colors.cardBg,
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white12),
+                      border: Border.all(color: colors.surfaceBorder),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.25),
+                          color: colors.shadowColor,
                           blurRadius: 16,
                           offset: const Offset(0, 8),
                         ),
@@ -326,7 +328,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                     style: GoogleFonts.poppins(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                      color: colors.textPrimary,
                                     ),
                                   ),
                                   Text(
@@ -347,16 +349,16 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF0F172A),
+                                  color: colors.secondaryBtnBg,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.5)),
+                                  border: Border.all(color: colors.secondaryBtnBorder),
                                 ),
                                 child: Text(
                                   _useCm ? 'Use ft/in' : 'Use cm',
                                   style: GoogleFonts.poppins(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF00E5FF),
+                                    color: colors.secondaryBtnText,
                                   ),
                                 ),
                               ),
@@ -366,13 +368,14 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                         const SizedBox(height: 16),
 
                         // Height Input
-                        Text('Height', style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF94A3B8))),
+                        Text('Height', style: GoogleFonts.poppins(fontSize: 12, color: colors.textSecondary)),
                         const SizedBox(height: 6),
                         if (_useCm) ...[
                           _buildCalculatorInput(
                             controller: _cmController,
                             hint: 'Height in cm (e.g. 175)',
                             fieldLabel: 'Height',
+                            colors: colors,
                           ),
                         ] else ...[
                           Row(
@@ -382,6 +385,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                   controller: _ftController,
                                   hint: 'Feet (ft)',
                                   fieldLabel: 'Height Feet',
+                                  colors: colors,
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -390,6 +394,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                   controller: _inController,
                                   hint: 'Inches (in)',
                                   fieldLabel: 'Height Inches',
+                                  colors: colors,
                                 ),
                               ),
                             ],
@@ -404,12 +409,13 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Weight (kg)', style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF94A3B8))),
+                                  Text('Weight (kg)', style: GoogleFonts.poppins(fontSize: 12, color: colors.textSecondary)),
                                   const SizedBox(height: 6),
                                   _buildCalculatorInput(
                                     controller: _weightController,
                                     hint: 'Weight in kg (e.g. 70)',
                                     fieldLabel: 'Weight',
+                                    colors: colors,
                                   ),
                                 ],
                               ),
@@ -419,12 +425,13 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Age (yrs)', style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF94A3B8))),
+                                  Text('Age (yrs)', style: GoogleFonts.poppins(fontSize: 12, color: colors.textSecondary)),
                                   const SizedBox(height: 6),
                                   _buildCalculatorInput(
                                     controller: _ageController,
                                     hint: 'Age in years (e.g. 25)',
                                     fieldLabel: 'Age',
+                                    colors: colors,
                                   ),
                                 ],
                               ),
@@ -450,10 +457,10 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(vertical: 8),
                                     decoration: BoxDecoration(
-                                      color: isSel ? const Color(0xFF1565C0) : const Color(0xFF0F172A),
+                                      color: isSel ? colors.primaryBlue : colors.secondaryBtnBg,
                                       borderRadius: BorderRadius.circular(10),
                                       border: Border.all(
-                                        color: isSel ? const Color(0xFF00E5FF) : Colors.white10,
+                                        color: isSel ? colors.cyanAccent : colors.secondaryBtnBorder,
                                       ),
                                     ),
                                     child: Center(
@@ -461,8 +468,8 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                         g,
                                         style: GoogleFonts.poppins(
                                           fontSize: 12,
-                                          fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                                          color: isSel ? Colors.white : const Color(0xFF94A3B8),
+                                          fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                                          color: isSel ? Colors.white : colors.secondaryBtnText,
                                         ),
                                       ),
                                     ),
@@ -480,8 +487,8 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                           child: ElevatedButton(
                             onPressed: () => _calculateGoal(provider),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF00E5FF),
-                              foregroundColor: const Color(0xFF0F172A),
+                              backgroundColor: colors.isDark ? const Color(0xFF00E5FF) : colors.primaryBlue,
+                              foregroundColor: colors.isDark ? const Color(0xFF0F172A) : Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
@@ -498,7 +505,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                           Container(
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF0F172A),
+                              color: colors.cardBgAlt,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.5)),
                             ),
@@ -510,7 +517,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                     const SizedBox(width: 8),
                                     Text(
                                       'Recommended Goal:',
-                                      style: GoogleFonts.poppins(fontSize: 12, color: Colors.white70),
+                                      style: GoogleFonts.poppins(fontSize: 12, color: colors.textSecondary),
                                     ),
                                     const Spacer(),
                                     Text(
@@ -585,6 +592,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                           title: 'Goal Status',
                           value: isSelectedGoalMet ? 'Completed' : 'Incomplete',
                           color: isSelectedGoalMet ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                          colors: colors,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -593,6 +601,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                           title: 'Perfect Days',
                           value: '${provider.perfectDaysCount} Days',
                           color: const Color(0xFFF59E0B),
+                          colors: colors,
                         ),
                       ),
                     ],
@@ -609,9 +618,9 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B),
+                        color: colors.cardBg,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.3)),
+                        border: Border.all(color: colors.surfaceBorder),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -634,29 +643,29 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                     children: [
                                       Text(
                                         'Rank Roadmap',
-                                        style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                                        style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: colors.textPrimary),
                                       ),
                                       const SizedBox(width: 6),
-                                      const Icon(Icons.info_outline, color: Color(0xFF00E5FF), size: 14),
+                                      Icon(Icons.info_outline, color: colors.cyanAccent, size: 14),
                                     ],
                                   ),
                                   Text(
                                     'Current: ${provider.currentRankName}',
-                                    style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF00E5FF), fontWeight: FontWeight.w600),
+                                    style: GoogleFonts.poppins(fontSize: 11, color: colors.cyanAccent, fontWeight: FontWeight.w600),
                                   ),
                                 ],
                               ),
                               const Spacer(),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF0F172A),
+                                  color: colors.secondaryBtnBg,
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.white12),
+                                  border: Border.all(color: colors.secondaryBtnBorder),
                                 ),
                                 child: Text(
                                   'View All',
-                                  style: GoogleFonts.poppins(fontSize: 10, color: const Color(0xFF94A3B8), fontWeight: FontWeight.w500),
+                                  style: GoogleFonts.poppins(fontSize: 10.5, color: colors.secondaryBtnText, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ],
@@ -667,11 +676,11 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                             children: [
                               Text(
                                 'Next: ${provider.nextRankName}',
-                                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF94A3B8)),
+                                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: colors.textSecondary),
                               ),
                               Text(
                                 '${provider.nextRankNeededMl} ml to unlock',
-                                style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF00E5FF)),
+                                style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: colors.cyanAccent),
                               ),
                             ],
                           ),
@@ -681,8 +690,8 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                             child: LinearProgressIndicator(
                               value: provider.nextRankProgressRatio,
                               minHeight: 10,
-                              backgroundColor: const Color(0xFF0F172A),
-                              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00E5FF)),
+                              backgroundColor: colors.emptyComponentBg,
+                              valueColor: AlwaysStoppedAnimation<Color>(colors.cyanAccent),
                             ),
                           ),
                         ],
@@ -698,9 +707,9 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
+                      color: colors.cardBg,
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: Colors.white10),
+                      border: Border.all(color: colors.surfaceBorder),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -712,7 +721,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: colors.textPrimary,
                               ),
                             ),
                             const Spacer(),
@@ -765,7 +774,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                               } else if (ratio > 0) {
                                 tileColor = const Color(0xFFF97316); // 1-49%
                               } else {
-                                tileColor = const Color(0xFF0F172A); // 0%
+                                tileColor = colors.emptyComponentBg; // 0%
                               }
 
                               return InkWell(
@@ -778,8 +787,8 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                     borderRadius: BorderRadius.circular(4),
                                     border: Border.all(
                                       color: isSelected
-                                          ? Colors.white
-                                          : (isToday ? const Color(0xFF00E5FF) : Colors.white10),
+                                          ? colors.cyanAccent
+                                          : (isToday ? colors.cyanAccent : colors.emptyComponentBorder),
                                       width: isSelected ? 1.5 : (isToday ? 1.2 : 0.6),
                                     ),
                                   ),
@@ -790,15 +799,15 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                             style: GoogleFonts.poppins(
                                               fontSize: 9,
                                               fontWeight: FontWeight.bold,
-                                              color: Colors.white,
+                                              color: (ratio == 0 && !colors.isDark) ? colors.textPrimary : Colors.white,
                                             ),
                                           )
                                         : (isSelected
                                             ? Container(
                                                 width: 3,
                                                 height: 3,
-                                                decoration: const BoxDecoration(
-                                                  color: Colors.white,
+                                                decoration: BoxDecoration(
+                                                  color: (ratio == 0 && !colors.isDark) ? colors.cyanAccent : Colors.white,
                                                   shape: BoxShape.circle,
                                                 ),
                                               )
@@ -816,10 +825,10 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            _buildLegendItem('100%+', const Color(0xFF10B981)),
-                            _buildLegendItem('50-99%', const Color(0xFF3B82F6)),
-                            _buildLegendItem('1-49%', const Color(0xFFF97316)),
-                            _buildLegendItem('0%', const Color(0xFF0F172A)),
+                            _buildLegendItem('100%+', const Color(0xFF10B981), colors),
+                            _buildLegendItem('50-99%', const Color(0xFF3B82F6), colors),
+                            _buildLegendItem('1-49%', const Color(0xFFF97316), colors),
+                            _buildLegendItem('0%', colors.emptyComponentBg, colors),
                           ],
                         ),
                       ],
@@ -834,9 +843,9 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
+                      color: colors.cardBg,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white10),
+                      border: Border.all(color: colors.surfaceBorder),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -849,7 +858,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: colors.textPrimary,
                               ),
                             ),
                             Text(
@@ -885,7 +894,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: provider.selectedDateLogs.length,
-                            separatorBuilder: (context, index) => const Divider(color: Colors.white10, height: 1),
+                            separatorBuilder: (context, index) => Divider(color: colors.surfaceBorder, height: 1),
                             itemBuilder: (context, index) {
                               final log = provider.selectedDateLogs[index];
                               return Padding(
@@ -895,10 +904,11 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                     Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF0F172A),
+                                        color: colors.secondaryBtnBg,
                                         borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: colors.secondaryBtnBorder),
                                       ),
-                                      child: const Icon(Icons.water_drop_rounded, color: Color(0xFF00E5FF), size: 18),
+                                      child: Icon(Icons.water_drop_rounded, color: colors.cyanAccent, size: 18),
                                     ),
                                     const SizedBox(width: 12),
                                     Column(
@@ -909,12 +919,12 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                           style: GoogleFonts.poppins(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.white,
+                                            color: colors.textPrimary,
                                           ),
                                         ),
                                         Text(
                                           DateFormat('hh:mm a').format(log.timestamp),
-                                          style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF94A3B8)),
+                                          style: GoogleFonts.poppins(fontSize: 11, color: colors.textSecondary),
                                         ),
                                       ],
                                     ),
@@ -922,7 +932,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                     // Can only delete logs of current day
                                     if (isTodaySelected)
                                       IconButton(
-                                        icon: const Icon(Icons.delete_outline, color: Colors.white38, size: 20),
+                                        icon: Icon(Icons.delete_outline, color: colors.textSecondary, size: 20),
                                         onPressed: () => _confirmDeleteLog(context, provider, log.id!),
                                       ),
                                   ],
@@ -943,9 +953,9 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
+                      color: colors.cardBg,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white10),
+                      border: Border.all(color: colors.surfaceBorder),
                     ),
                     child: Column(
                       children: [
@@ -958,18 +968,18 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                 children: [
                                   Text(
                                     'Meal Times Schedule',
-                                    style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                                    style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: colors.textPrimary),
                                   ),
                                   Text(
                                     'Set times to receive post-meal reminders',
-                                    style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF94A3B8)),
+                                    style: GoogleFonts.poppins(fontSize: 11, color: colors.textSecondary),
                                   ),
                                 ],
                               ),
                               const Spacer(),
                               Icon(
                                 _isMealsExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                                color: Colors.white70,
+                                color: colors.textSecondary,
                               ),
                             ],
                           ),
@@ -977,9 +987,9 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
 
                         if (_isMealsExpanded) ...[
                           const SizedBox(height: 16),
-                          _buildMealRow(context, 'Breakfast', 'bfast', _bfastTime),
-                          _buildMealRow(context, 'Lunch', 'lunch', _lunchTime),
-                          _buildMealRow(context, 'Dinner', 'dinner', _dinnerTime),
+                          _buildMealRow(context, 'Breakfast', 'bfast', _bfastTime, colors),
+                          _buildMealRow(context, 'Lunch', 'lunch', _lunchTime, colors),
+                          _buildMealRow(context, 'Dinner', 'dinner', _dinnerTime, colors),
                           const SizedBox(height: 12),
                           SizedBox(
                             width: double.infinity,
@@ -1014,19 +1024,21 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
   Widget _buildCalculatorInput({
     required TextEditingController controller,
     required String hint,
+    required AppColors colors,
     String? fieldLabel,
   }) {
     return TextField(
       controller: controller,
       keyboardType: TextInputType.number,
-      style: GoogleFonts.poppins(color: Colors.white, fontSize: 13),
+      style: GoogleFonts.poppins(color: colors.textPrimary, fontSize: 13),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.poppins(color: Colors.white38, fontSize: 12),
+        hintStyle: GoogleFonts.poppins(color: colors.textMuted, fontSize: 12),
         filled: true,
-        fillColor: const Color(0xFF0F172A),
+        fillColor: colors.cardBgAlt,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: colors.surfaceBorder)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: colors.surfaceBorder)),
       ),
       onSubmitted: (val) {
         if (fieldLabel != null && val.trim().isNotEmpty) {
@@ -1040,14 +1052,22 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
     required String title,
     required String value,
     required Color color,
+    required AppColors colors,
     IconData? trailingIcon,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: colors.cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadowColor,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1058,7 +1078,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
               Expanded(
                 child: Text(
                   title,
-                  style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF94A3B8)),
+                  style: GoogleFonts.poppins(fontSize: 11, color: colors.textSecondary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1082,7 +1102,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
     );
   }
 
-  Widget _buildLegendItem(String label, Color color) {
+  Widget _buildLegendItem(String label, Color color, AppColors colors) {
     return Row(
       children: [
         Container(
@@ -1091,36 +1111,37 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(2),
+            border: Border.all(color: colors.emptyComponentBorder, width: 0.5),
           ),
         ),
         const SizedBox(width: 4),
         Text(
           label,
-          style: GoogleFonts.poppins(fontSize: 10, color: const Color(0xFF94A3B8)),
+          style: GoogleFonts.poppins(fontSize: 10, color: colors.textSecondary),
         ),
       ],
     );
   }
 
-  Widget _buildMealRow(BuildContext context, String label, String key, TimeOfDay time) {
+  Widget _buildMealRow(BuildContext context, String label, String key, TimeOfDay time, AppColors colors) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: GoogleFonts.poppins(fontSize: 13, color: Colors.white)),
+          Text(label, style: GoogleFonts.poppins(fontSize: 13, color: colors.textPrimary)),
           InkWell(
             onTap: () => _selectMealTime(context, key),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFF0F172A),
+                color: colors.cardBgAlt,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.white24),
+                border: Border.all(color: colors.surfaceBorder),
               ),
               child: Text(
                 time.format(context),
-                style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF00E5FF)),
+                style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: colors.cyanAccent),
               ),
             ),
           ),
