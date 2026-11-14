@@ -292,17 +292,15 @@ class _AdvancedOptionsScreenState extends State<AdvancedOptionsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'Home & Lock Screen Widget',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 15.5,
-                                          fontWeight: FontWeight.bold,
-                                          color: colors.textPrimary,
-                                        ),
-                                      ),
-                                    ],
+                                  Text(
+                                    'Home & Lock Screen Widget',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: colors.textPrimary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 2),
                                   Container(
@@ -311,13 +309,17 @@ class _AdvancedOptionsScreenState extends State<AdvancedOptionsScreen> {
                                       color: colors.cyanAccent.withValues(alpha: 0.12),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
-                                    child: Text(
-                                      'QUICK INTAKE ENTRY • ZERO LAUNCH DELAY',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: colors.cyanAccent,
-                                        letterSpacing: 0.4,
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        'QUICK INTAKE ENTRY • ZERO LAUNCH DELAY',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: colors.cyanAccent,
+                                          letterSpacing: 0.4,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -571,10 +573,14 @@ class _AdvancedOptionsScreenState extends State<AdvancedOptionsScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                'Battery Optimization:',
-                                style: GoogleFonts.poppins(fontSize: 12.5, color: colors.textSecondary),
+                              Expanded(
+                                child: Text(
+                                  'Battery Optimization:',
+                                  style: GoogleFonts.poppins(fontSize: 12.5, color: colors.textSecondary),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
+                              const SizedBox(width: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
@@ -584,7 +590,7 @@ class _AdvancedOptionsScreenState extends State<AdvancedOptionsScreen> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  _isBatteryExempt ? 'EXEMPTED (OPTIMAL)' : 'NOT EXEMPTED',
+                                  _isBatteryExempt ? 'EXEMPTED' : 'NOT EXEMPTED',
                                   style: GoogleFonts.poppins(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,

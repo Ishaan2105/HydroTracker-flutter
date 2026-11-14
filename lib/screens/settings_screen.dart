@@ -956,14 +956,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   color: isDay ? Colors.amber : colors.cyanAccent,
                                 ),
                                 const SizedBox(width: 5),
-                                Text(
-                                  isDay
-                                      ? 'Active now: Light Mode (Daytime)'
-                                      : 'Active now: Dark Mode (Nighttime)',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: colors.textPrimary,
+                                Flexible(
+                                  child: Text(
+                                    isDay
+                                        ? 'Active: Light (Daytime)'
+                                        : 'Active: Dark (Nighttime)',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: colors.textPrimary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
