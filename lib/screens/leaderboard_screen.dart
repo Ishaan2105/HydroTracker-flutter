@@ -114,54 +114,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 // Top App Bar
                 const HydroTopBar(),
 
-                // Sub-header Banner: Live Standings badge
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: colors.cyanAccent.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: colors.cyanAccent.withValues(alpha: 0.3)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Color(0xFF10B981),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Global Community Streaks',
-                              style: GoogleFonts.poppins(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: colors.cyanAccent,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '${_entries.length} Hydrators',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: colors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
                 // Main Content with Pull-to-Refresh
                 Expanded(
                   child: RefreshIndicator(
