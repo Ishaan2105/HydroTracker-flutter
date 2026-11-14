@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'providers/hydration_provider.dart';
+import 'screens/auth_gate_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'services/app_logger.dart';
+import 'services/cloud_sync_service.dart';
 import 'services/notification_service.dart';
 
 void main() async {
@@ -28,6 +30,14 @@ void main() async {
 
   AppLogger.info('AppLifecycle', '🚀 Hydro Tracker starting up...');
 
+  // 3. Initialize Firebase & Cloud Sync
+  try {
+    await CloudSyncService.init();
+    AppLogger.info('CloudSyncService', 'CloudSyncService initialized.');
+  } catch (e, st) {
+    AppLogger.error('CloudSyncService', 'Failed to initialize cloud sync', e, st);
+  }
+
   try {
     await NotificationService.init();
     AppLogger.info('NotificationService', 'NotificationService initialized.');
@@ -41,6 +51,11 @@ void main() async {
     AppLogger.info('HydrationProvider', 'HydrationProvider state loaded.');
   } catch (e, st) {
     AppLogger.error('HydrationProvider', 'Failed to initialize hydration provider', e, st);
+  }
+
+  // 4. If already authenticated, trigger background cloud sync
+  if (CloudSyncService.instance.isSignedIn) {
+    CloudSyncService.instance.performFullTwoWaySync(hydrationProvider);
   }
 
   runApp(
@@ -87,7 +102,9 @@ class HydroTrackerApp extends StatelessWidget {
               ThemeData.light().textTheme,
             ),
           ),
-          home: const MainNavigationScreen(),
+          home: CloudSyncService.instance.isSignedIn
+              ? const MainNavigationScreen()
+              : const AuthGateScreen(),
         );
       },
     );

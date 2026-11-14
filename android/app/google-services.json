@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "947508151584",
+    "project_id": "water-475d7",
+    "storage_bucket": "water-475d7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:947508151584:android:f2130fd0eea35350ecc345",
+        "android_client_info": {
+          "package_name": "com.threestack.hydrotracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "947508151584-algtr04k4su4tdfgp7oadjfdqivq6eud.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.threestack.hydrotracker",
+            "certificate_hash": "208a94346a3b7394998b3460dd70d5b8909677e8"
+          }
+        },
+        {
+          "client_id": "947508151584-n11v1sfrb594l4vr31lch2uh7podq9jj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAT-mNzeNZnzx3lV3sv6yyAutfJsJ0zZYY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "947508151584-n11v1sfrb594l4vr31lch2uh7podq9jj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

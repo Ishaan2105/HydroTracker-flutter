@@ -5,6 +5,7 @@ import '../services/db_helper.dart';
 import '../services/pref_service.dart';
 import '../services/notification_service.dart';
 import '../services/app_logger.dart';
+import '../services/cloud_sync_service.dart';
 import '../services/widget_service.dart';
 
 class DayTrendData {
@@ -285,11 +286,13 @@ class HydrationProvider extends ChangeNotifier {
         final amount = item['amount'] as int;
         final timestamp = item['timestamp'] as DateTime;
         final dateStr = formatDateString(timestamp);
-        await DBHelper.instance.insertLog(WaterLog(
+        final newLog = WaterLog(
           amountMl: amount,
           timestamp: timestamp,
           dateString: dateStr,
-        ));
+        );
+        await DBHelper.instance.insertLog(newLog);
+        CloudSyncService.instance.syncSingleLog(newLog);
       }
       await loadHistoryStats();
       await loadInsightsData();
@@ -798,6 +801,7 @@ class HydrationProvider extends ChangeNotifier {
       );
 
       await DBHelper.instance.insertLog(log);
+      CloudSyncService.instance.syncSingleLog(log);
       await loadTodayData();
       await loadHistoryStats();
       await loadInsightsData();
@@ -811,6 +815,7 @@ class HydrationProvider extends ChangeNotifier {
       final lastLog = await DBHelper.instance.getLastLogForDate(todayDateString);
       if (lastLog != null && lastLog.id != null) {
         await DBHelper.instance.deleteLog(lastLog.id!);
+        CloudSyncService.instance.deleteSingleLog(lastLog.timestamp);
         _todayLogs = await DBHelper.instance.getLogsForDate(todayDateString);
         _todayIntakeMl = 0;
         for (var log in _todayLogs) {
@@ -833,7 +838,12 @@ class HydrationProvider extends ChangeNotifier {
 
   Future<void> deleteLogById(int id) async {
     try {
+      final allLogs = await DBHelper.instance.getAllLogs();
+      final target = allLogs.where((l) => l.id == id).firstOrNull;
       await DBHelper.instance.deleteLog(id);
+      if (target != null) {
+        CloudSyncService.instance.deleteSingleLog(target.timestamp);
+      }
       _todayLogs = await DBHelper.instance.getLogsForDate(todayDateString);
       _todayIntakeMl = 0;
       for (var log in _todayLogs) {
@@ -879,6 +889,11 @@ class HydrationProvider extends ChangeNotifier {
     WidgetService.updateWidgetData(_todayIntakeMl, _dailyGoalMl);
     notifyListeners(); // Notify instantly so UI updates in 0ms!
     await PrefService.setGoal(newGoalMl);
+    CloudSyncService.instance.syncProfileSettings(
+      dailyGoalMl: newGoalMl,
+      userName: _userName,
+      themeMode: _themeMode,
+    );
     await loadHistoryStats();
     await loadInsightsData();
   }
@@ -887,6 +902,11 @@ class HydrationProvider extends ChangeNotifier {
     _themeMode = mode;
     _isDarkMode = isDarkMode;
     await PrefService.setThemeMode(mode);
+    CloudSyncService.instance.syncProfileSettings(
+      dailyGoalMl: _dailyGoalMl,
+      userName: _userName,
+      themeMode: mode,
+    );
     notifyListeners();
   }
 
@@ -907,6 +927,11 @@ class HydrationProvider extends ChangeNotifier {
   Future<void> updateUserName(String name) async {
     _userName = name;
     await PrefService.setUserName(name);
+    CloudSyncService.instance.syncProfileSettings(
+      dailyGoalMl: _dailyGoalMl,
+      userName: name,
+      themeMode: _themeMode,
+    );
     notifyListeners();
   }
 

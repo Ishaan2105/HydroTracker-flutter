@@ -5,9 +5,11 @@ import 'package:provider/provider.dart';
 import '../providers/hydration_provider.dart';
 import '../services/pref_service.dart';
 import '../services/notification_service.dart';
+import '../services/cloud_sync_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/hydro_top_bar.dart';
 import '../widgets/waves_background.dart';
+import 'auth_gate_screen.dart';
 // import '../widgets/diagnostic_logs_sheet.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -157,6 +159,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 16),
                   ],
+
+                  // 0. Google Cloud Sync & Account Section
+                  _buildCloudSyncCard(context, provider, colors),
+                  const SizedBox(height: 16),
 
                   // 1. User Profile Section
                   _buildCard(
@@ -544,6 +550,166 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
       },
+    );
+  }
+
+  Widget _buildCloudSyncCard(BuildContext context, HydrationProvider provider, AppColors colors) {
+    final user = CloudSyncService.instance.currentUser;
+    final isSignedIn = user != null;
+
+    return _buildCard(
+      title: 'Google Cloud Sync',
+      subtitle: isSignedIn
+          ? 'Real-time backup active across all devices'
+          : 'Connect account to preserve streaks & logs',
+      colors: colors,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (isSignedIn) ...[
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: const Color(0xFF0284C7).withOpacity(0.2),
+                  backgroundImage: (user.photoURL != null && user.photoURL!.isNotEmpty)
+                      ? NetworkImage(user.photoURL!)
+                      : null,
+                  child: (user.photoURL == null || user.photoURL!.isEmpty)
+                      ? Text(
+                          (user.displayName ?? user.email ?? 'U')[0].toUpperCase(),
+                          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: const Color(0xFF0284C7)),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.displayName ?? 'HydroBuddy',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: colors.textPrimary, fontSize: 14),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        user.email ?? '',
+                        style: GoogleFonts.poppins(color: colors.textMuted, fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF10B981)),
+                      const SizedBox(width: 4),
+                      Text('Synced', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF10B981))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Syncing with Google Cloud...', style: GoogleFonts.poppins()),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                      await CloudSyncService.instance.performFullTwoWaySync(provider);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: const Color(0xFF10B981),
+                            content: Text('Cloud sync complete! Everything up to date.', style: GoogleFonts.poppins()),
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.sync_rounded, size: 16),
+                    label: Text('Sync Now', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF0284C7),
+                      side: const BorderSide(color: Color(0xFF0284C7)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                OutlinedButton(
+                  onPressed: () async {
+                    await CloudSyncService.instance.signOut();
+                    if (context.mounted) {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const AuthGateScreen()),
+                        (route) => false,
+                      );
+                    }
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                    side: BorderSide(color: Colors.redAccent.withOpacity(0.4)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('Sign Out', style: GoogleFonts.poppins(fontSize: 13)),
+                ),
+              ],
+            ),
+          ] else ...[
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF59E0B).withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.cloud_off_rounded, color: Color(0xFFF59E0B), size: 18),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Stored only on this device. Sign in to sync across devices.',
+                    style: GoogleFonts.poppins(color: colors.textMuted, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const AuthGateScreen()),
+                  );
+                },
+                icon: const Icon(Icons.login_rounded, size: 16),
+                label: Text('Link Google Account', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1565C0),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
