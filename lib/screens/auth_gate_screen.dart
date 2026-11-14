@@ -148,31 +148,37 @@ class _AuthGateScreenState extends State<AuthGateScreen> with SingleTickerProvid
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Animated Floating Water Droplet Logo
+                    // Animated Floating App Logo
                     ScaleTransition(
                       scale: _pulseAnimation,
                       child: Container(
-                        width: 100,
-                        height: 100,
+                        width: 96,
+                        height: 96,
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF00E5FF), Color(0xFF1565C0)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                          borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF00E5FF).withOpacity(0.4),
+                              color: const Color(0xFF00E5FF).withValues(alpha: 0.35),
                               blurRadius: 24,
-                              spreadRadius: 4,
+                              spreadRadius: 2,
+                              offset: const Offset(0, 6),
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.water_drop_rounded,
-                          size: 54,
-                          color: Colors.white,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: Image.asset(
+                            'assets/images/logo.jpeg',
+                            width: 96,
+                            height: 96,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Image.asset(
+                              'assets/images/app_logo.png',
+                              width: 96,
+                              height: 96,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                         ),
                       ),
                     ),
