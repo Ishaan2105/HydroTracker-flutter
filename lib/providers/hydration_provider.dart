@@ -65,6 +65,7 @@ class HydrationProvider extends ChangeNotifier {
   /// Times that should fire only ONCE (not repeat daily). Default = empty → all daily.
   List<String> _oneTimeReminderTimes = [];
   bool _isSoloOptIn = true;
+  bool _isLeaderboardOptIn = true;
   String _themeMode = 'auto'; // 'auto' (schedule: 6:30 AM Light / 6:30 PM Dark), 'light', 'dark'
   bool _isDarkMode = true;
 
@@ -75,6 +76,7 @@ class HydrationProvider extends ChangeNotifier {
   String get userName => _userName;
   List<WaterLog> get todayLogs => _todayLogs;
   bool get isStreakBannerDismissed => _isStreakBannerDismissed;
+  bool get isLeaderboardOptIn => _isLeaderboardOptIn;
   String get themeMode => _themeMode;
 
   /// Returns true if [dt] (or DateTime.now()) falls within the daytime window:
@@ -223,6 +225,7 @@ class HydrationProvider extends ChangeNotifier {
       _disabledReminderTimes = await PrefService.getDisabledReminderTimes();
       _oneTimeReminderTimes = await PrefService.getOneTimeReminderTimes();
       _isSoloOptIn = await PrefService.getSoloOptIn();
+      _isLeaderboardOptIn = await PrefService.getLeaderboardOptIn();
       _themeMode = await PrefService.getThemeMode();
       _isDarkMode = isDarkMode;
 
@@ -697,6 +700,13 @@ class HydrationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> toggleLeaderboardOptIn(bool val) async {
+    _isLeaderboardOptIn = val;
+    notifyListeners();
+    await PrefService.setLeaderboardOptIn(val);
+    await CloudSyncService.instance.updateLeaderboardParticipation(this, val);
+  }
+
   Future<void> clearAllData() async {
     // 1. Wipe all local SQLite database logs
     await DBHelper.instance.clearAllLogs();
@@ -805,7 +815,9 @@ class HydrationProvider extends ChangeNotifier {
       await loadTodayData();
       await loadHistoryStats();
       await loadInsightsData();
-      CloudSyncService.instance.syncLeaderboardEntry(this);
+      if (_isLeaderboardOptIn) {
+        CloudSyncService.instance.syncLeaderboardEntry(this);
+      }
     } catch (e, st) {
       AppLogger.error('HydrationProvider', 'logWater failed: $e', e, st);
     }

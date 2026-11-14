@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -297,6 +298,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           value: provider.isPostMealNotifEnabled,
                           activeColor: colors.cyanAccent,
                           onChanged: (val) => provider.togglePostMealNotif(val),
+                        ),
+                        Divider(color: colors.surfaceBorder),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            'Participate in Global Leaderboard',
+                            style: GoogleFonts.poppins(fontSize: 13, color: colors.textPrimary),
+                          ),
+                          subtitle: Text(
+                            provider.isLeaderboardOptIn
+                                ? 'Your streak & name are public on the community board'
+                                : 'Private mode: You can view rankings without participating',
+                            style: GoogleFonts.poppins(fontSize: 11, color: colors.textSecondary),
+                          ),
+                          value: provider.isLeaderboardOptIn,
+                          activeColor: colors.cyanAccent,
+                          onChanged: (val) async {
+                            HapticFeedback.lightImpact();
+                            final isSignedIn = CloudSyncService.instance.isSignedIn;
+                            if (!isSignedIn && val) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Please sign in with Google to participate in the global leaderboard.',
+                                    style: GoogleFonts.poppins(),
+                                  ),
+                                  action: SnackBarAction(
+                                    label: 'Sign In',
+                                    textColor: colors.cyanAccent,
+                                    onPressed: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(builder: (_) => const AuthGateScreen()),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+                            await provider.toggleLeaderboardOptIn(val);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: val ? const Color(0xFF10B981) : const Color(0xFF64748B),
+                                  content: Text(
+                                    val
+                                        ? 'Public Mode: Your streak is now live on the leaderboard!'
+                                        : 'Private Mode: Your streak was removed from public rankings.',
+                                    style: GoogleFonts.poppins(fontSize: 12),
+                                  ),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          },
                         ),
                         const SizedBox(height: 10),
                         Row(

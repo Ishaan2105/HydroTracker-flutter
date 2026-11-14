@@ -285,8 +285,10 @@ class CloudSyncService {
       await provider.loadHistoryStats();
       await provider.loadInsightsData();
 
-      // 7. Sync updated streak & volume to global leaderboard
-      await syncLeaderboardEntry(provider);
+      // 7. Sync updated streak & volume to global leaderboard if opted in
+      if (provider.isLeaderboardOptIn) {
+        await syncLeaderboardEntry(provider);
+      }
 
       AppLogger.info('CloudSyncService', 'Cloud sync finished successfully. Restored $syncedCount logs into local cache.');
     } catch (e, st) {
@@ -302,6 +304,7 @@ class CloudSyncService {
   Future<void> syncLeaderboardEntry(HydrationProvider provider) async {
     final user = currentUser;
     if (user == null) return;
+    if (!provider.isLeaderboardOptIn) return;
 
     try {
       final name = (provider.userName.trim().isNotEmpty && provider.userName != 'HydroBuddy')
@@ -319,6 +322,37 @@ class CloudSyncService {
       }, SetOptions(merge: true));
     } catch (e, st) {
       AppLogger.error('CloudSyncService', 'syncLeaderboardEntry failed: $e', e, st);
+    }
+  }
+
+  /// Updates user opt-in status in cloud profile and adds/removes public leaderboard entry
+  Future<void> updateLeaderboardParticipation(HydrationProvider provider, bool isOptedIn) async {
+    final user = currentUser;
+    if (user == null) return;
+
+    try {
+      // 1. Record choice in private cloud profile
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('profile')
+          .doc('settings')
+          .set({'leaderboard_opt_in': isOptedIn}, SetOptions(merge: true));
+
+      if (!isOptedIn) {
+        // 2. Delist user from public leaderboard immediately
+        await _firestore
+            .collection('public_leaderboard')
+            .doc(user.uid)
+            .delete();
+        AppLogger.info('CloudSyncService', 'User delisted from public leaderboard.');
+      } else {
+        // 3. Relist user with active stats immediately
+        await syncLeaderboardEntry(provider);
+        AppLogger.info('CloudSyncService', 'User relisted on public leaderboard.');
+      }
+    } catch (e, st) {
+      AppLogger.error('CloudSyncService', 'updateLeaderboardParticipation error: $e', e, st);
     }
   }
 
@@ -345,7 +379,7 @@ class CloudSyncService {
 
     // Ensure current signed-in Firebase user has their latest live streak & volume reflected
     final user = currentUser;
-    if (user != null) {
+    if (user != null && provider.isLeaderboardOptIn) {
       final currentName = (provider.userName.trim().isNotEmpty && provider.userName != 'HydroBuddy')
           ? provider.userName
           : (user.displayName ?? 'Hydro User');
@@ -359,6 +393,9 @@ class CloudSyncService {
         lifetimeVolumeMl: provider.lifetimeVolumeMl,
         updatedAt: DateTime.now(),
       );
+    } else if (user != null && !provider.isLeaderboardOptIn) {
+      // User opted out: remove from public list
+      entryMap.remove(user.uid);
     }
 
     // Sort strictly:

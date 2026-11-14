@@ -15,6 +15,7 @@ class PrefService {
   static const String keyPostMealNotif = 'post_meal_notif';
   static const String keyReminderTimes = 'reminder_times';
   static const String keySoloOptIn = 'solo_opt_in';
+  static const String keyLeaderboardOptIn = 'leaderboard_opt_in';
 
   static String formatTo12H(String timeStr) {
     try {
@@ -168,6 +169,16 @@ class PrefService {
   static Future<void> setSoloOptIn(bool val) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(keySoloOptIn, val);
+  }
+
+  static Future<bool> getLeaderboardOptIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(keyLeaderboardOptIn) ?? true;
+  }
+
+  static Future<void> setLeaderboardOptIn(bool val) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(keyLeaderboardOptIn, val);
   }
 
   static const String keyDisabledReminderTimes = 'disabled_reminder_times';

@@ -288,13 +288,20 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               ],
             ),
 
-            // 4. Sticky Floating "Your Rank" Footer
-            if (userEntry != null)
+            // 4. Sticky Floating Footer (Your Rank OR Incognito Mode)
+            if (userEntry != null && provider.isLeaderboardOptIn)
               Positioned(
                 left: 16,
                 right: 16,
                 bottom: 14,
                 child: _buildStickyUserRankFooter(userEntry, colors),
+              )
+            else if (!provider.isLeaderboardOptIn)
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 14,
+                child: _buildPrivateModeFooter(context, provider, colors),
               ),
           ],
         ),
@@ -899,6 +906,90 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             Icon(Icons.arrow_upward_rounded, size: 16, color: colors.cyanAccent),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPrivateModeFooter(BuildContext context, HydrationProvider provider, AppColors colors) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: colors.cardBg.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: colors.surfaceBorder, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: colors.cardBgAlt,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.visibility_off_rounded, size: 18, color: Color(0xFF94A3B8)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Incognito Mode',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                Text(
+                  'You are browsing the leaderboard privately',
+                  style: GoogleFonts.poppins(
+                    fontSize: 10.5,
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: () async {
+              HapticFeedback.lightImpact();
+              await provider.toggleLeaderboardOptIn(true);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: const Color(0xFF10B981),
+                    content: Text(
+                      'Welcome to the leaderboard! Your streak is now active.',
+                      style: GoogleFonts.poppins(fontSize: 12),
+                    ),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colors.cyanAccent,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 0,
+            ),
+            child: Text(
+              'Join Board',
+              style: GoogleFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
       ),
     );
   }
