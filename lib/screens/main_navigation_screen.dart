@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 import '../widgets/waves_background.dart';
 import 'home_screen.dart';
 import 'trends_insights_screen.dart';
+import 'leaderboard_screen.dart';
 import 'advanced_options_screen.dart';
 import 'settings_screen.dart';
 
@@ -24,6 +25,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
   final List<Widget> _screens = const [
     HomeScreen(),
     TrendsInsightsScreen(),
+    LeaderboardScreen(),
     AdvancedOptionsScreen(),
   ];
 
@@ -74,7 +76,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
       // Trends & Insights tab: reload today's data, history stats, and insights data
       provider.loadTodayData();
       provider.loadHistoryStats().then((_) => provider.loadInsightsData());
-    } else if (index == 2) {
+    } else if (index == 3) {
       // Advanced Options tab: make sure today's intake is fresh for the widget preview
       provider.loadTodayData();
     }
@@ -122,20 +124,24 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
           showUnselectedLabels: true,
           type: BottomNavigationBarType.fixed,
           elevation: 8,
-          selectedFontSize: 12,
-          unselectedFontSize: 11,
+          selectedFontSize: 11,
+          unselectedFontSize: 10,
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded),
+              icon: Icon(Icons.water_drop_rounded),
               label: 'Home',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.auto_graph_rounded),
-              label: 'Trends & Insights',
+              label: 'Insights',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.emoji_events_rounded),
+              label: 'Leaderboard',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.widgets_rounded),
-              label: 'Advanced Options',
+              label: 'Advanced',
             ),
           ],
         ),

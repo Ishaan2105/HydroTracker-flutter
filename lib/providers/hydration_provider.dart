@@ -805,6 +805,7 @@ class HydrationProvider extends ChangeNotifier {
       await loadTodayData();
       await loadHistoryStats();
       await loadInsightsData();
+      CloudSyncService.instance.syncLeaderboardEntry(this);
     } catch (e, st) {
       AppLogger.error('HydrationProvider', 'logWater failed: $e', e, st);
     }
