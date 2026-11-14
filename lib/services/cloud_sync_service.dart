@@ -322,8 +322,7 @@ class CloudSyncService {
     }
   }
 
-  /// Fetches global leaderboard rankings sorted by Current Streak (descending)
-  /// with Lifetime Volume as tie-breaker.
+  /// Fetches global leaderboard rankings for registered Firebase users only.
   Future<List<LeaderboardEntry>> fetchLeaderboardEntries(HydrationProvider provider) async {
     final Map<String, LeaderboardEntry> entryMap = {};
 
@@ -336,86 +335,30 @@ class CloudSyncService {
 
       for (var doc in snapshot.docs) {
         final entry = LeaderboardEntry.fromMap(doc.data(), docId: doc.id);
-        entryMap[entry.uid] = entry;
+        if (entry.uid.isNotEmpty) {
+          entryMap[entry.uid] = entry;
+        }
       }
     } catch (e, st) {
       AppLogger.error('CloudSyncService', 'fetchLeaderboardEntries from Firestore error: $e', e, st);
     }
 
-    // Ensure current user's latest stats are represented accurately
+    // Ensure current signed-in Firebase user has their latest live streak & volume reflected
     final user = currentUser;
-    final currentUid = user?.uid ?? 'local_user';
-    final currentName = provider.userName.trim().isNotEmpty
-        ? provider.userName
-        : (user?.displayName ?? 'You');
+    if (user != null) {
+      final currentName = (provider.userName.trim().isNotEmpty && provider.userName != 'HydroBuddy')
+          ? provider.userName
+          : (user.displayName ?? 'Hydro User');
 
-    entryMap[currentUid] = LeaderboardEntry(
-      uid: currentUid,
-      displayName: currentName,
-      photoUrl: user?.photoURL,
-      currentStreak: provider.currentStreak,
-      bestStreak: provider.bestStreak,
-      lifetimeVolumeMl: provider.lifetimeVolumeMl,
-      updatedAt: DateTime.now(),
-    );
-
-    // Baseline curated community hydration members for a vibrant podium
-    final communitySeed = [
-      LeaderboardEntry(
-        uid: 'seed_1',
-        displayName: 'Aria Chen',
-        currentStreak: 21,
-        bestStreak: 28,
-        lifetimeVolumeMl: 58500,
-      ),
-      LeaderboardEntry(
-        uid: 'seed_2',
-        displayName: 'Marcus Vance',
-        currentStreak: 14,
-        bestStreak: 19,
-        lifetimeVolumeMl: 42000,
-      ),
-      LeaderboardEntry(
-        uid: 'seed_3',
-        displayName: 'Elena Rostova',
-        currentStreak: 10,
-        bestStreak: 14,
-        lifetimeVolumeMl: 31500,
-      ),
-      LeaderboardEntry(
-        uid: 'seed_4',
-        displayName: 'David Miller',
-        currentStreak: 7,
-        bestStreak: 12,
-        lifetimeVolumeMl: 24000,
-      ),
-      LeaderboardEntry(
-        uid: 'seed_5',
-        displayName: 'Sofia Gomez',
-        currentStreak: 5,
-        bestStreak: 9,
-        lifetimeVolumeMl: 18500,
-      ),
-      LeaderboardEntry(
-        uid: 'seed_6',
-        displayName: 'Kenji Sato',
-        currentStreak: 4,
-        bestStreak: 7,
-        lifetimeVolumeMl: 15000,
-      ),
-      LeaderboardEntry(
-        uid: 'seed_7',
-        displayName: 'Liam O\'Connor',
-        currentStreak: 2,
-        bestStreak: 6,
-        lifetimeVolumeMl: 9500,
-      ),
-    ];
-
-    for (var seed in communitySeed) {
-      if (!entryMap.containsKey(seed.uid)) {
-        entryMap[seed.uid] = seed;
-      }
+      entryMap[user.uid] = LeaderboardEntry(
+        uid: user.uid,
+        displayName: currentName,
+        photoUrl: user.photoURL,
+        currentStreak: provider.currentStreak,
+        bestStreak: provider.bestStreak,
+        lifetimeVolumeMl: provider.lifetimeVolumeMl,
+        updatedAt: DateTime.now(),
+      );
     }
 
     // Sort strictly:

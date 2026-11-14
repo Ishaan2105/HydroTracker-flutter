@@ -197,6 +197,50 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                   ),
                                 ),
 
+                              // Empty State if no real users are registered yet
+                              if (_entries.isEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+                                  margin: const EdgeInsets.symmetric(vertical: 24),
+                                  decoration: BoxDecoration(
+                                    color: colors.cardBg,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: colors.surfaceBorder),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        width: 72,
+                                        height: 72,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFFB800).withValues(alpha: 0.15),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.emoji_events_rounded, size: 38, color: Color(0xFFFFB800)),
+                                      ),
+                                      const SizedBox(height: 18),
+                                      Text(
+                                        'No Registered Users Yet',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.bold,
+                                          color: colors.textPrimary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Be the first on the global leaderboard! Sign in with your Google account and log water intake to claim the #1 spot.',
+                                        textAlign: TextAlign.center,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 13,
+                                          color: colors.textSecondary,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
                               // 1. Olympic-style Top 3 Podium
                               if (top3.isNotEmpty) _buildPodium(top3, colors),
 
@@ -287,57 +331,54 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               // #2 Silver (Left)
-              if (second != null)
-                Expanded(
-                  child: _buildPodiumPedestal(
-                    entry: second,
-                    rank: 2,
-                    pedestalHeight: 92,
-                    avatarRadius: 26,
-                    accentColor: const Color(0xFF94A3B8), // Silver
-                    gradientColors: [const Color(0xFF64748B), const Color(0xFF334155)],
-                    colors: colors,
-                  ),
-                )
-              else
-                const Spacer(),
+              Expanded(
+                child: second != null
+                    ? _buildPodiumPedestal(
+                        entry: second,
+                        rank: 2,
+                        pedestalHeight: 92,
+                        avatarRadius: 26,
+                        accentColor: const Color(0xFF94A3B8), // Silver
+                        gradientColors: [const Color(0xFF64748B), const Color(0xFF334155)],
+                        colors: colors,
+                      )
+                    : _buildEmptyPodiumSlot(rank: 2, height: 92, colors: colors),
+              ),
 
               const SizedBox(width: 10),
 
               // #1 Gold (Center)
-              if (first != null)
-                Expanded(
-                  child: _buildPodiumPedestal(
-                    entry: first,
-                    rank: 1,
-                    pedestalHeight: 126,
-                    avatarRadius: 32,
-                    isChampion: true,
-                    accentColor: const Color(0xFFFFB800), // Gold
-                    gradientColors: [const Color(0xFFF59E0B), const Color(0xFFB45309)],
-                    colors: colors,
-                  ),
-                )
-              else
-                const Spacer(),
+              Expanded(
+                child: first != null
+                    ? _buildPodiumPedestal(
+                        entry: first,
+                        rank: 1,
+                        pedestalHeight: 126,
+                        avatarRadius: 32,
+                        isChampion: true,
+                        accentColor: const Color(0xFFFFB800), // Gold
+                        gradientColors: [const Color(0xFFF59E0B), const Color(0xFFB45309)],
+                        colors: colors,
+                      )
+                    : _buildEmptyPodiumSlot(rank: 1, height: 126, colors: colors),
+              ),
 
               const SizedBox(width: 10),
 
               // #3 Bronze (Right)
-              if (third != null)
-                Expanded(
-                  child: _buildPodiumPedestal(
-                    entry: third,
-                    rank: 3,
-                    pedestalHeight: 74,
-                    avatarRadius: 24,
-                    accentColor: const Color(0xFFCD7F32), // Bronze
-                    gradientColors: [const Color(0xFF9A3412), const Color(0xFF7C2D12)],
-                    colors: colors,
-                  ),
-                )
-              else
-                const Spacer(),
+              Expanded(
+                child: third != null
+                    ? _buildPodiumPedestal(
+                        entry: third,
+                        rank: 3,
+                        pedestalHeight: 74,
+                        avatarRadius: 24,
+                        accentColor: const Color(0xFFCD7F32), // Bronze
+                        gradientColors: [const Color(0xFF9A3412), const Color(0xFF7C2D12)],
+                        colors: colors,
+                      )
+                    : _buildEmptyPodiumSlot(rank: 3, height: 74, colors: colors),
+              ),
             ],
           ),
         ],
@@ -520,6 +561,66 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 ),
               ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyPodiumSlot({
+    required int rank,
+    required double height,
+    required AppColors colors,
+  }) {
+    final color = rank == 1
+        ? const Color(0xFFFFB800)
+        : (rank == 2 ? const Color(0xFF94A3B8) : const Color(0xFFCD7F32));
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: color.withValues(alpha: 0.35), width: 1.5),
+            color: colors.cardBgAlt.withValues(alpha: 0.4),
+          ),
+          child: Icon(Icons.person_add_alt_1_rounded, size: 20, color: color.withValues(alpha: 0.5)),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Open Spot',
+          style: GoogleFonts.poppins(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: colors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '—',
+          style: GoogleFonts.poppins(fontSize: 10, color: colors.textMuted),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          height: height,
+          decoration: BoxDecoration(
+            color: colors.cardBgAlt.withValues(alpha: 0.3),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+          ),
+          child: Center(
+            child: Text(
+              '#$rank',
+              style: GoogleFonts.poppins(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: color.withValues(alpha: 0.35),
+              ),
+            ),
           ),
         ),
       ],
