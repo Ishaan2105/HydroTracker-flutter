@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "947508151584-4o1kelvttlspbr0u9gainekj7qds615c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.threestack.hydrotracker",
+            "certificate_hash": "197006f89c65541d2cc6d3f388ab2c48d18e5553"
+          }
+        },
+        {
           "client_id": "947508151584-algtr04k4su4tdfgp7oadjfdqivq6eud.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

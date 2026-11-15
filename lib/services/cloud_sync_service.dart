@@ -14,7 +14,10 @@ class CloudSyncService {
 
   FirebaseAuth get _auth => FirebaseAuth.instance;
   FirebaseFirestore get _firestore => FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: '947508151584-n11v1sfrb594l4vr31lch2uh7podq9jj.apps.googleusercontent.com',
+    scopes: ['email', 'profile'],
+  );
 
   bool _isSyncing = false;
   bool get isSyncing => _isSyncing;

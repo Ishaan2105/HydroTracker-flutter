@@ -115,7 +115,12 @@ class _AuthGateScreenState extends State<AuthGateScreen> with SingleTickerProvid
       AppLogger.error('AuthGateScreen', 'Google Sign-In caught error: $e', e, st);
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Could not sign in with Google. Please check your internet connection.';
+        final errorStr = e.toString();
+        if (errorStr.contains('10') || errorStr.contains('sign_in_failed') || errorStr.contains('developer_error')) {
+          _errorMessage = 'Google Sign-In setup error (SHA-1 fingerprint mismatch in Firebase).';
+        } else {
+          _errorMessage = 'Could not sign in with Google. Please check your internet connection.';
+        }
       });
     }
   }
