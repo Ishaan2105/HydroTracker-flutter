@@ -4,8 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'providers/hydration_provider.dart';
 import 'screens/auth_gate_screen.dart';
+import 'screens/force_update_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'services/app_logger.dart';
+import 'services/app_update_service.dart';
 import 'services/cloud_sync_service.dart';
 import 'services/notification_service.dart';
 
@@ -102,11 +104,71 @@ class HydroTrackerApp extends StatelessWidget {
               ThemeData.light().textTheme,
             ),
           ),
-          home: CloudSyncService.instance.isSignedIn
-              ? const MainNavigationScreen()
-              : const AuthGateScreen(),
+          home: const AppStartupGate(),
         );
       },
     );
+  }
+}
+
+class AppStartupGate extends StatefulWidget {
+  const AppStartupGate({super.key});
+
+  @override
+  State<AppStartupGate> createState() => _AppStartupGateState();
+}
+
+class _AppStartupGateState extends State<AppStartupGate> {
+  bool _isCheckingUpdate = true;
+  UpdateGateResult? _forceUpdateResult;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAppUpdateStatus();
+  }
+
+  Future<void> _checkAppUpdateStatus() async {
+    // Check Firestore Version Gate (remote killswitch / mandatory update barrier)
+    try {
+      final gate = await AppUpdateService.checkFirestoreVersionGate().timeout(
+        const Duration(seconds: 4),
+        onTimeout: () => const UpdateGateResult(needsForceUpdate: false),
+      );
+      if (mounted) {
+        setState(() {
+          _forceUpdateResult = gate.needsForceUpdate ? gate : null;
+          _isCheckingUpdate = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isCheckingUpdate = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isCheckingUpdate) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0B1329),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF00E5FF)),
+        ),
+      );
+    }
+
+    if (_forceUpdateResult != null) {
+      return ForceUpdateScreen(
+        title: _forceUpdateResult!.title,
+        message: _forceUpdateResult!.message,
+        playStoreUrl: _forceUpdateResult!.playStoreUrl,
+      );
+    }
+
+    return CloudSyncService.instance.isSignedIn
+        ? const MainNavigationScreen()
+        : const AuthGateScreen();
   }
 }
