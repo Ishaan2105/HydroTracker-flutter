@@ -139,10 +139,10 @@ class AboutScreen extends StatelessWidget {
                       colors,
                     ),
                     const SizedBox(height: 12),
-                    _buildSubHeading('2.2 Custom Glass Tracker', colors),
+                    _buildSubHeading('2.2 Custom Glass Tracker & Editable Capacity', colors),
                     _buildParagraph(
                       'Many people count hydration by the number of glasses they drink throughout the day. Hydro Tracker lets you configure your personal glass volume and log multiple glasses at once:\n\n'
-                      '• Configuring Glass Size: Tap the "Glass" button next to custom mL on the Home Screen, tap "Glass Size", and select your standard glass measurement (150ml, 200ml, 250ml, 300ml, 350ml, or 500ml).\n'
+                      '• Configuring & Editing Glass Size: Tap the "Glass" button on the Home Screen (placed on the left for easy access). Tap the inline "Glass Size: Xml • Edit" pill to choose common presets (150ml, 200ml, 250ml, 300ml, 350ml, or 500ml) or type a custom volume (50–1000 mL). You can also edit your glass capacity anytime in Settings under "Glass Capacity (ml)".\n'
                       '• Multi-Glass Stepper: Use the [ - ] and [ + ] buttons to select how many glasses you drank (e.g. 5 glasses). The live preview calculates the total volume (5 × 200ml = 1000ml / 1.0L).\n'
                       '• One-Tap Logging: Tap the confirmation button to record the entire volume in a single action.',
                       colors,
@@ -195,15 +195,22 @@ class AboutScreen extends StatelessWidget {
                     _buildSubHeading('4.1 Adding the Sleek Widget', colors),
                     _buildParagraph(
                       'Hydro Tracker includes a frosted glassmorphic Android AppWidget with 0ms launch delay:\n\n'
-                      '1. Long-press an empty space on your Android home screen.\n'
-                      '2. Select "Widgets" and locate Hydro Tracker.\n'
-                      '3. Drag the widget onto your home screen.',
+                      '• 1-Tap Home Pinning: Go to Advanced Options in the app and tap "Add to Home Screen". A system confirmation dialog with a live preview will pin it to your desktop.\n'
+                      '• Manual Placement: Long-press an empty space on your Android home screen → tap "Widgets" → locate Hydro Tracker → drag onto your desktop.',
                       colors,
                     ),
                     const SizedBox(height: 12),
-                    _buildSubHeading('4.2 Direct Quick-Log Buttons', colors),
+                    _buildSubHeading('4.2 Smart Quick-Log Buttons', colors),
                     _buildParagraph(
-                      'The widget includes dedicated "+250 ml" and "+500 ml" capsule buttons that record intake directly to your daily total without needing to open the app. The progress ring and volume counter update instantly.',
+                      'The widget displays two primary capsule buttons:\n\n'
+                      '1. Button 1: "Glass" Button: Records your configured glass capacity in the background with zero latency. If you haven\'t configured a glass size yet, tapping "Glass" automatically opens the Glass Setup Sheet inside the app so you can set your capacity.\n'
+                      '2. Button 2: "+250 ml" Button: Instantly logs 250 mL directly to your daily intake and synchronizes across all devices.',
+                      colors,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildSubHeading('4.3 Dynamic Resizing & Adaptive Scaling', colors),
+                    _buildParagraph(
+                      'The Hydro Tracker widget supports fluid resizing on your home screen (e.g. 3×1, 3×2, 4×2, 4×3). When you stretch the widget vertically, its internal layout automatically scales: the progress ring expands with the official circular logo, the intake readout enlarges, and the quick-log buttons expand to comfortable 48dp touch targets.',
                       colors,
                     ),
                   ], colors),

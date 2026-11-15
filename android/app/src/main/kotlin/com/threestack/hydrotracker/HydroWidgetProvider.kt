@@ -7,7 +7,10 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.os.Build
+import android.os.Bundle
 import android.util.Log
+import android.util.SizeF
 import android.widget.RemoteViews
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -66,6 +69,97 @@ class HydroWidgetProvider : AppWidgetProvider() {
             return getSafeInt(prefs, KEY_INTAKE, 0)
         }
 
+        fun buildWidgetViews(
+            context: Context,
+            intakeMl: Int,
+            goalMl: Int,
+            isExpanded: Boolean = false
+        ): RemoteViews {
+            val layoutRes = if (isExpanded) {
+                R.layout.widget_hydro_layout_expanded
+            } else {
+                R.layout.widget_hydro_layout
+            }
+            val views = RemoteViews(context.packageName, layoutRes)
+
+            val safeGoal = if (goalMl > 0) goalMl else 2500
+            val progressPct = ((intakeMl.toFloat() / safeGoal.toFloat()) * 100).toInt().coerceIn(0, 100)
+
+            views.setProgressBar(R.id.widget_progress_bar, 100, progressPct, false)
+            views.setTextViewText(R.id.widget_text_intake, "$intakeMl / $safeGoal ml")
+            views.setTextViewText(R.id.widget_text_percent, "$progressPct%")
+
+            // Body / Circle tap opens app
+            val launchIntent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            val pendingAppIntent = PendingIntent.getActivity(
+                context,
+                100,
+                launchIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            views.setOnClickPendingIntent(R.id.widget_root, pendingAppIntent)
+            views.setOnClickPendingIntent(R.id.widget_circle_container, pendingAppIntent)
+
+            // Glass configuration status
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val hasConfiguredGlass = getSafeBoolean(prefs, KEY_HAS_CONFIGURED_GLASS, false)
+            val customGlassMl = getSafeInt(prefs, KEY_CUSTOM_GLASS_ML, 200).coerceIn(50, 1000)
+
+            // Button 1 (Left - Priority #1): Glass Button
+            views.setTextViewText(R.id.widget_btn_glass, "Glass")
+            if (hasConfiguredGlass) {
+                val addGlassIntent = Intent(context, HydroWidgetProvider::class.java).apply {
+                    action = ACTION_ADD_WATER
+                    putExtra(EXTRA_AMOUNT, customGlassMl)
+                }
+                val pendingAddGlass = PendingIntent.getBroadcast(
+                    context,
+                    104,
+                    addGlassIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_btn_glass, pendingAddGlass)
+            } else {
+                val createGlassIntent = Intent(context, MainActivity::class.java).apply {
+                    action = Intent.ACTION_VIEW
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    putExtra(EXTRA_TRIGGER_ACTION, ACTION_CREATE_GLASS)
+                }
+                val pendingCreateGlass = PendingIntent.getActivity(
+                    context,
+                    103,
+                    createGlassIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_btn_glass, pendingCreateGlass)
+            }
+
+            // Button 2 (Right - Priority #2): +250 ml Button tap
+            views.setTextViewText(R.id.widget_btn_250, "+250 ml")
+            val add250Intent = Intent(context, HydroWidgetProvider::class.java).apply {
+                action = ACTION_ADD_WATER
+                putExtra(EXTRA_AMOUNT, 250)
+            }
+            val pendingAdd250 = PendingIntent.getBroadcast(
+                context,
+                101,
+                add250Intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            views.setOnClickPendingIntent(R.id.widget_btn_250, pendingAdd250)
+
+            return views
+        }
+
+        fun buildPreviewViews(context: Context): RemoteViews {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val intake = checkMidnightRollover(prefs)
+            val goal = getSafeInt(prefs, KEY_GOAL, 2500)
+            return buildWidgetViews(context, intake, goal, isExpanded = false)
+        }
+
         fun updateAllWidgets(context: Context, intakeMl: Int, goalMl: Int) {
             try {
                 val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
@@ -95,77 +189,22 @@ class HydroWidgetProvider : AppWidgetProvider() {
             goalMl: Int
         ) {
             try {
-                val views = RemoteViews(context.packageName, R.layout.widget_hydro_layout)
-
-                val safeGoal = if (goalMl > 0) goalMl else 2500
-                val progressPct = ((intakeMl.toFloat() / safeGoal.toFloat()) * 100).toInt().coerceIn(0, 100)
-
-                views.setProgressBar(R.id.widget_progress_bar, 100, progressPct, false)
-                views.setTextViewText(R.id.widget_text_intake, "$intakeMl / $safeGoal ml")
-                views.setTextViewText(R.id.widget_text_percent, "$progressPct%")
-
-                // Body / Circle tap opens app
-                val launchIntent = Intent(context, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                }
-                val pendingAppIntent = PendingIntent.getActivity(
-                    context,
-                    100,
-                    launchIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                views.setOnClickPendingIntent(R.id.widget_root, pendingAppIntent)
-                views.setOnClickPendingIntent(R.id.widget_circle_container, pendingAppIntent)
-
-                // Glass configuration status
-                val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                val hasConfiguredGlass = getSafeBoolean(prefs, KEY_HAS_CONFIGURED_GLASS, false)
-                val customGlassMl = getSafeInt(prefs, KEY_CUSTOM_GLASS_ML, 200).coerceIn(50, 1000)
-
-                // Button 1 (Left - Priority #1): Glass Button
-                views.setTextViewText(R.id.widget_btn_glass, "Glass")
-                if (hasConfiguredGlass) {
-                    val addGlassIntent = Intent(context, HydroWidgetProvider::class.java).apply {
-                        action = ACTION_ADD_WATER
-                        putExtra(EXTRA_AMOUNT, customGlassMl)
-                    }
-                    val pendingAddGlass = PendingIntent.getBroadcast(
-                        context,
-                        104,
-                        addGlassIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val compactViews = buildWidgetViews(context, intakeMl, goalMl, isExpanded = false)
+                    val expandedViews = buildWidgetViews(context, intakeMl, goalMl, isExpanded = true)
+                    val viewMapping = mapOf(
+                        SizeF(120f, 40f) to compactViews,
+                        SizeF(150f, 95f) to expandedViews
                     )
-                    views.setOnClickPendingIntent(R.id.widget_btn_glass, pendingAddGlass)
+                    val responsiveViews = RemoteViews(viewMapping)
+                    appWidgetManager.updateAppWidget(appWidgetId, responsiveViews)
                 } else {
-                    val createGlassIntent = Intent(context, MainActivity::class.java).apply {
-                        action = Intent.ACTION_VIEW
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                        putExtra(EXTRA_TRIGGER_ACTION, ACTION_CREATE_GLASS)
-                    }
-                    val pendingCreateGlass = PendingIntent.getActivity(
-                        context,
-                        103,
-                        createGlassIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
-                    views.setOnClickPendingIntent(R.id.widget_btn_glass, pendingCreateGlass)
+                    val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
+                    val minHeight = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT) ?: 60
+                    val isExpanded = minHeight >= 95
+                    val views = buildWidgetViews(context, intakeMl, goalMl, isExpanded)
+                    appWidgetManager.updateAppWidget(appWidgetId, views)
                 }
-
-                // Button 2 (Right - Priority #2): +250 ml Button tap
-                views.setTextViewText(R.id.widget_btn_250, "+250 ml")
-                val add250Intent = Intent(context, HydroWidgetProvider::class.java).apply {
-                    action = ACTION_ADD_WATER
-                    putExtra(EXTRA_AMOUNT, 250)
-                }
-                val pendingAdd250 = PendingIntent.getBroadcast(
-                    context,
-                    101,
-                    add250Intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                views.setOnClickPendingIntent(R.id.widget_btn_250, pendingAdd250)
-
-                appWidgetManager.updateAppWidget(appWidgetId, views)
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating single widget $appWidgetId", e)
             }
@@ -187,6 +226,23 @@ class HydroWidgetProvider : AppWidgetProvider() {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error in onUpdate", e)
+        }
+    }
+
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: Bundle
+    ) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
+        try {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val intake = checkMidnightRollover(prefs)
+            val goal = getSafeInt(prefs, KEY_GOAL, 2500)
+            updateWidget(context, appWidgetManager, appWidgetId, intake, goal)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in onAppWidgetOptionsChanged", e)
         }
     }
 

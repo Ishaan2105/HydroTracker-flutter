@@ -455,7 +455,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                   const SizedBox(height: 6),
                                   _buildCalculatorInput(
                                     controller: _weightController,
-                                    hint: 'Weight in kg (e.g. 70)',
+                                    hint: 'weight in kg',
                                     fieldLabel: 'Weight',
                                     colors: colors,
                                   ),
@@ -471,7 +471,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                   const SizedBox(height: 6),
                                   _buildCalculatorInput(
                                     controller: _ageController,
-                                    hint: 'Age in years (e.g. 25)',
+                                    hint: 'Age in years',
                                     fieldLabel: 'Age',
                                     colors: colors,
                                   ),

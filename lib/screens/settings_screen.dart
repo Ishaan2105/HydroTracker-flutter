@@ -23,6 +23,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _nameController;
   late TextEditingController _goalController;
+  late TextEditingController _glassController;
   bool _isBatteryExempt = true; // assume OK until checked
   bool _isThemeExpanded = true;
 
@@ -32,6 +33,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final provider = Provider.of<HydrationProvider>(context, listen: false);
     _nameController = TextEditingController(text: provider.userName);
     _goalController = TextEditingController(text: (provider.dailyGoalMl / 1000).toStringAsFixed(1));
+    _glassController = TextEditingController(text: '${provider.customGlassMl}');
     _checkBatteryStatus();
   }
 
@@ -46,6 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void dispose() {
     _nameController.dispose();
     _goalController.dispose();
+    _glassController.dispose();
     super.dispose();
   }
 
@@ -87,6 +90,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
     }
+  }
+
+  void _saveGlassSize(HydrationProvider provider, int sizeMl) async {
+    final clamped = sizeMl.clamp(50, 1000);
+    setState(() {
+      _glassController.text = '$clamped';
+    });
+    await provider.setCustomGlassMl(clamped);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Glass capacity set to ${clamped}ml',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: const Color(0xFF1565C0),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  Widget _buildGlassPresetChip(HydrationProvider provider, int sizeMl, AppColors colors) {
+    final isSelected = provider.customGlassMl == sizeMl;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        label: Text(
+          '$sizeMl ml',
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? colors.primaryBlue : colors.textPrimary,
+          ),
+        ),
+        selected: isSelected,
+        selectedColor: colors.cyanAccent.withValues(alpha: 0.25),
+        backgroundColor: colors.cardBgAlt,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        onSelected: (selected) {
+          if (selected) {
+            _saveGlassSize(provider, sizeMl);
+          }
+        },
+      ),
+    );
   }
 
   void _addReminderTime(BuildContext context, HydrationProvider provider) async {
@@ -262,6 +312,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             _buildPresetChip(provider, 3.0, colors),
                             _buildPresetChip(provider, 3.5, colors),
                           ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 2.5 Custom Glass Capacity Section
+                  _buildCard(
+                    title: 'Glass Capacity (ml)',
+                    subtitle: 'Customize standard glass intake volume for 1-tap logging & widget',
+                    colors: colors,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _glassController,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  LengthLimitingTextInputFormatter(4),
+                                ],
+                                style: GoogleFonts.poppins(color: colors.textPrimary, fontSize: 14),
+                                decoration: InputDecoration(
+                                  suffixText: 'ml',
+                                  suffixStyle: GoogleFonts.poppins(color: colors.cyanAccent, fontWeight: FontWeight.bold),
+                                  filled: true,
+                                  fillColor: colors.cardBgAlt,
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: () {
+                                final val = int.tryParse(_glassController.text);
+                                if (val != null && val >= 50 && val <= 1000) {
+                                  _saveGlassSize(provider, val);
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1565C0),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: Text('Set Size', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        // Presets
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildGlassPresetChip(provider, 150, colors),
+                              _buildGlassPresetChip(provider, 200, colors),
+                              _buildGlassPresetChip(provider, 250, colors),
+                              _buildGlassPresetChip(provider, 300, colors),
+                              _buildGlassPresetChip(provider, 350, colors),
+                              _buildGlassPresetChip(provider, 500, colors),
+                            ],
+                          ),
                         ),
                       ],
                     ),

@@ -119,28 +119,46 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      appBar: const HydroTopBar(),
       body: SafeArea(
+        top: false,
         bottom: false,
         child: Stack(
           children: [
-            Column(
-              children: [
-                // Top App Bar
-                const HydroTopBar(),
+            RefreshIndicator(
+              onRefresh: () => _loadLeaderboard(isUserRefresh: true),
+              color: colors.cyanAccent,
+              backgroundColor: colors.cardBg,
+              child: _isLoading
+                  ? _buildShimmerLoading(colors)
+                  : ListView(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+                      children: [
+                        // Page Header (Matching Trends and Insights)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Community Leaderboard',
+                              style: GoogleFonts.poppins(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: colors.textPrimary,
+                              ),
+                            ),
+                            Text(
+                              'Live hydration ranks & community champions',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: colors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
 
-                // Main Content with Pull-to-Refresh
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: () => _loadLeaderboard(isUserRefresh: true),
-                    color: colors.cyanAccent,
-                    backgroundColor: colors.cardBg,
-                    child: _isLoading
-                        ? _buildShimmerLoading(colors)
-                        : ListView(
-                            controller: _scrollController,
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                            children: [
-                              if (_errorMessage != null)
+                        if (_errorMessage != null)
                                 Container(
                                   margin: const EdgeInsets.only(bottom: 12),
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -250,9 +268,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                             ],
                           ),
                   ),
-                ),
-              ],
-            ),
 
             // 4. Sticky Floating Footer (Your Rank OR Incognito Mode)
             if (userEntry != null && provider.isLeaderboardOptIn)

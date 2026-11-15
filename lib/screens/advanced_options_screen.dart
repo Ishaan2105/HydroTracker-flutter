@@ -436,14 +436,16 @@ class _AdvancedOptionsScreenState extends State<AdvancedOptionsScreen> {
                                         ),
                                         const SizedBox(height: 10),
 
-                                        // Quick add intake buttons (Sleek Pills)
+                                        // Quick add intake buttons (Sleek Pills: Glass + 250ml)
                                         Row(
                                           children: [
                                             Expanded(
                                               child: _buildWidgetAddButton(
                                                 context: context,
-                                                label: '+250ml',
-                                                amountMl: 250,
+                                                label: provider.hasConfiguredGlass
+                                                    ? 'Glass (${provider.customGlassMl}ml)'
+                                                    : 'Glass',
+                                                amountMl: provider.customGlassMl,
                                                 colors: colors,
                                               ),
                                             ),
@@ -451,8 +453,8 @@ class _AdvancedOptionsScreenState extends State<AdvancedOptionsScreen> {
                                             Expanded(
                                               child: _buildWidgetAddButton(
                                                 context: context,
-                                                label: '+500ml',
-                                                amountMl: 500,
+                                                label: '+250 ml',
+                                                amountMl: 250,
                                                 colors: colors,
                                               ),
                                             ),
@@ -643,75 +645,6 @@ class _AdvancedOptionsScreenState extends State<AdvancedOptionsScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
-
-                  // 3. Local SQLite Database Diagnostics
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: colors.cardBg,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: colors.surfaceBorder),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colors.shadowColor,
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF6366F1).withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(Icons.storage_rounded, color: Color(0xFF6366F1), size: 22),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Offline Local Storage',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color: colors.textPrimary,
-                                    ),
-                                  ),
-                                  Text(
-                                    'hydro_tracker.db • Zero cloud data leaks',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 11,
-                                      color: colors.textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'All your hydration logs, streaks, and timestamps are saved in an on-device SQLite database. No external servers or network connections are ever used.',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: colors.textSecondary,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
                   const SizedBox(height: 32),
                 ],
               ),
@@ -728,40 +661,38 @@ class _AdvancedOptionsScreenState extends State<AdvancedOptionsScreen> {
     required int amountMl,
     required AppColors colors,
   }) {
-    return Expanded(
-      child: InkWell(
-        onTap: () {
-          final provider = Provider.of<HydrationProvider>(context, listen: false);
-          provider.logWater(amountMl);
-          ScaffoldMessenger.of(context).clearSnackBars();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Logged $label via Widget Preview!',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-              ),
-              backgroundColor: colors.primaryBlue,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 2),
+    return InkWell(
+      onTap: () {
+        final provider = Provider.of<HydrationProvider>(context, listen: false);
+        provider.logWater(amountMl);
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Logged $label via Widget Preview!',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
             ),
-          );
-        },
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: colors.cardBg,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: colors.surfaceBorder),
+            backgroundColor: colors.primaryBlue,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
           ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: colors.textPrimary,
-            ),
+        );
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: colors.cardBg,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: colors.surfaceBorder),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: colors.textPrimary,
           ),
         ),
       ),
