@@ -322,7 +322,7 @@ class CloudSyncService {
         'bestStreak': provider.bestStreak,
         'lifetimeVolumeMl': provider.lifetimeVolumeMl,
         'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      }, SetOptions(merge: true)).timeout(const Duration(seconds: 3));
     } catch (e, st) {
       AppLogger.error('CloudSyncService', 'syncLeaderboardEntry failed: $e', e, st);
     }
@@ -368,7 +368,8 @@ class CloudSyncService {
           .collection('public_leaderboard')
           .orderBy('currentStreak', descending: true)
           .limit(100)
-          .get(const GetOptions(source: Source.serverAndCache));
+          .get(const GetOptions(source: Source.serverAndCache))
+          .timeout(const Duration(seconds: 3));
 
       for (var doc in snapshot.docs) {
         final entry = LeaderboardEntry.fromMap(doc.data(), docId: doc.id);
@@ -377,7 +378,23 @@ class CloudSyncService {
         }
       }
     } catch (e, st) {
-      AppLogger.error('CloudSyncService', 'fetchLeaderboardEntries from Firestore error: $e', e, st);
+      AppLogger.error('CloudSyncService', 'fetchLeaderboardEntries server query error: $e', e, st);
+      // Fallback: try cache if server was unreachable or disabled
+      try {
+        final cachedSnapshot = await _firestore
+            .collection('public_leaderboard')
+            .orderBy('currentStreak', descending: true)
+            .limit(100)
+            .get(const GetOptions(source: Source.cache))
+            .timeout(const Duration(seconds: 1));
+
+        for (var doc in cachedSnapshot.docs) {
+          final entry = LeaderboardEntry.fromMap(doc.data(), docId: doc.id);
+          if (entry.uid.isNotEmpty) {
+            entryMap[entry.uid] = entry;
+          }
+        }
+      } catch (_) {}
     }
 
     // Ensure current signed-in Firebase user has their latest live streak & volume reflected

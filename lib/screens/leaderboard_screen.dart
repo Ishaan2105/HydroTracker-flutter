@@ -44,9 +44,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
     try {
       final provider = Provider.of<HydrationProvider>(context, listen: false);
-      // Ensure local stats are synced to Firestore first
-      await CloudSyncService.instance.syncLeaderboardEntry(provider);
-      final list = await CloudSyncService.instance.fetchLeaderboardEntries(provider);
+      // Ensure local stats sync doesn't block loading
+      try {
+        await CloudSyncService.instance
+            .syncLeaderboardEntry(provider)
+            .timeout(const Duration(seconds: 3));
+      } catch (_) {}
+
+      final list = await CloudSyncService.instance
+          .fetchLeaderboardEntries(provider)
+          .timeout(const Duration(seconds: 4));
+
       if (mounted) {
         setState(() {
           _entries = list;
@@ -58,6 +66,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         setState(() {
           _isLoading = false;
           _errorMessage = 'Could not load live standings. Displaying cached ranks.';
+        });
+      }
+    } finally {
+      if (mounted && _isLoading) {
+        setState(() {
+          _isLoading = false;
         });
       }
     }
