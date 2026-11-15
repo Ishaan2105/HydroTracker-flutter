@@ -66,6 +66,7 @@ class HydrationProvider extends ChangeNotifier {
   List<String> _oneTimeReminderTimes = [];
   bool _isSoloOptIn = true;
   bool _isLeaderboardOptIn = true;
+  int _customGlassMl = 200;
   String _themeMode = 'auto'; // 'auto' (schedule: 6:30 AM Light / 6:30 PM Dark), 'light', 'dark'
   bool _isDarkMode = true;
 
@@ -77,6 +78,7 @@ class HydrationProvider extends ChangeNotifier {
   List<WaterLog> get todayLogs => _todayLogs;
   bool get isStreakBannerDismissed => _isStreakBannerDismissed;
   bool get isLeaderboardOptIn => _isLeaderboardOptIn;
+  int get customGlassMl => _customGlassMl;
   String get themeMode => _themeMode;
 
   /// Returns true if [dt] (or DateTime.now()) falls within the daytime window:
@@ -226,6 +228,7 @@ class HydrationProvider extends ChangeNotifier {
       _oneTimeReminderTimes = await PrefService.getOneTimeReminderTimes();
       _isSoloOptIn = await PrefService.getSoloOptIn();
       _isLeaderboardOptIn = await PrefService.getLeaderboardOptIn();
+      _customGlassMl = await PrefService.getCustomGlassMl();
       _themeMode = await PrefService.getThemeMode();
       _isDarkMode = isDarkMode;
 
@@ -839,6 +842,9 @@ class HydrationProvider extends ChangeNotifier {
         await loadHistoryStats();
         await loadInsightsData();
         await loadSelectedDateData();
+        if (_isLeaderboardOptIn) {
+          CloudSyncService.instance.syncLeaderboardEntry(this);
+        }
         notifyListeners();
         return true;
       }
@@ -847,6 +853,18 @@ class HydrationProvider extends ChangeNotifier {
       AppLogger.error('HydrationProvider', 'undoLastLog failed: $e', e, st);
       return false;
     }
+  }
+
+  Future<void> setCustomGlassMl(int ml) async {
+    _customGlassMl = ml.clamp(50, 1000);
+    await PrefService.setCustomGlassMl(_customGlassMl);
+    notifyListeners();
+  }
+
+  Future<void> logGlasses(int glassCount) async {
+    final count = glassCount.clamp(1, 20);
+    final totalMl = count * _customGlassMl;
+    await logWater(totalMl);
   }
 
   Future<void> deleteLogById(int id) async {
@@ -867,6 +885,9 @@ class HydrationProvider extends ChangeNotifier {
       await loadHistoryStats();
       await loadInsightsData();
       await loadSelectedDateData();
+      if (_isLeaderboardOptIn) {
+        CloudSyncService.instance.syncLeaderboardEntry(this);
+      }
       notifyListeners();
     } catch (e, st) {
       AppLogger.error('HydrationProvider', 'deleteLogById failed: $e', e, st);

@@ -627,7 +627,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: const Color(0xFF0284C7).withOpacity(0.2),
+                  backgroundColor: const Color(0xFF0284C7).withValues(alpha: 0.2),
                   backgroundImage: (user.photoURL != null && user.photoURL!.isNotEmpty)
                       ? NetworkImage(user.photoURL!)
                       : null,
@@ -659,7 +659,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withOpacity(0.15),
+                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -673,56 +673,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Syncing with Google Cloud...', style: GoogleFonts.poppins()),
-                          duration: const Duration(seconds: 1),
-                        ),
-                      );
-                      await CloudSyncService.instance.performFullTwoWaySync(provider);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: const Color(0xFF10B981),
-                            content: Text('Cloud sync complete! Everything up to date.', style: GoogleFonts.poppins()),
-                          ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.sync_rounded, size: 16),
-                    label: Text('Sync Now', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF0284C7),
-                      side: const BorderSide(color: Color(0xFF0284C7)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.25)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFF10B981),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                OutlinedButton(
-                  onPressed: () async {
-                    await CloudSyncService.instance.signOut();
-                    if (context.mounted) {
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => const AuthGateScreen()),
-                        (route) => false,
-                      );
-                    }
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.redAccent,
-                    side: BorderSide(color: Colors.redAccent.withOpacity(0.4)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Real-time cloud sync active • All logs, streaks, and goals save automatically',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: colors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
-                  child: Text('Sign Out', style: GoogleFonts.poppins(fontSize: 13)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  await CloudSyncService.instance.signOut();
+                  if (context.mounted) {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const AuthGateScreen()),
+                      (route) => false,
+                    );
+                  }
+                },
+                icon: const Icon(Icons.logout_rounded, size: 14),
+                label: Text('Sign Out', style: GoogleFonts.poppins(fontSize: 12.5)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.redAccent,
+                  side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.4)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 ),
-              ],
+              ),
             ),
           ] else ...[
             Row(
@@ -731,7 +735,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF59E0B).withOpacity(0.15),
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.cloud_off_rounded, color: Color(0xFFF59E0B), size: 18),

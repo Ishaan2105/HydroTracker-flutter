@@ -16,6 +16,7 @@ class PrefService {
   static const String keyReminderTimes = 'reminder_times';
   static const String keySoloOptIn = 'solo_opt_in';
   static const String keyLeaderboardOptIn = 'leaderboard_opt_in';
+  static const String keyCustomGlassMl = 'custom_glass_ml';
 
   static String formatTo12H(String timeStr) {
     try {
@@ -179,6 +180,16 @@ class PrefService {
   static Future<void> setLeaderboardOptIn(bool val) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(keyLeaderboardOptIn, val);
+  }
+
+  static Future<int> getCustomGlassMl() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(keyCustomGlassMl) ?? 200;
+  }
+
+  static Future<void> setCustomGlassMl(int ml) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(keyCustomGlassMl, ml);
   }
 
   static const String keyDisabledReminderTimes = 'disabled_reminder_times';

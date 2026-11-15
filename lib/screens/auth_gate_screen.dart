@@ -133,7 +133,7 @@ class _AuthGateScreenState extends State<AuthGateScreen> with SingleTickerProvid
     final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF0F9FF);
     final textPrimary = isDark ? Colors.white : const Color(0xFF0F172A);
     final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final cardBg = isDark ? const Color(0xFF1E293B).withOpacity(0.85) : Colors.white.withOpacity(0.9);
+    final cardBg = isDark ? const Color(0xFF1E293B).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.9);
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -221,12 +221,12 @@ class _AuthGateScreenState extends State<AuthGateScreen> with SingleTickerProvid
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: isDark
-                              ? Colors.white.withOpacity(0.08)
+                              ? Colors.white.withValues(alpha: 0.08)
                               : const Color(0xFFE2E8F0),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(isDark ? 0.25 : 0.05),
+                            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
                             blurRadius: 16,
                             offset: const Offset(0, 4),
                           ),
@@ -270,9 +270,9 @@ class _AuthGateScreenState extends State<AuthGateScreen> with SingleTickerProvid
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         decoration: BoxDecoration(
-                          color: Colors.redAccent.withOpacity(0.12),
+                          color: Colors.redAccent.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+                          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
                         ),
                         child: Row(
                           children: [
@@ -300,7 +300,7 @@ class _AuthGateScreenState extends State<AuthGateScreen> with SingleTickerProvid
                           backgroundColor: Colors.white,
                           foregroundColor: const Color(0xFF1F2937),
                           elevation: 3,
-                          shadowColor: const Color(0xFF00E5FF).withOpacity(0.3),
+                          shadowColor: const Color(0xFF00E5FF).withValues(alpha: 0.3),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                             side: const BorderSide(color: Color(0xFFE5E7EB), width: 1.2),
@@ -398,7 +398,7 @@ class _AuthGateScreenState extends State<AuthGateScreen> with SingleTickerProvid
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.12),
+            color: iconColor.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: iconColor, size: 20),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -87,6 +88,16 @@ class _HomeScreenState extends State<HomeScreen> {
       _customController.clear();
       FocusScope.of(context).unfocus();
     }
+  }
+
+  void _showGlassTrackerModal(BuildContext context, HydrationProvider provider, AppColors colors) {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _GlassTrackerSheet(provider: provider, colors: colors),
+    );
   }
 
   @override
@@ -203,35 +214,108 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 12),
 
-                  // Custom ml Input
-                  TextField(
-                    controller: _customController,
-                    keyboardType: TextInputType.number,
-                    style: GoogleFonts.poppins(
-                        color: colors.textPrimary, fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'Custom ml...',
-                      hintStyle: GoogleFonts.poppins(
-                          color: colors.textMuted, fontSize: 13),
-                      filled: true,
-                      fillColor: colors.cardBg,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(color: colors.surfaceBorder),
+                  // Custom ml Input & Glass Tracker Row
+                  Row(
+                    children: [
+                      // Custom ml Input with embedded submit icon
+                      Expanded(
+                        flex: 5,
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: colors.cardBg,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: colors.surfaceBorder),
+                          ),
+                          child: TextField(
+                            controller: _customController,
+                            keyboardType: TextInputType.number,
+                            style: GoogleFonts.poppins(
+                              color: colors.textPrimary,
+                              fontSize: 13.5,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'Custom ml...',
+                              hintStyle: GoogleFonts.poppins(
+                                color: colors.textMuted,
+                                fontSize: 12.5,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.only(
+                                left: 14,
+                                right: 4,
+                                top: 12,
+                                bottom: 12,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  Icons.check_circle_rounded,
+                                  color: colors.cyanAccent,
+                                  size: 22,
+                                ),
+                                tooltip: 'Log custom ml',
+                                onPressed: () => _logCustomWater(context),
+                              ),
+                            ),
+                            onSubmitted: (_) => _logCustomWater(context),
+                          ),
+                        ),
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(color: colors.surfaceBorder),
+                      const SizedBox(width: 10),
+                      // Create Glass / Glass Tracker Button
+                      Expanded(
+                        flex: 5,
+                        child: SizedBox(
+                          height: 48,
+                          child: Material(
+                            color: colors.cardBg,
+                            borderRadius: BorderRadius.circular(14),
+                            child: InkWell(
+                              onTap: () => _showGlassTrackerModal(context, provider, colors),
+                              borderRadius: BorderRadius.circular(14),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: colors.surfaceBorder,
+                                    width: 1.0,
+                                  ),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.local_drink_rounded,
+                                      color: colors.cyanAccent,
+                                      size: 19,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Flexible(
+                                      child: Text(
+                                        'Glass (${provider.customGlassMl}ml)',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: colors.textPrimary,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    onSubmitted: (_) => _logCustomWater(context),
+                    ],
                   ),
 
                   const SizedBox(height: 10),
 
-                  // Add Button
+                  // Undo Last Log Button (Matching Primary Card Button UI)
                   SizedBox(
                     width: double.infinity,
                     height: 48,
@@ -239,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: colors.cardBg,
                       borderRadius: BorderRadius.circular(14),
                       child: InkWell(
-                        onTap: () => _logCustomWater(context),
+                        onTap: () => _undoLastLog(context),
                         borderRadius: BorderRadius.circular(14),
                         child: Container(
                           decoration: BoxDecoration(
@@ -250,38 +334,26 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           alignment: Alignment.center,
-                          child: Text(
-                            'Add',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: colors.textPrimary,
-                            ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.undo_rounded,
+                                size: 18,
+                                color: colors.textSecondary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Undo Last Log',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: colors.textPrimary,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Undo Last Log Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () => _undoLastLog(context),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: colors.surfaceBorder),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: Text(
-                        'Undo Last Log',
-                        style: GoogleFonts.poppins(
-                            color: colors.textSecondary,
-                            fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
@@ -960,6 +1032,366 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GlassTrackerSheet extends StatefulWidget {
+  final HydrationProvider provider;
+  final AppColors colors;
+
+  const _GlassTrackerSheet({required this.provider, required this.colors});
+
+  @override
+  State<_GlassTrackerSheet> createState() => _GlassTrackerSheetState();
+}
+
+class _GlassTrackerSheetState extends State<_GlassTrackerSheet> {
+  int _glassCount = 1;
+  late int _selectedGlassMl;
+  bool _isCustomizingSize = false;
+  final List<int> _sizePresets = [150, 200, 250, 300, 350, 500];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedGlassMl = widget.provider.customGlassMl;
+  }
+
+  void _logGlasses() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final count = _glassCount;
+    final glassSize = _selectedGlassMl;
+    final total = count * glassSize;
+
+    HapticFeedback.mediumImpact();
+    Navigator.pop(context);
+
+    // If glass size was changed, update persistent preference
+    if (glassSize != widget.provider.customGlassMl) {
+      await widget.provider.setCustomGlassMl(glassSize);
+    }
+
+    await widget.provider.logGlasses(count);
+
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          'Logged $count ${count == 1 ? "glass" : "glasses"} (${total}ml)! 💧',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: const Color(0xFF0284C7),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = widget.colors;
+    final totalMl = _glassCount * _selectedGlassMl;
+    final totalL = (totalMl / 1000).toStringAsFixed(2);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.cardBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border(top: BorderSide(color: colors.surfaceBorder)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 24,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(context).viewInsets.bottom + 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Center(
+            child: Container(
+              width: 38,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colors.textMuted.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: colors.cyanAccent.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.local_drink_rounded, color: colors.cyanAccent, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Glass Intake Tracker',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Log water by glasses drunk',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _isCustomizingSize = !_isCustomizingSize;
+                  });
+                },
+                icon: Icon(
+                  _isCustomizingSize ? Icons.check_circle_outline : Icons.tune_rounded,
+                  size: 16,
+                  color: colors.cyanAccent,
+                ),
+                label: Text(
+                  _isCustomizingSize ? 'Done' : 'Glass Size',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: colors.cyanAccent,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Glass Size Configurator (if active)
+          if (_isCustomizingSize) ...[
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: colors.cardBgAlt,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: colors.surfaceBorder),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '1 Glass Measurement',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        '$_selectedGlassMl ml',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: colors.cyanAccent,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _sizePresets.map((size) {
+                      final isSelected = size == _selectedGlassMl;
+                      return InkWell(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() => _selectedGlassMl = size);
+                          widget.provider.setCustomGlassMl(size);
+                        },
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? colors.cyanAccent.withValues(alpha: 0.2)
+                                : colors.cardBg,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isSelected ? colors.cyanAccent : colors.surfaceBorder,
+                              width: isSelected ? 1.5 : 1.0,
+                            ),
+                          ),
+                          child: Text(
+                            '$size ml',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                              color: isSelected ? colors.cyanAccent : colors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // Counter Stepper Card
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              color: colors.cardBgAlt,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: colors.surfaceBorder),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Minus button
+                    InkWell(
+                      onTap: _glassCount > 1
+                          ? () {
+                              HapticFeedback.lightImpact();
+                              setState(() => _glassCount--);
+                            }
+                          : null,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: colors.cardBg,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: colors.surfaceBorder),
+                        ),
+                        child: Icon(
+                          Icons.remove_rounded,
+                          color: _glassCount > 1 ? colors.textPrimary : colors.textMuted,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+
+                    // Number of glasses display
+                    Column(
+                      children: [
+                        Text(
+                          '$_glassCount',
+                          style: GoogleFonts.poppins(
+                            fontSize: 34,
+                            fontWeight: FontWeight.bold,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                        Text(
+                          _glassCount == 1 ? 'Glass' : 'Glasses',
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: colors.cyanAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Plus button
+                    InkWell(
+                      onTap: _glassCount < 20
+                          ? () {
+                              HapticFeedback.lightImpact();
+                              setState(() => _glassCount++);
+                            }
+                          : null,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: colors.cardBg,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: colors.surfaceBorder),
+                        ),
+                        child: Icon(
+                          Icons.add_rounded,
+                          color: _glassCount < 20 ? colors.textPrimary : colors.textMuted,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Divider(color: colors.surfaceBorder, height: 1),
+                const SizedBox(height: 12),
+                // Live Calculation Preview
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.calculate_outlined, size: 15, color: colors.textMuted),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$_glassCount × ${_selectedGlassMl}ml = ',
+                      style: GoogleFonts.poppins(fontSize: 13, color: colors.textSecondary),
+                    ),
+                    Text(
+                      '$totalMl ml ($totalL L)',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.bold,
+                        color: colors.cyanAccent,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // Log Action Button
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: _logGlasses,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colors.cyanAccent,
+                foregroundColor: Colors.black,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: Text(
+                'Log $_glassCount ${_glassCount == 1 ? "Glass" : "Glasses"} ($totalMl ml)',
+                style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+            ),
           ),
         ],
       ),
