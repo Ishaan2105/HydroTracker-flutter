@@ -863,6 +863,7 @@ class HydrationProvider extends ChangeNotifier {
     _hasConfiguredGlass = true;
     await PrefService.setCustomGlassMl(_customGlassMl);
     await PrefService.setHasConfiguredGlass(true);
+    await WidgetService.updateWidgetData(todayIntakeMl, dailyGoalMl);
     notifyListeners();
   }
 

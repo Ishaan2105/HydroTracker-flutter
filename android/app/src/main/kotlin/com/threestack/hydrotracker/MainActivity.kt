@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.os.PowerManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -18,12 +19,42 @@ class MainActivity : FlutterActivity() {
         private const val WIDGET_CHANNEL = "hydro_flutter/widget"
     }
 
+    private var pendingWidgetAction: String? = null
+    private var widgetMethodChannel: MethodChannel? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        handleIntentAction(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntentAction(intent)
+    }
+
+    private fun handleIntentAction(intent: Intent?) {
+        val action = intent?.getStringExtra(HydroWidgetProvider.EXTRA_TRIGGER_ACTION)
+        if (action != null) {
+            pendingWidgetAction = action
+            widgetMethodChannel?.invokeMethod("onWidgetAction", action)
+        }
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
         // Android Home & Lock Screen Widget Channel
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, WIDGET_CHANNEL).setMethodCallHandler { call, result ->
+        val widgetChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, WIDGET_CHANNEL)
+        widgetMethodChannel = widgetChannel
+
+        widgetChannel.setMethodCallHandler { call, result ->
             when (call.method) {
+                "getInitialAction" -> {
+                    val action = pendingWidgetAction
+                    pendingWidgetAction = null
+                    result.success(action)
+                }
                 "isPinSupported" -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         val appWidgetManager = AppWidgetManager.getInstance(this)

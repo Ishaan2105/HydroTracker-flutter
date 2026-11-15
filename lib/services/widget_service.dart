@@ -4,6 +4,33 @@ import 'pref_service.dart';
 
 class WidgetService {
   static const MethodChannel _channel = MethodChannel('hydro_flutter/widget');
+  static void Function(String action)? onWidgetActionReceived;
+  static bool _handlerInitialized = false;
+
+  /// Initialize native callback listeners for widget actions
+  static void init() {
+    if (_handlerInitialized) return;
+    _handlerInitialized = true;
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'onWidgetAction') {
+        final action = call.arguments as String?;
+        if (action != null && onWidgetActionReceived != null) {
+          onWidgetActionReceived!(action);
+        }
+      }
+    });
+  }
+
+  /// Consume the pending launch action (if app was opened via widget button)
+  static Future<String?> getInitialAction() async {
+    try {
+      final String? action = await _channel.invokeMethod<String>('getInitialAction');
+      return action;
+    } catch (e) {
+      debugPrint('WidgetService.getInitialAction error: $e');
+      return null;
+    }
+  }
 
   /// Check if the device / launcher supports pinning widgets directly
   static Future<bool> isPinWidgetSupported() async {

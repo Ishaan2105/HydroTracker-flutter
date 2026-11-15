@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/hydration_provider.dart';
+import '../services/widget_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/wave_progress_ring.dart';
 import '../widgets/hydro_top_bar.dart';
@@ -19,7 +20,36 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _customController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetService.init();
+    WidgetService.onWidgetActionReceived = (action) {
+      if (action == 'create_glass') {
+        _triggerGlassCreation();
+      }
+    };
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkWidgetLaunchIntent();
+    });
+  }
+
+  void _triggerGlassCreation() {
+    if (!mounted) return;
+    final provider = Provider.of<HydrationProvider>(context, listen: false);
+    final colors = AppColors(isDark: Theme.of(context).brightness == Brightness.dark);
+    _showGlassTrackerModal(context, provider, colors);
+  }
+
+  Future<void> _checkWidgetLaunchIntent() async {
+    final action = await WidgetService.getInitialAction();
+    if (action == 'create_glass' && mounted) {
+      _triggerGlassCreation();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetService.onWidgetActionReceived = null;
     _customController.dispose();
     super.dispose();
   }
@@ -214,55 +244,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 12),
 
-                  // Custom ml Input & Glass Tracker Row
+                  // Glass Tracker & Custom ml Input Row (Glass on Left, Custom mL on Right)
                   Row(
                     children: [
-                      // Custom ml Input with embedded submit icon
-                      Expanded(
-                        flex: 5,
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: colors.cardBg,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: colors.surfaceBorder),
-                          ),
-                          child: TextField(
-                            controller: _customController,
-                            keyboardType: TextInputType.number,
-                            style: GoogleFonts.poppins(
-                              color: colors.textPrimary,
-                              fontSize: 13.5,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Custom ml...',
-                              hintStyle: GoogleFonts.poppins(
-                                color: colors.textMuted,
-                                fontSize: 12.5,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.only(
-                                left: 14,
-                                right: 4,
-                                top: 12,
-                                bottom: 12,
-                              ),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  Icons.check_circle_rounded,
-                                  color: colors.cyanAccent,
-                                  size: 22,
-                                ),
-                                tooltip: 'Log custom ml',
-                                onPressed: () => _logCustomWater(context),
-                              ),
-                            ),
-                            onSubmitted: (_) => _logCustomWater(context),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      // Create Glass / Glass Tracker Button
+                      // Create Glass / Glass Tracker Button (Position 1 - Left)
                       Expanded(
                         flex: 5,
                         child: SizedBox(
@@ -315,6 +300,51 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                             ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      // Custom ml Input with embedded submit icon (Position 2 - Right)
+                      Expanded(
+                        flex: 6,
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: colors.cardBg,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: colors.surfaceBorder),
+                          ),
+                          child: TextField(
+                            controller: _customController,
+                            keyboardType: TextInputType.number,
+                            style: GoogleFonts.poppins(
+                              color: colors.textPrimary,
+                              fontSize: 13.5,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'Custom ml...',
+                              hintStyle: GoogleFonts.poppins(
+                                color: colors.textMuted,
+                                fontSize: 12.5,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.only(
+                                left: 14,
+                                right: 4,
+                                top: 12,
+                                bottom: 12,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  Icons.check_circle_rounded,
+                                  color: colors.cyanAccent,
+                                  size: 22,
+                                ),
+                                tooltip: 'Log custom ml',
+                                onPressed: () => _logCustomWater(context),
+                              ),
+                            ),
+                            onSubmitted: (_) => _logCustomWater(context),
                           ),
                         ),
                       ),

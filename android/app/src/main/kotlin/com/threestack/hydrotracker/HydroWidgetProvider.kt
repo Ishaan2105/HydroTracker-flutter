@@ -19,11 +19,15 @@ class HydroWidgetProvider : AppWidgetProvider() {
         private const val TAG = "HydroWidget"
         const val ACTION_ADD_WATER = "com.threestack.hydrotracker.ACTION_ADD_WATER"
         const val EXTRA_AMOUNT = "extra_amount"
+        const val EXTRA_TRIGGER_ACTION = "extra_trigger_action"
+        const val ACTION_CREATE_GLASS = "create_glass"
         private const val PREFS_NAME = "FlutterSharedPreferences"
         private const val KEY_INTAKE = "flutter.today_intake_ml"
         private const val KEY_GOAL = "flutter.daily_goal_ml"
         private const val KEY_PENDING_LOGS = "flutter.pending_widget_logs"
         private const val KEY_WIDGET_DATE = "flutter.widget_last_active_date"
+        private const val KEY_HAS_CONFIGURED_GLASS = "flutter.has_configured_glass"
+        private const val KEY_CUSTOM_GLASS_ML = "flutter.custom_glass_ml"
 
         fun getSafeInt(prefs: SharedPreferences, key: String, defaultVal: Int): Int {
             return try {
@@ -34,6 +38,14 @@ class HydroWidgetProvider : AppWidgetProvider() {
                 } catch (_: Exception) {
                     defaultVal
                 }
+            }
+        }
+
+        fun getSafeBoolean(prefs: SharedPreferences, key: String, defaultVal: Boolean): Boolean {
+            return try {
+                prefs.getBoolean(key, defaultVal)
+            } catch (_: Exception) {
+                defaultVal
             }
         }
 
@@ -105,7 +117,42 @@ class HydroWidgetProvider : AppWidgetProvider() {
                 views.setOnClickPendingIntent(R.id.widget_root, pendingAppIntent)
                 views.setOnClickPendingIntent(R.id.widget_circle_container, pendingAppIntent)
 
-                // +250ml Button tap
+                // Glass configuration status
+                val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                val hasConfiguredGlass = getSafeBoolean(prefs, KEY_HAS_CONFIGURED_GLASS, false)
+                val customGlassMl = getSafeInt(prefs, KEY_CUSTOM_GLASS_ML, 200).coerceIn(50, 1000)
+
+                // Button 1 (Left - Priority #1): Glass Button
+                views.setTextViewText(R.id.widget_btn_glass, "Glass")
+                if (hasConfiguredGlass) {
+                    val addGlassIntent = Intent(context, HydroWidgetProvider::class.java).apply {
+                        action = ACTION_ADD_WATER
+                        putExtra(EXTRA_AMOUNT, customGlassMl)
+                    }
+                    val pendingAddGlass = PendingIntent.getBroadcast(
+                        context,
+                        104,
+                        addGlassIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+                    views.setOnClickPendingIntent(R.id.widget_btn_glass, pendingAddGlass)
+                } else {
+                    val createGlassIntent = Intent(context, MainActivity::class.java).apply {
+                        action = Intent.ACTION_VIEW
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        putExtra(EXTRA_TRIGGER_ACTION, ACTION_CREATE_GLASS)
+                    }
+                    val pendingCreateGlass = PendingIntent.getActivity(
+                        context,
+                        103,
+                        createGlassIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+                    views.setOnClickPendingIntent(R.id.widget_btn_glass, pendingCreateGlass)
+                }
+
+                // Button 2 (Right - Priority #2): +250 ml Button tap
+                views.setTextViewText(R.id.widget_btn_250, "+250 ml")
                 val add250Intent = Intent(context, HydroWidgetProvider::class.java).apply {
                     action = ACTION_ADD_WATER
                     putExtra(EXTRA_AMOUNT, 250)
@@ -117,19 +164,6 @@ class HydroWidgetProvider : AppWidgetProvider() {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
                 views.setOnClickPendingIntent(R.id.widget_btn_250, pendingAdd250)
-
-                // +500ml Button tap
-                val add500Intent = Intent(context, HydroWidgetProvider::class.java).apply {
-                    action = ACTION_ADD_WATER
-                    putExtra(EXTRA_AMOUNT, 500)
-                }
-                val pendingAdd500 = PendingIntent.getBroadcast(
-                    context,
-                    102,
-                    add500Intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                views.setOnClickPendingIntent(R.id.widget_btn_500, pendingAdd500)
 
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             } catch (e: Exception) {
