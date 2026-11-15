@@ -277,8 +277,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(14),
                                   border: Border.all(
-                                    color: colors.surfaceBorder,
-                                    width: 1.0,
+                                    color: provider.hasConfiguredGlass
+                                        ? colors.surfaceBorder
+                                        : colors.cyanAccent.withValues(alpha: 0.6),
+                                    width: provider.hasConfiguredGlass ? 1.0 : 1.5,
                                   ),
                                 ),
                                 padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -286,18 +288,24 @@ class _HomeScreenState extends State<HomeScreen> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(
-                                      Icons.local_drink_rounded,
+                                      provider.hasConfiguredGlass
+                                          ? Icons.local_drink_rounded
+                                          : Icons.add_circle_outline_rounded,
                                       color: colors.cyanAccent,
                                       size: 19,
                                     ),
                                     const SizedBox(width: 6),
                                     Flexible(
                                       child: Text(
-                                        'Glass (${provider.customGlassMl}ml)',
+                                        provider.hasConfiguredGlass
+                                            ? 'Glass (${provider.customGlassMl}ml)'
+                                            : 'Create Glass',
                                         style: GoogleFonts.poppins(
                                           fontSize: 12.5,
                                           fontWeight: FontWeight.w600,
-                                          color: colors.textPrimary,
+                                          color: provider.hasConfiguredGlass
+                                              ? colors.textPrimary
+                                              : colors.cyanAccent,
                                         ),
                                         overflow: TextOverflow.ellipsis,
                                         maxLines: 1,
@@ -1054,24 +1062,34 @@ class _GlassTrackerSheetState extends State<_GlassTrackerSheet> {
   late int _selectedGlassMl;
   bool _isCustomizingSize = false;
   final List<int> _sizePresets = [150, 200, 250, 300, 350, 500];
+  final TextEditingController _customSizeController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _selectedGlassMl = widget.provider.customGlassMl;
+    _customSizeController.text = '$_selectedGlassMl';
+    _isCustomizingSize = !widget.provider.hasConfiguredGlass;
+  }
+
+  @override
+  void dispose() {
+    _customSizeController.dispose();
+    super.dispose();
   }
 
   void _logGlasses() async {
     final messenger = ScaffoldMessenger.of(context);
     final count = _glassCount;
-    final glassSize = _selectedGlassMl;
+    final parsed = int.tryParse(_customSizeController.text.trim()) ?? _selectedGlassMl;
+    final glassSize = parsed.clamp(50, 1000);
     final total = count * glassSize;
 
     HapticFeedback.mediumImpact();
     Navigator.pop(context);
 
-    // If glass size was changed, update persistent preference
-    if (glassSize != widget.provider.customGlassMl) {
+    // If glass size was changed or not configured yet, update persistent preference
+    if (glassSize != widget.provider.customGlassMl || !widget.provider.hasConfiguredGlass) {
       await widget.provider.setCustomGlassMl(glassSize);
     }
 
@@ -1136,7 +1154,13 @@ class _GlassTrackerSheetState extends State<_GlassTrackerSheet> {
                   color: colors.cyanAccent.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.local_drink_rounded, color: colors.cyanAccent, size: 24),
+                child: Icon(
+                  widget.provider.hasConfiguredGlass
+                      ? Icons.local_drink_rounded
+                      : Icons.tune_rounded,
+                  color: colors.cyanAccent,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1144,7 +1168,9 @@ class _GlassTrackerSheetState extends State<_GlassTrackerSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Glass Intake Tracker',
+                      widget.provider.hasConfiguredGlass
+                          ? 'Glass Intake Tracker'
+                          : 'Set Your Glass Size',
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -1152,7 +1178,9 @@ class _GlassTrackerSheetState extends State<_GlassTrackerSheet> {
                       ),
                     ),
                     Text(
-                      'Log water by glasses drunk',
+                      widget.provider.hasConfiguredGlass
+                          ? 'Log water by glasses drunk'
+                          : 'Choose your preferred glass capacity',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         color: colors.textSecondary,
@@ -1161,26 +1189,27 @@ class _GlassTrackerSheetState extends State<_GlassTrackerSheet> {
                   ],
                 ),
               ),
-              TextButton.icon(
-                onPressed: () {
-                  setState(() {
-                    _isCustomizingSize = !_isCustomizingSize;
-                  });
-                },
-                icon: Icon(
-                  _isCustomizingSize ? Icons.check_circle_outline : Icons.tune_rounded,
-                  size: 16,
-                  color: colors.cyanAccent,
-                ),
-                label: Text(
-                  _isCustomizingSize ? 'Done' : 'Glass Size',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+              if (widget.provider.hasConfiguredGlass)
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _isCustomizingSize = !_isCustomizingSize;
+                    });
+                  },
+                  icon: Icon(
+                    _isCustomizingSize ? Icons.check_circle_outline : Icons.tune_rounded,
+                    size: 16,
                     color: colors.cyanAccent,
                   ),
+                  label: Text(
+                    _isCustomizingSize ? 'Done' : 'Glass Size',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: colors.cyanAccent,
+                    ),
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -1192,7 +1221,11 @@ class _GlassTrackerSheetState extends State<_GlassTrackerSheet> {
               decoration: BoxDecoration(
                 color: colors.cardBgAlt,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: colors.surfaceBorder),
+                border: Border.all(
+                  color: !widget.provider.hasConfiguredGlass
+                      ? colors.cyanAccent.withValues(alpha: 0.4)
+                      : colors.surfaceBorder,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1201,22 +1234,37 @@ class _GlassTrackerSheetState extends State<_GlassTrackerSheet> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '1 Glass Measurement',
+                        '1 Glass Capacity',
                         style: GoogleFonts.poppins(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
                           color: colors.textPrimary,
                         ),
                       ),
-                      Text(
-                        '$_selectedGlassMl ml',
-                        style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: colors.cyanAccent,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: colors.cyanAccent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '$_selectedGlassMl ml',
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: colors.cyanAccent,
+                          ),
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Pick a common size or enter a custom amount (50 - 1000 ml):',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Wrap(
@@ -1227,8 +1275,10 @@ class _GlassTrackerSheetState extends State<_GlassTrackerSheet> {
                       return InkWell(
                         onTap: () {
                           HapticFeedback.selectionClick();
-                          setState(() => _selectedGlassMl = size);
-                          widget.provider.setCustomGlassMl(size);
+                          setState(() {
+                            _selectedGlassMl = size;
+                            _customSizeController.text = '$size';
+                          });
                         },
                         borderRadius: BorderRadius.circular(10),
                         child: Container(
@@ -1254,6 +1304,103 @@ class _GlassTrackerSheetState extends State<_GlassTrackerSheet> {
                         ),
                       );
                     }).toList(),
+                  ),
+                  const SizedBox(height: 12),
+                  // Custom ml input & Set Size button
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: colors.cardBg,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: colors.surfaceBorder),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          alignment: Alignment.center,
+                          child: TextField(
+                            controller: _customSizeController,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(4),
+                            ],
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: colors.textPrimary,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'Custom ml',
+                              hintStyle: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: colors.textMuted,
+                              ),
+                              isDense: true,
+                              border: InputBorder.none,
+                              suffixText: 'ml',
+                              suffixStyle: GoogleFonts.poppins(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: colors.cyanAccent,
+                              ),
+                            ),
+                            onChanged: (val) {
+                              final parsed = int.tryParse(val);
+                              if (parsed != null && parsed >= 50 && parsed <= 1000) {
+                                setState(() => _selectedGlassMl = parsed);
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final parsed = int.tryParse(_customSizeController.text.trim()) ?? _selectedGlassMl;
+                          final clamped = parsed.clamp(50, 1000);
+                          HapticFeedback.mediumImpact();
+                          await widget.provider.setCustomGlassMl(clamped);
+                          if (mounted) {
+                            setState(() {
+                              _selectedGlassMl = clamped;
+                              _isCustomizingSize = false;
+                            });
+                          }
+                          messenger.clearSnackBars();
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Glass size set to ${clamped}ml! 🥛',
+                                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                              ),
+                              backgroundColor: const Color(0xFF0284C7),
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colors.cyanAccent,
+                          foregroundColor: Colors.black,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          minimumSize: const Size(0, 44),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Set Size',
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

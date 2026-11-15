@@ -67,6 +67,7 @@ class HydrationProvider extends ChangeNotifier {
   bool _isSoloOptIn = true;
   bool _isLeaderboardOptIn = true;
   int _customGlassMl = 200;
+  bool _hasConfiguredGlass = false;
   String _themeMode = 'auto'; // 'auto' (schedule: 6:30 AM Light / 6:30 PM Dark), 'light', 'dark'
   bool _isDarkMode = true;
 
@@ -79,6 +80,7 @@ class HydrationProvider extends ChangeNotifier {
   bool get isStreakBannerDismissed => _isStreakBannerDismissed;
   bool get isLeaderboardOptIn => _isLeaderboardOptIn;
   int get customGlassMl => _customGlassMl;
+  bool get hasConfiguredGlass => _hasConfiguredGlass;
   String get themeMode => _themeMode;
 
   /// Returns true if [dt] (or DateTime.now()) falls within the daytime window:
@@ -229,6 +231,7 @@ class HydrationProvider extends ChangeNotifier {
       _isSoloOptIn = await PrefService.getSoloOptIn();
       _isLeaderboardOptIn = await PrefService.getLeaderboardOptIn();
       _customGlassMl = await PrefService.getCustomGlassMl();
+      _hasConfiguredGlass = await PrefService.hasConfiguredGlass();
       _themeMode = await PrefService.getThemeMode();
       _isDarkMode = isDarkMode;
 
@@ -857,7 +860,9 @@ class HydrationProvider extends ChangeNotifier {
 
   Future<void> setCustomGlassMl(int ml) async {
     _customGlassMl = ml.clamp(50, 1000);
+    _hasConfiguredGlass = true;
     await PrefService.setCustomGlassMl(_customGlassMl);
+    await PrefService.setHasConfiguredGlass(true);
     notifyListeners();
   }
 
