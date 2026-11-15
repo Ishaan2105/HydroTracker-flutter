@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Frosted Glassmorphic Translucent Background for Hydro Tracker Widget -->
+<!-- Sleek Frosted Glassmorphic Background for Hydro Tracker Widget -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <!-- Semi-transparent deep slate tint (~18% opacity) allows wallpaper to show through with high text contrast -->
-    <solid android:color="#2E0F172A" />
-    <corners android:radius="22dp" />
+    <solid android:color="#E60B1329" />
+    <corners android:radius="20dp" />
     <stroke
-        android:width="1dp"
-        android:color="#4D00E5FF" />
+        android:width="1.2dp"
+        android:color="#3800E5FF" />
 </shape>

@@ -7,97 +7,119 @@
     android:orientation="horizontal"
     android:background="@drawable/widget_bg"
     android:gravity="center_vertical"
-    android:padding="10dp">
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
 
-    <!-- Sleek Progress Circle (without showing percentage) -->
+    <!-- Progress Circle with Centered Circular Water Logo (Zero White Edges) -->
     <FrameLayout
         android:id="@+id/widget_circle_container"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
+        android:layout_width="54dp"
+        android:layout_height="54dp"
         android:layout_gravity="center_vertical">
 
         <ProgressBar
             android:id="@+id/widget_progress_bar"
             style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="54dp"
+            android:layout_height="54dp"
             android:indeterminate="false"
             android:max="100"
             android:progress="0"
             android:progressDrawable="@drawable/widget_progress_ring" />
 
         <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:id="@+id/widget_logo_icon"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
             android:layout_gravity="center"
-            android:src="@mipmap/ic_launcher"
-            android:contentDescription="Water Progress" />
+            android:src="@drawable/widget_logo"
+            android:contentDescription="Hydro Logo" />
     </FrameLayout>
 
-    <!-- Intake Info & Quick Add Buttons -->
+    <!-- Intake Metrics & Quick Add Buttons -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:layout_marginStart="10dp"
+        android:layout_marginStart="12dp"
         android:layout_gravity="center_vertical"
         android:orientation="vertical">
 
-        <!-- Title & Intake text with single-line truncation -->
-        <TextView
-            android:id="@+id/widget_title"
+        <!-- Intake Header Row (Target Metric + Percent Badge) -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="HYDRO TRACKER"
-            android:textColor="#00E5FF"
-            android:textSize="11sp"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:textStyle="bold" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-        <TextView
-            android:id="@+id/widget_text_intake"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="0 / 2500 ml"
-            android:textColor="#F1F5F9"
-            android:textStyle="bold"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:textSize="12sp" />
+            <TextView
+                android:id="@+id/widget_text_intake"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="0 / 2500 ml"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="13.5sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false" />
 
-        <!-- Quick Log Options with flexible weights -->
+            <TextView
+                android:id="@+id/widget_text_percent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0%"
+                android:textColor="#00E5FF"
+                android:textStyle="bold"
+                android:textSize="11sp"
+                android:paddingStart="7dp"
+                android:paddingEnd="7dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:background="@drawable/widget_badge_bg"
+                android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <!-- Quick Log Options (Sleek Glassmorphic Pills - Fully Displayed Without Clipping) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:orientation="horizontal">
 
-            <Button
+            <TextView
                 android:id="@+id/widget_btn_250"
                 android:layout_width="0dp"
-                android:layout_height="32dp"
+                android:layout_height="30dp"
                 android:layout_weight="1"
                 android:layout_marginEnd="6dp"
                 android:background="@drawable/widget_btn_bg"
-                android:text="+250ml"
+                android:text="+250 ml"
                 android:textColor="#00E5FF"
-                android:textSize="11sp"
+                android:textSize="11.5sp"
                 android:textStyle="bold"
-                android:padding="0dp" />
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:includeFontPadding="false" />
 
-            <Button
+            <TextView
                 android:id="@+id/widget_btn_500"
                 android:layout_width="0dp"
-                android:layout_height="32dp"
+                android:layout_height="30dp"
                 android:layout_weight="1"
                 android:background="@drawable/widget_btn_bg"
-                android:text="+500ml"
+                android:text="+500 ml"
                 android:textColor="#00E5FF"
-                android:textSize="11sp"
+                android:textSize="11.5sp"
                 android:textStyle="bold"
-                android:padding="0dp" />
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:includeFontPadding="false" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

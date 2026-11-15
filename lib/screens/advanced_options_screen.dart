@@ -401,46 +401,60 @@ class _AdvancedOptionsScreenState extends State<AdvancedOptionsScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          'Hydro Tracker',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: colors.textPrimary,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${(provider.todayIntakeMl / 1000).toStringAsFixed(2)} / ${(provider.dailyGoalMl / 1000).toStringAsFixed(1)} L',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 11.5,
-                                            fontWeight: FontWeight.w600,
-                                            color: colors.cyanAccent,
-                                          ),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                '${provider.todayIntakeMl} / ${provider.dailyGoalMl} ml',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: colors.textPrimary,
+                                                ),
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: colors.cyanAccent.withValues(alpha: 0.12),
+                                                borderRadius: BorderRadius.circular(8),
+                                                border: Border.all(
+                                                  color: colors.cyanAccent.withValues(alpha: 0.3),
+                                                  width: 0.8,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                '${((provider.todayIntakeMl / (provider.dailyGoalMl > 0 ? provider.dailyGoalMl : 2500)) * 100).toInt().clamp(0, 100)}%',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: colors.cyanAccent,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                         const SizedBox(height: 10),
 
-                                        // Quick add intake buttons
+                                        // Quick add intake buttons (Sleek Pills)
                                         Row(
                                           children: [
-                                            _buildWidgetAddButton(
-                                              context: context,
-                                              label: '+250ml',
-                                              amountMl: 250,
-                                              colors: colors,
+                                            Expanded(
+                                              child: _buildWidgetAddButton(
+                                                context: context,
+                                                label: '+250ml',
+                                                amountMl: 250,
+                                                colors: colors,
+                                              ),
                                             ),
-                                            const SizedBox(width: 6),
-                                            _buildWidgetAddButton(
-                                              context: context,
-                                              label: '+500ml',
-                                              amountMl: 500,
-                                              colors: colors,
-                                            ),
-                                            const SizedBox(width: 6),
-                                            _buildWidgetAddButton(
-                                              context: context,
-                                              label: '+750ml',
-                                              amountMl: 750,
-                                              colors: colors,
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: _buildWidgetAddButton(
+                                                context: context,
+                                                label: '+500ml',
+                                                amountMl: 500,
+                                                colors: colors,
+                                              ),
                                             ),
                                           ],
                                         ),

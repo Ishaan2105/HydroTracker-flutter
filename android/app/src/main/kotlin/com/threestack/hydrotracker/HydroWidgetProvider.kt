@@ -90,6 +90,7 @@ class HydroWidgetProvider : AppWidgetProvider() {
 
                 views.setProgressBar(R.id.widget_progress_bar, 100, progressPct, false)
                 views.setTextViewText(R.id.widget_text_intake, "$intakeMl / $safeGoal ml")
+                views.setTextViewText(R.id.widget_text_percent, "$progressPct%")
 
                 // Body / Circle tap opens app
                 val launchIntent = Intent(context, MainActivity::class.java).apply {

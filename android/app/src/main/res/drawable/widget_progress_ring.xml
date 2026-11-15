@@ -3,10 +3,10 @@
     <item android:id="@android:id/background">
         <shape
             android:shape="ring"
-            android:innerRadiusRatio="2.8"
-            android:thicknessRatio="10.0"
+            android:innerRadiusRatio="2.6"
+            android:thicknessRatio="11.0"
             android:useLevel="false">
-            <solid android:color="#2638BDF8" />
+            <solid android:color="#2000E5FF" />
         </shape>
     </item>
     <item android:id="@android:id/progress">
@@ -17,12 +17,11 @@
             android:pivotY="50%">
             <shape
                 android:shape="ring"
-                android:innerRadiusRatio="2.8"
-                android:thicknessRatio="10.0"
+                android:innerRadiusRatio="2.6"
+                android:thicknessRatio="11.0"
                 android:useLevel="true">
                 <solid android:color="#00E5FF" />
             </shape>
         </rotate>
     </item>
 </layer-list>
-
