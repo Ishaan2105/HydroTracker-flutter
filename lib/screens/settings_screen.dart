@@ -24,6 +24,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _nameController;
   late TextEditingController _goalController;
   late TextEditingController _glassController;
+  final ScrollController _glassScrollController = ScrollController();
   bool _isBatteryExempt = true; // assume OK until checked
   bool _isThemeExpanded = true;
 
@@ -49,6 +50,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _nameController.dispose();
     _goalController.dispose();
     _glassController.dispose();
+    _glassScrollController.dispose();
     super.dispose();
   }
 
@@ -366,18 +368,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        // Presets
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              _buildGlassPresetChip(provider, 150, colors),
-                              _buildGlassPresetChip(provider, 200, colors),
-                              _buildGlassPresetChip(provider, 250, colors),
-                              _buildGlassPresetChip(provider, 300, colors),
-                              _buildGlassPresetChip(provider, 350, colors),
-                              _buildGlassPresetChip(provider, 500, colors),
-                            ],
+                        // Presets with Sleek Horizontal Scrollbar
+                        RawScrollbar(
+                          controller: _glassScrollController,
+                          thumbVisibility: true,
+                          thickness: 3.5,
+                          radius: const Radius.circular(2),
+                          thumbColor: colors.cyanAccent.withValues(alpha: 0.6),
+                          padding: const EdgeInsets.only(top: 6),
+                          child: SingleChildScrollView(
+                            controller: _glassScrollController,
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              children: [
+                                _buildGlassPresetChip(provider, 150, colors),
+                                _buildGlassPresetChip(provider, 200, colors),
+                                _buildGlassPresetChip(provider, 250, colors),
+                                _buildGlassPresetChip(provider, 300, colors),
+                                _buildGlassPresetChip(provider, 350, colors),
+                                _buildGlassPresetChip(provider, 500, colors),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -1364,7 +1376,7 @@ class _BatteryGuidanceBannerState extends State<_BatteryGuidanceBanner> {
                         ),
                         if (!_isExpanded)
                           Text(
-                            'Tap to fix background alarm delivery on Samsung',
+                            'Tap to fix background alarm delivery on Android',
                             style: GoogleFonts.poppins(fontSize: 10, color: mutedTextColor),
                           ),
                       ],
@@ -1389,8 +1401,7 @@ class _BatteryGuidanceBannerState extends State<_BatteryGuidanceBanner> {
                   Divider(color: isDark ? Colors.orangeAccent : Colors.orange.withValues(alpha: 0.5), height: 1, thickness: 0.3),
                   const SizedBox(height: 10),
                   Text(
-                    'Samsung One UI can kill background alarms even with all permissions granted. '
-                    'Two settings need to be fixed for reliable delivery:',
+                    'Android battery optimization and aggressive OEM power-management can suppress background alarms even with all permissions granted. Two settings ensure reliable delivery:',
                     style: GoogleFonts.poppins(fontSize: 11, color: secondaryTextColor),
                   ),
                   const SizedBox(height: 12),
@@ -1425,9 +1436,9 @@ class _BatteryGuidanceBannerState extends State<_BatteryGuidanceBanner> {
 
           const SizedBox(height: 10),
 
-          // Fix 2 — Samsung Device Care / App Sleep
+          // Fix 2 — OEM Background Limits & App Sleep
           Text(
-            'Fix 2 — Samsung App Sleep (Never Sleeping Apps)',
+            'Fix 2 — Background Usage Limits & App Sleep',
             style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: primaryTextColor),
           ),
           const SizedBox(height: 4),
@@ -1614,9 +1625,7 @@ class BatteryGuidanceBottomSheet extends StatelessWidget {
 
             const SizedBox(height: 12),
             Text(
-              'Samsung One UI\'s battery optimization can silently suppress your '
-              'hydration alarms, even when all permissions are granted.\n\n'
-              'Two quick fixes take less than 30 seconds:',
+              'Android\'s battery optimization and aggressive OEM background power-management can silently suppress or delay scheduled hydration alarms when your screen is locked. To ensure alarms fire with 100% accuracy, please grant Unrestricted background activity.',
               style: GoogleFonts.poppins(fontSize: 13, color: Colors.white70, height: 1.5),
             ),
 
@@ -1626,7 +1635,7 @@ class BatteryGuidanceBottomSheet extends StatelessWidget {
             _sheetFixRow(
               icon: Icons.bolt_rounded,
               title: 'Fix 1 — Allow Unrestricted Battery',
-              subtitle: 'Prevents Samsung from throttling the AlarmManager',
+              subtitle: 'Prevents the Android OS from throttling AlarmManager',
               color: Colors.orange,
               onTap: () async {
                 await NotificationService.requestBatteryOptimizationExemption();
@@ -1638,15 +1647,47 @@ class BatteryGuidanceBottomSheet extends StatelessWidget {
             // Fix 2
             _sheetFixRow(
               icon: Icons.phone_android_rounded,
-              title: 'Fix 2 — Never Sleeping Apps (Samsung)',
-              subtitle: 'Device Care → Battery → Background usage limits',
+              title: 'Fix 2 — OEM Background Limits (Samsung & Others)',
+              subtitle: 'Device Care → Battery → Background limits',
               color: const Color(0xFF00E5FF),
               onTap: () async {
                 await NotificationService.openSamsungDeviceCare();
               },
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
+
+            // Expandable OEM Troubleshooting Tip
+            Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                collapsedIconColor: Colors.white70,
+                iconColor: const Color(0xFF00E5FF),
+                title: Text(
+                  'Manufacturer Guide (Samsung, Xiaomi, OnePlus, Pixel)',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF00E5FF),
+                  ),
+                ),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      '• Samsung: Settings → Apps → Hydro Tracker → Battery → Unrestricted, and Device Care → Battery → Background usage limits → Never sleeping apps.\n'
+                      '• Xiaomi / HyperOS: Settings → Apps → Manage apps → Hydro Tracker → Autostart ON, and Battery saver → No restrictions.\n'
+                      '• OnePlus / Oppo / Realme: App info → Battery usage → Allow background activity & Allow auto-launch.\n'
+                      '• Google Pixel / Stock Android: Settings → Apps → Hydro Tracker → App battery usage → Unrestricted.',
+                      style: GoogleFonts.poppins(fontSize: 11, color: Colors.white60, height: 1.45),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 14),
 
             SizedBox(
               width: double.infinity,

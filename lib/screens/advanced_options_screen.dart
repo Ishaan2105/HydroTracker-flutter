@@ -18,6 +18,7 @@ class AdvancedOptionsScreen extends StatefulWidget {
 class _AdvancedOptionsScreenState extends State<AdvancedOptionsScreen> {
   bool _isPinSupported = true;
   bool _isBatteryExempt = true;
+  bool _isPrecisionEngineExpanded = false;
 
   @override
   void initState() {
@@ -411,8 +412,11 @@ class _AdvancedOptionsScreenState extends State<AdvancedOptionsScreen> {
                                                   fontWeight: FontWeight.bold,
                                                   color: colors.textPrimary,
                                                 ),
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 1,
                                               ),
                                             ),
+                                            const SizedBox(width: 4),
                                             Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                               decoration: BoxDecoration(
@@ -525,10 +529,9 @@ class _AdvancedOptionsScreenState extends State<AdvancedOptionsScreen> {
 
                   const SizedBox(height: 20),
 
-                  // 2. Precision Alarm Engine Diagnostics Card
+                  // 2. Collapsible Precision Alarm Engine Diagnostics Card
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: colors.cardBg,
                       borderRadius: BorderRadius.circular(20),
@@ -544,103 +547,205 @@ class _AdvancedOptionsScreenState extends State<AdvancedOptionsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(Icons.bolt_rounded, color: Color(0xFF10B981), size: 22),
+                        // Clickable Accordion Header
+                        InkWell(
+                          onTap: () {
+                            setState(() {
+                              _isPrecisionEngineExpanded = !_isPrecisionEngineExpanded;
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Padding(
+                            padding: const EdgeInsets.all(18),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(Icons.bolt_rounded, color: Color(0xFF10B981), size: 22),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Precision Engine Status',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: colors.textPrimary,
+                                        ),
+                                      ),
+                                      Text(
+                                        'exactAllowWhileIdle • Doze mode defense',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 11,
+                                          color: colors.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                AnimatedRotation(
+                                  turns: _isPrecisionEngineExpanded ? 0.5 : 0.0,
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.easeInOut,
+                                  child: Icon(Icons.expand_more_rounded, color: colors.textSecondary, size: 22),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Precision Engine Status',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color: colors.textPrimary,
+                          ),
+                        ),
+
+                        // Expanded Diagnostic Matrix
+                        AnimatedCrossFade(
+                          firstChild: const SizedBox.shrink(),
+                          secondChild: Padding(
+                            padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Divider(height: 1),
+                                const SizedBox(height: 14),
+
+                                // Battery Optimization Status
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: colors.cardBgAlt,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'Battery Optimization:',
+                                          style: GoogleFonts.poppins(fontSize: 12.5, color: colors.textSecondary),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: _isBatteryExempt
+                                              ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                                              : const Color(0xFFEF4444).withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          _isBatteryExempt ? 'EXEMPTED' : 'NOT EXEMPTED',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: _isBatteryExempt ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(height: 10),
+
+                                // OEM Warning & Action Buttons
+                                if (!_isBatteryExempt) ...[
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton(
+                                      onPressed: () async {
+                                        await NotificationService.requestBatteryOptimizationExemption();
+                                        _checkCapabilities();
+                                      },
+                                      style: OutlinedButton.styleFrom(
+                                        side: const BorderSide(color: Color(0xFFF97316)),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
+                                      child: Text(
+                                        'Request Exemption (Unrestricted)',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFFF97316),
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                  Text(
-                                    'exactAllowWhileIdle • Doze mode defense',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 11,
-                                      color: colors.textSecondary,
-                                    ),
-                                  ),
+                                  const SizedBox(height: 8),
                                 ],
-                              ),
+
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: () async {
+                                          await NotificationService.openSamsungDeviceCare();
+                                        },
+                                        icon: const Icon(Icons.settings_suggest_rounded, size: 16),
+                                        label: Text(
+                                          'Device Care',
+                                          style: GoogleFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.w600),
+                                        ),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: colors.cyanAccent,
+                                          side: BorderSide(color: colors.cyanAccent.withValues(alpha: 0.4)),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          padding: const EdgeInsets.symmetric(vertical: 10),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: () async {
+                                          final testTime = await NotificationService.scheduleOneMinuteTest();
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).clearSnackBars();
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  NotificationService.formatAlarmConfirmation(testTime),
+                                                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                                                ),
+                                                backgroundColor: const Color(0xFF10B981),
+                                                behavior: SnackBarBehavior.floating,
+                                                duration: const Duration(seconds: 4),
+                                              ),
+                                            );
+                                          }
+                                        },
+                                        icon: const Icon(Icons.alarm_rounded, size: 16, color: Colors.white),
+                                        label: Text(
+                                          'Test 1-Min Alarm',
+                                          style: GoogleFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.w600, color: Colors.white),
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: colors.primaryBlue,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          padding: const EdgeInsets.symmetric(vertical: 10),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+
+                                // Diagnostic Note
+                                Text(
+                                  'Uses exactAllowWhileIdle to schedule alarms directly with the Android AlarmManager, bypassing standard Doze mode standby limits.',
+                                  style: GoogleFonts.poppins(fontSize: 11, color: colors.textSecondary, height: 1.35),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
+                          crossFadeState: _isPrecisionEngineExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                          duration: const Duration(milliseconds: 250),
                         ),
-                        const SizedBox(height: 14),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: colors.cardBgAlt,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  'Battery Optimization:',
-                                  style: GoogleFonts.poppins(fontSize: 12.5, color: colors.textSecondary),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: _isBatteryExempt
-                                      ? const Color(0xFF10B981).withValues(alpha: 0.15)
-                                      : const Color(0xFFEF4444).withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  _isBatteryExempt ? 'EXEMPTED' : 'NOT EXEMPTED',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: _isBatteryExempt ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (!_isBatteryExempt) ...[
-                          const SizedBox(height: 10),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: () async {
-                                await NotificationService.requestBatteryOptimizationExemption();
-                                _checkCapabilities();
-                              },
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Color(0xFFF97316)),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              child: Text(
-                                'Grant Unrestricted Battery Access',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFF97316),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
@@ -680,19 +785,24 @@ class _AdvancedOptionsScreenState extends State<AdvancedOptionsScreen> {
       },
       borderRadius: BorderRadius.circular(10),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         decoration: BoxDecoration(
           color: colors.cardBg,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: colors.surfaceBorder),
         ),
         alignment: Alignment.center,
-        child: Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-            color: colors.textPrimary,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: colors.textPrimary,
+            ),
           ),
         ),
       ),

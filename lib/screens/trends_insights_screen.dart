@@ -33,6 +33,28 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
   // Accordion Toggles
   bool _isMealsExpanded = false;
 
+  // Monthly Heatmap State
+  DateTime _activeHeatmapMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
+
+  bool get _canIncrementHeatmapMonth {
+    final now = DateTime.now();
+    return _activeHeatmapMonth.year < now.year ||
+        (_activeHeatmapMonth.year == now.year && _activeHeatmapMonth.month < now.month);
+  }
+
+  void _previousHeatmapMonth() {
+    setState(() {
+      _activeHeatmapMonth = DateTime(_activeHeatmapMonth.year, _activeHeatmapMonth.month - 1, 1);
+    });
+  }
+
+  void _nextHeatmapMonth() {
+    if (!_canIncrementHeatmapMonth) return;
+    setState(() {
+      _activeHeatmapMonth = DateTime(_activeHeatmapMonth.year, _activeHeatmapMonth.month + 1, 1);
+    });
+  }
+
   // Meal Schedule Controllers
   TimeOfDay _bfastTime = const TimeOfDay(hour: 8, minute: 30);
   TimeOfDay _lunchTime = const TimeOfDay(hour: 13, minute: 0);
@@ -415,7 +437,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                         if (_useCm) ...[
                           _buildCalculatorInput(
                             controller: _cmController,
-                            hint: 'Height in cm (e.g. 175)',
+                            hint: 'Height in cm',
                             fieldLabel: 'Height',
                             colors: colors,
                           ),
@@ -877,7 +899,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                   const SizedBox(height: 20),
 
                   // ==========================================
-                  // 4. 30-Day Activity Heat Map (Shrunk by 35%)
+                  // 4. Monthly Activity Heatmap with Month Navigation
                   // ==========================================
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -892,7 +914,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                         Row(
                           children: [
                             Text(
-                              '30-Day Activity Heatmap',
+                              'Monthly Activity Heatmap',
                               style: GoogleFonts.poppins(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.bold,
@@ -918,90 +940,145 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 8),
+
+                        // Month Navigation Toolbar
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.chevron_left_rounded),
+                              color: colors.textPrimary,
+                              iconSize: 24,
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: _previousHeatmapMonth,
+                            ),
+                            Text(
+                              DateFormat('MMMM yyyy').format(_activeHeatmapMonth),
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: colors.textPrimary,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.chevron_right_rounded),
+                              color: _canIncrementHeatmapMonth
+                                  ? colors.textPrimary
+                                  : colors.textSecondary.withValues(alpha: 0.3),
+                              iconSize: 24,
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: _canIncrementHeatmapMonth ? _nextHeatmapMonth : null,
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 10),
 
-                        // Heatmap Tiles Grid (Shrunk by 35% with compact horizontal padding and smaller tiles)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 7,
-                              crossAxisSpacing: 4.5,
-                              mainAxisSpacing: 4.5,
-                              childAspectRatio: 1.0,
-                            ),
-                            itemCount: 30,
-                            itemBuilder: (context, index) {
-                              final date = DateTime.now().subtract(Duration(days: 29 - index));
-                              final dateStr = provider.formatDateString(date);
-                              final total = provider.dailyTotalsMap[dateStr] ?? 0;
-                              final ratio = provider.dailyGoalMl > 0 ? (total / provider.dailyGoalMl) : 0.0;
-                              final isSelected = dateStr == provider.selectedDateString;
-                              final isToday = index == 29;
+                        // Heatmap Tiles Grid (Exact days in active month: 28, 29, 30, or 31)
+                        Builder(
+                          builder: (context) {
+                            final daysInMonth = DateTime(_activeHeatmapMonth.year, _activeHeatmapMonth.month + 1, 0).day;
+                            final now = DateTime.now();
 
-                              Color tileColor;
-                              if (ratio >= 1.0) {
-                                tileColor = const Color(0xFF10B981); // 100%+
-                              } else if (ratio >= 0.5) {
-                                tileColor = const Color(0xFF3B82F6); // 50-99%
-                              } else if (ratio > 0) {
-                                tileColor = const Color(0xFFF97316); // 1-49%
-                              } else {
-                                tileColor = colors.emptyComponentBg; // 0%
-                              }
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              child: GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 7,
+                                  crossAxisSpacing: 4.5,
+                                  mainAxisSpacing: 4.5,
+                                  childAspectRatio: 1.0,
+                                ),
+                                itemCount: daysInMonth,
+                                itemBuilder: (context, index) {
+                                  final day = index + 1;
+                                  final date = DateTime(_activeHeatmapMonth.year, _activeHeatmapMonth.month, day);
+                                  final dateStr = provider.formatDateString(date);
+                                  final total = provider.dailyTotalsMap[dateStr] ?? 0;
+                                  final ratio = provider.dailyGoalMl > 0 ? (total / provider.dailyGoalMl) : 0.0;
+                                  final isSelected = dateStr == provider.selectedDateString;
+                                  final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
 
-                              return InkWell(
-                                onTap: () => provider.selectDate(date),
-                                borderRadius: BorderRadius.circular(4),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  decoration: BoxDecoration(
-                                    color: tileColor,
+                                  // Level mapping: Level 0 (0%), Level 1 (1–49%), Level 2 (50–79%), Level 3 (80–99%), Level 4 (100%+)
+                                  Color tileColor;
+                                  if (ratio >= 1.0) {
+                                    tileColor = const Color(0xFF10B981); // 100%+
+                                  } else if (ratio >= 0.8) {
+                                    tileColor = const Color(0xFF00E5FF); // 80-99%
+                                  } else if (ratio >= 0.5) {
+                                    tileColor = const Color(0xFF3B82F6); // 50-79%
+                                  } else if (ratio > 0) {
+                                    tileColor = const Color(0xFFF97316); // 1-49%
+                                  } else {
+                                    tileColor = colors.emptyComponentBg; // 0%
+                                  }
+
+                                  return InkWell(
+                                    onTap: () => provider.selectDate(date),
                                     borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? colors.cyanAccent
-                                          : (isToday ? colors.cyanAccent : colors.emptyComponentBorder),
-                                      width: isSelected ? 1.5 : (isToday ? 1.2 : 0.6),
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: isToday
-                                        ? Text(
-                                            '${date.day}',
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.bold,
-                                              color: (ratio == 0 && !colors.isDark) ? colors.textPrimary : Colors.white,
-                                            ),
-                                          )
-                                        : (isSelected
-                                            ? Container(
-                                                width: 3,
-                                                height: 3,
-                                                decoration: BoxDecoration(
-                                                  color: (ratio == 0 && !colors.isDark) ? colors.cyanAccent : Colors.white,
-                                                  shape: BoxShape.circle,
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      decoration: BoxDecoration(
+                                        color: tileColor,
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(
+                                          color: isSelected
+                                              ? colors.cyanAccent
+                                              : (isToday ? colors.cyanAccent : colors.emptyComponentBorder),
+                                          width: isSelected ? 1.5 : (isToday ? 1.2 : 0.6),
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: isToday
+                                            ? Text(
+                                                '$day',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: (ratio == 0 && !colors.isDark) ? colors.textPrimary : Colors.white,
                                                 ),
                                               )
-                                            : const SizedBox.shrink()),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                                            : (isSelected
+                                                ? Container(
+                                                    width: 3,
+                                                    height: 3,
+                                                    decoration: BoxDecoration(
+                                                      color: (ratio == 0 && !colors.isDark) ? colors.cyanAccent : Colors.white,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                  )
+                                                : Text(
+                                                    '$day',
+                                                    style: GoogleFonts.poppins(
+                                                      fontSize: 8,
+                                                      fontWeight: FontWeight.w500,
+                                                      color: ratio > 0 ? Colors.white.withValues(alpha: 0.85) : colors.textSecondary.withValues(alpha: 0.5),
+                                                    ),
+                                                  )),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
                         ),
 
                         const SizedBox(height: 10),
 
-                        // Heatmap Legend (Compact)
+                        // Heatmap Legend (Level 4: 100%+, Level 3: 80-99%, Level 2: 50-79%, Level 1: 1-49%, Level 0: 0%)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
                             _buildLegendItem('100%+', const Color(0xFF10B981), colors),
-                            _buildLegendItem('50-99%', const Color(0xFF3B82F6), colors),
+                            _buildLegendItem('80-99%', const Color(0xFF00E5FF), colors),
+                            _buildLegendItem('50-79%', const Color(0xFF3B82F6), colors),
                             _buildLegendItem('1-49%', const Color(0xFFF97316), colors),
                             _buildLegendItem('0%', colors.emptyComponentBg, colors),
                           ],

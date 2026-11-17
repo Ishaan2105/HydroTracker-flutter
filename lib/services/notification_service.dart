@@ -1,12 +1,31 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:intl/intl.dart';
+import '../models/water_log.dart';
 import 'app_logger.dart';
+import 'db_helper.dart';
+import 'pref_service.dart';
+import 'widget_service.dart';
+
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse response) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final actionId = response.actionId;
+  if (actionId == 'ACTION_LOG_GLASS') {
+    final hasGlass = await PrefService.hasConfiguredGlass();
+    if (hasGlass) {
+      final customGlassMl = await PrefService.getCustomGlassMl();
+      await NotificationService.logWaterDirectly(customGlassMl);
+    }
+  } else if (actionId == 'ACTION_LOG_250') {
+    await NotificationService.logWaterDirectly(250);
+  }
+}
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
@@ -15,6 +34,60 @@ class NotificationService {
   static bool _initialized = false;
   static const String channelId = 'hydro_tracker_reminders';
   static const String channelName = 'Hydration Reminders';
+  static final StreamController<int> notificationIntakeStream = StreamController<int>.broadcast();
+
+  static const List<AndroidNotificationAction> _notificationActions = [
+    AndroidNotificationAction(
+      'ACTION_LOG_GLASS',
+      'Glass',
+      showsUserInterface: false,
+      cancelNotification: true,
+    ),
+    AndroidNotificationAction(
+      'ACTION_LOG_250',
+      '+250 ml',
+      showsUserInterface: false,
+      cancelNotification: true,
+    ),
+  ];
+
+  static Future<void> _handleNotificationResponse(NotificationResponse response) async {
+    AppLogger.info('NotificationService', 'Notification response received: ${response.id}, action: ${response.actionId}');
+    final actionId = response.actionId;
+    if (actionId == 'ACTION_LOG_GLASS') {
+      final hasGlass = await PrefService.hasConfiguredGlass();
+      if (hasGlass) {
+        final customGlassMl = await PrefService.getCustomGlassMl();
+        await logWaterDirectly(customGlassMl);
+      } else {
+        WidgetService.onWidgetActionReceived?.call('create_glass');
+      }
+    } else if (actionId == 'ACTION_LOG_250') {
+      await logWaterDirectly(250);
+    }
+  }
+
+  static Future<void> logWaterDirectly(int amountMl) async {
+    try {
+      final now = DateTime.now();
+      final dateStr = DateFormat('yyyy-MM-dd').format(now);
+      final log = WaterLog(
+        amountMl: amountMl,
+        timestamp: now,
+        dateString: dateStr,
+      );
+      await DBHelper.instance.insertLog(log);
+      final logs = await DBHelper.instance.getLogsForDate(dateStr);
+      final total = logs.fold<int>(0, (sum, l) => sum + l.amountMl);
+      await PrefService.setTodayIntake(total);
+      final goal = await PrefService.getGoal();
+      await WidgetService.updateWidgetData(total, goal);
+      notificationIntakeStream.add(amountMl);
+      AppLogger.info('NotificationService', 'Directly logged $amountMl ml via notification action');
+    } catch (e, st) {
+      AppLogger.error('NotificationService', 'logWaterDirectly failed', e, st);
+    }
+  }
 
   /// Initialize notifications plugin, channels & timezone data
   static Future<void> init() async {
@@ -24,7 +97,7 @@ class NotificationService {
       await _initTimeZone();
 
       const AndroidInitializationSettings androidSettings =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
+          AndroidInitializationSettings('ic_stat_hydro_logo');
 
       const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
         requestAlertPermission: true,
@@ -39,9 +112,8 @@ class NotificationService {
 
       await _notificationsPlugin.initialize(
         initSettings,
-        onDidReceiveNotificationResponse: (NotificationResponse response) {
-          AppLogger.info('NotificationService', 'Notification response received: ${response.id}');
-        },
+        onDidReceiveNotificationResponse: _handleNotificationResponse,
+        onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
       );
 
       // Create explicit Android Notification Channel with max priority & sound
@@ -236,7 +308,7 @@ class NotificationService {
       if (!exempt) {
         AppLogger.warn(
           'NotificationService',
-          'Battery optimization is NOT disabled for this app. Samsung One UI may suppress AlarmManager. Open Settings to fix.',
+          'Battery optimization is NOT disabled for this app. Android OEM power-management may suppress AlarmManager. Open Settings to fix.',
         );
       }
 
@@ -331,10 +403,12 @@ class NotificationService {
       priority: Priority.high,
       playSound: true,
       enableVibration: true,
-      icon: '@mipmap/ic_launcher',
+      icon: 'ic_stat_hydro_logo',
+      color: Color(0xFF00E5FF),
       category: AndroidNotificationCategory.reminder,
       visibility: NotificationVisibility.public,
       showWhen: true,
+      actions: _notificationActions,
     );
 
     const NotificationDetails notificationDetails = NotificationDetails(
@@ -423,7 +497,9 @@ class NotificationService {
       priority: Priority.high,
       playSound: true,
       enableVibration: true,
-      icon: '@mipmap/ic_launcher',
+      icon: 'ic_stat_hydro_logo',
+      color: Color(0xFF00E5FF),
+      actions: _notificationActions,
     );
 
     const NotificationDetails notificationDetails = NotificationDetails(
@@ -501,10 +577,12 @@ class NotificationService {
         priority: Priority.high,
         playSound: true,
         enableVibration: true,
-        icon: '@mipmap/ic_launcher',
+        icon: 'ic_stat_hydro_logo',
+        color: Color(0xFF00E5FF),
         category: AndroidNotificationCategory.reminder,
         visibility: NotificationVisibility.public,
         showWhen: true,
+        actions: _notificationActions,
       );
 
       const NotificationDetails notificationDetails = NotificationDetails(

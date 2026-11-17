@@ -51,6 +51,9 @@ class HydrationProvider extends ChangeNotifier {
   int _worstDayMl = 0;
   String _hitRateFraction = '0/7';
   double _hitRatePct = 0.0;
+  int _morningIntakeMl = 0;
+  int _afternoonIntakeMl = 0;
+  int _eveningIntakeMl = 0;
   Map<String, String> _mealSchedule = {
     'bfast': '08:30 AM',
     'lunch': '01:00 PM',
@@ -120,6 +123,9 @@ class HydrationProvider extends ChangeNotifier {
   int get worstDayMl => _worstDayMl;
   String get hitRateFraction => _hitRateFraction;
   double get hitRatePct => _hitRatePct;
+  int get morningIntakeMl => _morningIntakeMl;
+  int get afternoonIntakeMl => _afternoonIntakeMl;
+  int get eveningIntakeMl => _eveningIntakeMl;
   Map<String, String> get mealSchedule => _mealSchedule;
 
   bool get isNotifEnabled => _isNotifEnabled;
@@ -239,6 +245,16 @@ class HydrationProvider extends ChangeNotifier {
       await loadTodayData();
       await loadHistoryStats();
       await loadInsightsData();
+
+      NotificationService.notificationIntakeStream.stream.listen((amount) async {
+        await loadTodayData();
+        await loadHistoryStats();
+        await loadInsightsData();
+        if (_isLeaderboardOptIn) {
+          CloudSyncService.instance.syncLeaderboardEntry(this);
+        }
+        notifyListeners();
+      });
     } catch (e) {
       debugPrint('HydrationProvider init data load error: $e');
     }
@@ -494,6 +510,28 @@ class HydrationProvider extends ChangeNotifier {
     _worstDayMl = minMl < 999999 ? minMl : 0;
     _hitRateFraction = '$hitCount7/7';
     _hitRatePct = (hitCount7 / 7.0) * 100;
+
+    try {
+      final startDateStr = formatDateString(now.subtract(const Duration(days: 6)));
+      final endDateStr = formatDateString(now);
+      final weekLogs = await DBHelper.instance.getLogsForDateRange(startDateStr, endDateStr);
+      int morning = 0;
+      int afternoon = 0;
+      int evening = 0;
+      for (var log in weekLogs) {
+        final hour = log.timestamp.hour;
+        if (hour >= 6 && hour < 12) {
+          morning += log.amountMl;
+        } else if (hour >= 12 && hour < 18) {
+          afternoon += log.amountMl;
+        } else {
+          evening += log.amountMl;
+        }
+      }
+      _morningIntakeMl = morning;
+      _afternoonIntakeMl = afternoon;
+      _eveningIntakeMl = evening;
+    } catch (_) {}
 
     notifyListeners();
   }

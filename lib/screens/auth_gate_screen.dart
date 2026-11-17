@@ -137,22 +137,17 @@ class _AuthGateScreenState extends State<AuthGateScreen> with SingleTickerProvid
 
     return Scaffold(
       backgroundColor: bgColor,
-      body: Stack(
-        children: [
-          // Ambient Water Wave Background
-          WavesBackground(
-            backgroundColor: bgColor,
-            lineColor: isDark ? const Color(0x1F00E5FF) : const Color(0x150284C7),
-          ),
-
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
+      body: WavesBackground(
+        backgroundColor: bgColor,
+        lineColor: isDark ? const Color(0x1F00E5FF) : const Color(0x150284C7),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
                     // Animated Floating App Logo
                     ScaleTransition(
                       scale: _pulseAnimation,
@@ -378,9 +373,8 @@ class _AuthGateScreenState extends State<AuthGateScreen> with SingleTickerProvid
               ),
             ),
           ),
-        ],
-      ),
-    );
+        ),
+      );
   }
 
   Widget _buildFeatureRow({

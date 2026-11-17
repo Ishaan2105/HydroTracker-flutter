@@ -206,6 +206,17 @@ class DBHelper {
     return result.map((json) => WaterLog.fromMap(json)).toList();
   }
 
+  Future<List<WaterLog>> getLogsForDateRange(String startDate, String endDate) async {
+    final db = await instance.database;
+    final result = await db.query(
+      'water_logs',
+      where: 'date_string >= ? AND date_string <= ?',
+      whereArgs: [startDate, endDate],
+      orderBy: 'timestamp ASC',
+    );
+    return result.map((json) => WaterLog.fromMap(json)).toList();
+  }
+
   Future<int> getTotalIntakeForDate(String dateString) async {
     final logs = await getLogsForDate(dateString);
     int total = 0;

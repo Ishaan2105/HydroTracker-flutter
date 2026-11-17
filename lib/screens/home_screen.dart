@@ -18,6 +18,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _customController = TextEditingController();
+  bool _isWeeklyAnalyticsExpanded = false;
 
   @override
   void initState() {
@@ -659,10 +660,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 20),
 
-                        // Aesthetic Frosted Bar Graph Canvas
+                        // Minimalist Rectangular Bar Graph Canvas (No background tracks, no 100% target line, no glow)
                         Container(
-                          height: 220,
-                          padding: const EdgeInsets.fromLTRB(6, 12, 6, 8),
+                          height: 195,
+                          padding: const EdgeInsets.fromLTRB(10, 16, 10, 10),
                           decoration: BoxDecoration(
                             color: colors.isDark
                                 ? const Color(0xFF0B1322).withValues(alpha: 0.6)
@@ -674,219 +675,112 @@ class _HomeScreenState extends State<HomeScreen> {
                                   : Colors.black.withValues(alpha: 0.04),
                             ),
                           ),
-                          child: Stack(
-                            children: [
-                              // 100% Target Reference Line (Glowing Neon Cyan Line)
-                              Positioned(
-                                top: 38,
-                                left: 6,
-                                right: 6,
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(
-                                          color: const Color(0xFF00E5FF).withValues(alpha: 0.5),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        '100% Target',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF00E5FF),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Container(
-                                        height: 1.2,
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              const Color(0xFF00E5FF).withValues(alpha: 0.6),
-                                              const Color(0xFF00E5FF).withValues(alpha: 0.1),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: List.generate(7, (index) {
+                              final date = DateTime.now().subtract(Duration(days: 6 - index));
+                              final dateStr = DateFormat('yyyy-MM-dd').format(date);
+                              final dayLabel = DateFormat('E').format(date);
+                              final total = provider.dailyTotalsMap[dateStr] ?? 0;
+                              final ratio = provider.dailyGoalMl > 0 ? (total / provider.dailyGoalMl) : 0.0;
+                              final isToday = index == 6;
+                              final isGoalAchieved = ratio >= 1.0;
 
-                              // 7 Days Pillars
-                              Positioned.fill(
-                                top: 8,
-                                bottom: 0,
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  children: List.generate(7, (index) {
-                                    final date = DateTime.now().subtract(Duration(days: 6 - index));
-                                    final dateStr = DateFormat('yyyy-MM-dd').format(date);
-                                    final dayLabel = DateFormat('E').format(date);
-                                    final total = provider.dailyTotalsMap[dateStr] ?? 0;
-                                    final ratio = provider.dailyGoalMl > 0 ? (total / provider.dailyGoalMl) : 0.0;
-                                    final isToday = index == 6;
-                                    final isGoalAchieved = ratio >= 1.0;
+                              const double maxBarHeight = 110.0;
+                              final double barHeight = (ratio.clamp(0.0, 1.0) * maxBarHeight).clamp(0.0, maxBarHeight);
 
-                                    const double trackHeight = 115.0;
-                                    final double fillHeight = (ratio.clamp(0.0, 1.25) / 1.0 * (trackHeight * 0.8)).clamp(total > 0 ? 8.0 : 0.0, trackHeight);
-
-                                    // Luminous Gradients
-                                    List<Color> barColors;
-                                    List<BoxShadow>? barShadow;
-
-                                    if (isGoalAchieved) {
-                                      barColors = [
-                                        const Color(0xFF00E5FF),
-                                        const Color(0xFF0284C7),
-                                        const Color(0xFF0369A1),
-                                      ];
-                                      barShadow = [
-                                        BoxShadow(
-                                          color: const Color(0xFF00E5FF).withValues(alpha: 0.5),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, -2),
-                                        ),
-                                      ];
-                                    } else if (ratio >= 0.5) {
-                                      barColors = [
-                                        const Color(0xFF38BDF8),
-                                        const Color(0xFF2563EB),
-                                      ];
-                                      barShadow = [
-                                        BoxShadow(
-                                          color: const Color(0xFF38BDF8).withValues(alpha: 0.25),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, -1),
-                                        ),
-                                      ];
-                                    } else if (ratio > 0) {
-                                      barColors = [
-                                        const Color(0xFF60A5FA),
-                                        const Color(0xFF1D4ED8),
-                                      ];
-                                    } else {
-                                      barColors = colors.isDark
-                                          ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-                                          : [const Color(0xFFBAE6FD), const Color(0xFFE0F2FE)];
-                                    }
-
-                                    return Column(
-                                      mainAxisAlignment: MainAxisAlignment.end,
+                              return Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  // Top value indicator
+                                  SizedBox(
+                                    height: 18,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        // Top value indicator
-                                        SizedBox(
-                                          height: 18,
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              if (isGoalAchieved) ...[
-                                                const Icon(Icons.star_rounded, size: 10, color: Color(0xFF00E5FF)),
-                                                const SizedBox(width: 1),
-                                              ],
-                                              Text(
-                                                total > 0 ? '${(total / 1000).toStringAsFixed(1)}L' : '0L',
-                                                style: GoogleFonts.poppins(
-                                                  fontSize: 9.5,
-                                                  fontWeight: isGoalAchieved ? FontWeight.bold : FontWeight.w500,
-                                                  color: isGoalAchieved
-                                                      ? const Color(0xFF00E5FF)
-                                                      : (isToday ? colors.textPrimary : colors.textSecondary),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-
-                                        // Cylinder Capsule Pillar (Track + Liquid Fill)
-                                        Container(
-                                          width: 28,
-                                          height: trackHeight,
-                                          decoration: BoxDecoration(
-                                            color: colors.isDark
-                                                ? Colors.white.withValues(alpha: 0.04)
-                                                : Colors.black.withValues(alpha: 0.035),
-                                            borderRadius: BorderRadius.circular(14),
-                                            border: Border.all(
-                                              color: isToday
-                                                  ? const Color(0xFF00E5FF).withValues(alpha: 0.5)
-                                                  : (colors.isDark
-                                                      ? Colors.white.withValues(alpha: 0.06)
-                                                      : Colors.black.withValues(alpha: 0.05)),
-                                              width: isToday ? 1.5 : 1.0,
-                                            ),
-                                          ),
-                                          alignment: Alignment.bottomCenter,
-                                          child: fillHeight > 0
-                                              ? Container(
-                                                  width: 28,
-                                                  height: fillHeight,
-                                                  decoration: BoxDecoration(
-                                                    gradient: LinearGradient(
-                                                      begin: Alignment.topCenter,
-                                                      end: Alignment.bottomCenter,
-                                                      colors: barColors,
-                                                    ),
-                                                    borderRadius: BorderRadius.circular(13),
-                                                    boxShadow: barShadow,
-                                                  ),
-                                                  child: Column(
-                                                    children: [
-                                                      // Liquid Surface Meniscus
-                                                      Container(
-                                                        height: 2.5,
-                                                        margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.white.withValues(alpha: 0.65),
-                                                          borderRadius: BorderRadius.circular(1.5),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                )
-                                              : null,
-                                        ),
-                                        const SizedBox(height: 8),
-
-                                        // Day Label Badge
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                                          decoration: BoxDecoration(
-                                            color: isToday
-                                                ? const Color(0xFF00E5FF).withValues(alpha: 0.2)
-                                                : colors.dayBadgeBg,
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(
-                                              color: isToday
-                                                  ? const Color(0xFF00E5FF)
-                                                  : colors.dayBadgeBorder,
-                                              width: isToday ? 1.2 : 1.0,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            isToday ? 'TODAY' : dayLabel,
-                                            style: GoogleFonts.poppins(
-                                              fontSize: isToday ? 9.5 : 10.5,
-                                              fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
-                                              color: isToday ? const Color(0xFF00E5FF) : colors.dayBadgeText,
-                                              letterSpacing: isToday ? 0.3 : 0.0,
-                                            ),
+                                        if (isGoalAchieved) ...[
+                                          const Icon(Icons.star_rounded, size: 10, color: Color(0xFF00E5FF)),
+                                          const SizedBox(width: 1),
+                                        ],
+                                        Text(
+                                          total > 0 ? '${(total / 1000).toStringAsFixed(1)}L' : '0L',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 9.5,
+                                            fontWeight: isGoalAchieved ? FontWeight.bold : FontWeight.w500,
+                                            color: isGoalAchieved
+                                                ? const Color(0xFF00E5FF)
+                                                : (isToday ? colors.textPrimary : colors.textSecondary),
                                           ),
                                         ),
                                       ],
-                                    );
-                                  }),
-                                ),
-                              ),
-                            ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+
+                                  // Clean Rectangular Bar (Zero background track, zero glow)
+                                  SizedBox(
+                                    width: 24,
+                                    height: maxBarHeight,
+                                    child: Align(
+                                      alignment: Alignment.bottomCenter,
+                                      child: total > 0
+                                          ? Container(
+                                              width: 24,
+                                              height: barHeight.clamp(3.0, maxBarHeight),
+                                              decoration: BoxDecoration(
+                                                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                                                gradient: LinearGradient(
+                                                  begin: Alignment.topCenter,
+                                                  end: Alignment.bottomCenter,
+                                                  colors: isToday
+                                                      ? const [Color(0xFF00E5FF), Color(0xFF0284C7)]
+                                                      : (isGoalAchieved
+                                                          ? const [Color(0xFF00E5FF), Color(0xFF1565C0)]
+                                                          : const [Color(0xFF38BDF8), Color(0xFF1E40AF)]),
+                                                ),
+                                              ),
+                                            )
+                                          : Container(
+                                              width: 24,
+                                              height: 1.5,
+                                              decoration: BoxDecoration(
+                                                color: colors.isDark ? Colors.white24 : Colors.black12,
+                                                borderRadius: BorderRadius.circular(1),
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+
+                                  // Day Label Badge
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: isToday
+                                          ? const Color(0xFF00E5FF).withValues(alpha: 0.18)
+                                          : colors.dayBadgeBg,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: isToday
+                                            ? const Color(0xFF00E5FF)
+                                            : colors.dayBadgeBorder,
+                                        width: isToday ? 1.2 : 1.0,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      isToday ? 'TODAY' : dayLabel,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: isToday ? 9.5 : 10.5,
+                                        fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
+                                        color: isToday ? const Color(0xFF00E5FF) : colors.dayBadgeText,
+                                        letterSpacing: isToday ? 0.3 : 0.0,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }),
                           ),
                         ),
 
@@ -1222,7 +1116,246 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 14),
+
+          // Deep-Dive Weekly Analytics Expandable Trigger
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isWeeklyAnalyticsExpanded = !_isWeeklyAnalyticsExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              decoration: BoxDecoration(
+                color: colors.statBadgeBg,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colors.statBadgeBorder),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.analytics_outlined, size: 16, color: colors.cyanAccent),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Detailed Weekly Analytics',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: _isWeeklyAnalyticsExpanded ? 0.5 : 0.0,
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeInOut,
+                    child: Icon(Icons.expand_more_rounded, size: 18, color: colors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Expandable Body: 6 Detailed Metrics
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Container(
+              margin: const EdgeInsets.only(top: 10),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colors.cardBgAlt,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: colors.surfaceBorder),
+              ),
+              child: Column(
+                children: [
+                  // Metric 1: Total Volume Consumed
+                  _buildAnalyticsRow(
+                    icon: Icons.water_drop_rounded,
+                    label: 'Total Volume Consumed',
+                    value: '${(provider.weeklyTotalMl / 1000).toStringAsFixed(2)} L / ${NumberFormat('#,###').format(provider.weeklyTotalMl)} mL',
+                    colors: colors,
+                  ),
+                  const Divider(height: 14),
+
+                  // Metric 2: Daily Average Intake vs Goal
+                  _buildAnalyticsRow(
+                    icon: Icons.av_timer_rounded,
+                    label: 'Daily Average Intake',
+                    value: '${provider.weeklyAverageMl.round()} mL/day (${(provider.dailyGoalMl > 0 ? (provider.weeklyAverageMl / provider.dailyGoalMl * 100).round() : 0)}% of goal)',
+                    colors: colors,
+                  ),
+                  const Divider(height: 14),
+
+                  // Metric 3: Goal Consistency Rate
+                  _buildAnalyticsRow(
+                    icon: Icons.task_alt_rounded,
+                    label: 'Goal Consistency Rate',
+                    value: '${provider.hitRateFraction} days (${provider.hitRatePct.toStringAsFixed(0)}%)',
+                    colors: colors,
+                  ),
+                  const Divider(height: 14),
+
+                  // Metric 4: Intake Breakdown by Time of Day
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.schedule_rounded, size: 14, color: colors.cyanAccent),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Time of Day Breakdown',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _buildDiurnalChip('Morning', '06-12', provider.morningIntakeMl, provider.weeklyTotalMl, const Color(0xFFF59E0B), colors),
+                          const SizedBox(width: 6),
+                          _buildDiurnalChip('Afternoon', '12-18', provider.afternoonIntakeMl, provider.weeklyTotalMl, const Color(0xFF00E5FF), colors),
+                          const SizedBox(width: 6),
+                          _buildDiurnalChip('Evening', '18-24', provider.eveningIntakeMl, provider.weeklyTotalMl, const Color(0xFF8B5CF6), colors),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 14),
+
+                  // Metric 5: Peak & Lowest Days
+                  _buildAnalyticsRow(
+                    icon: Icons.swap_vert_rounded,
+                    label: 'Peak / Lowest Intake Days',
+                    value: 'Peak: ${provider.bestDayLabel}\nLowest: ${provider.worstDayLabel}',
+                    colors: colors,
+                  ),
+                  const Divider(height: 14),
+
+                  // Metric 6: Streak Contribution
+                  _buildAnalyticsRow(
+                    icon: Icons.local_fire_department_rounded,
+                    label: 'Streak Contribution',
+                    value: '+${provider.sevenDayTrend.where((d) => d.ratio >= 1.0).length} streak days in rolling 7-day window',
+                    colors: colors,
+                  ),
+                ],
+              ),
+            ),
+            crossFadeState: _isWeeklyAnalyticsExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 250),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAnalyticsRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required AppColors colors,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: colors.cyanAccent.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 14, color: colors.cyanAccent),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 10.5,
+                  color: colors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDiurnalChip(
+    String period,
+    String timeRange,
+    int amountMl,
+    int totalWeeklyMl,
+    Color accentColor,
+    AppColors colors,
+  ) {
+    final pct = totalWeeklyMl > 0 ? ((amountMl / totalWeeklyMl) * 100).round() : 0;
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        decoration: BoxDecoration(
+          color: accentColor.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: accentColor.withValues(alpha: 0.25)),
+        ),
+        child: Column(
+          children: [
+            Text(
+              period,
+              style: GoogleFonts.poppins(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w600,
+                color: accentColor,
+              ),
+            ),
+            Text(
+              timeRange,
+              style: GoogleFonts.poppins(
+                fontSize: 8.5,
+                color: colors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              '${(amountMl / 1000).toStringAsFixed(1)}L',
+              style: GoogleFonts.poppins(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: colors.textPrimary,
+              ),
+            ),
+            Text(
+              '$pct%',
+              style: GoogleFonts.poppins(
+                fontSize: 9,
+                fontWeight: FontWeight.w500,
+                color: colors.textSecondary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

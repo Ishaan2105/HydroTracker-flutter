@@ -260,9 +260,10 @@ class AboutScreen extends StatelessWidget {
                     _buildSubHeading('7.1 Bypassing OEM Background Restrictions', colors),
                     _buildParagraph(
                       'To guarantee hourly and post-meal alarms fire exactly on schedule when your screen is locked:\n\n'
-                      '• Samsung One UI: Settings → Apps → Hydro Tracker → Battery → Unrestricted. In Background usage limits, add Hydro Tracker to "Never sleeping apps".\n'
+                      '• Samsung: Settings → Apps → Hydro Tracker → Battery → Unrestricted. In Background usage limits, add Hydro Tracker to "Never sleeping apps".\n'
                       '• Xiaomi (MIUI/HyperOS): App Info → Battery Saver → "No Restrictions" & enable Autostart.\n'
-                      '• OnePlus / Oppo / Realme: App Info → Battery Usage → "Allow background activity".',
+                      '• OnePlus / Oppo / Realme: App Info → Battery Usage → "Allow background activity".\n'
+                      '• Google Pixel / Stock Android: Settings → Apps → Hydro Tracker → App battery usage → Unrestricted.',
                       colors,
                     ),
                     const SizedBox(height: 12),

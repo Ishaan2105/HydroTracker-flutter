@@ -73,12 +73,13 @@ class HydroWidgetProvider : AppWidgetProvider() {
             context: Context,
             intakeMl: Int,
             goalMl: Int,
-            isExpanded: Boolean = false
+            tier: Int = 1
         ): RemoteViews {
-            val layoutRes = if (isExpanded) {
-                R.layout.widget_hydro_layout_expanded
-            } else {
-                R.layout.widget_hydro_layout
+            val layoutRes = when (tier) {
+                4 -> R.layout.widget_hydro_layout_expanded
+                3 -> R.layout.widget_hydro_layout_tier3
+                2 -> R.layout.widget_hydro_layout_tier2
+                else -> R.layout.widget_hydro_layout
             }
             val views = RemoteViews(context.packageName, layoutRes)
 
@@ -107,7 +108,7 @@ class HydroWidgetProvider : AppWidgetProvider() {
             val hasConfiguredGlass = getSafeBoolean(prefs, KEY_HAS_CONFIGURED_GLASS, false)
             val customGlassMl = getSafeInt(prefs, KEY_CUSTOM_GLASS_ML, 200).coerceIn(50, 1000)
 
-            // Button 1 (Left - Priority #1): Glass Button
+            // Button 1 (Priority #1): Glass Button
             views.setTextViewText(R.id.widget_btn_glass, "Glass")
             if (hasConfiguredGlass) {
                 val addGlassIntent = Intent(context, HydroWidgetProvider::class.java).apply {
@@ -136,7 +137,7 @@ class HydroWidgetProvider : AppWidgetProvider() {
                 views.setOnClickPendingIntent(R.id.widget_btn_glass, pendingCreateGlass)
             }
 
-            // Button 2 (Right - Priority #2): +250 ml Button tap
+            // Button 2 (Priority #2): +250 ml Button
             views.setTextViewText(R.id.widget_btn_250, "+250 ml")
             val add250Intent = Intent(context, HydroWidgetProvider::class.java).apply {
                 action = ACTION_ADD_WATER
@@ -150,6 +151,54 @@ class HydroWidgetProvider : AppWidgetProvider() {
             )
             views.setOnClickPendingIntent(R.id.widget_btn_250, pendingAdd250)
 
+            // Button 3 (Priority #3): +500 ml (Tiers 2, 3, 4)
+            if (tier >= 2) {
+                views.setTextViewText(R.id.widget_btn_500, "+500 ml")
+                val add500Intent = Intent(context, HydroWidgetProvider::class.java).apply {
+                    action = ACTION_ADD_WATER
+                    putExtra(EXTRA_AMOUNT, 500)
+                }
+                val pendingAdd500 = PendingIntent.getBroadcast(
+                    context,
+                    105,
+                    add500Intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_btn_500, pendingAdd500)
+            }
+
+            // Button 4 (Priority #4): +750 ml (Tiers 3, 4)
+            if (tier >= 3) {
+                views.setTextViewText(R.id.widget_btn_750, "+750 ml")
+                val add750Intent = Intent(context, HydroWidgetProvider::class.java).apply {
+                    action = ACTION_ADD_WATER
+                    putExtra(EXTRA_AMOUNT, 750)
+                }
+                val pendingAdd750 = PendingIntent.getBroadcast(
+                    context,
+                    106,
+                    add750Intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_btn_750, pendingAdd750)
+            }
+
+            // Button 5 (Priority #5): +1000 ml (Tier 4)
+            if (tier >= 4) {
+                views.setTextViewText(R.id.widget_btn_1000, "+1000 ml")
+                val add1000Intent = Intent(context, HydroWidgetProvider::class.java).apply {
+                    action = ACTION_ADD_WATER
+                    putExtra(EXTRA_AMOUNT, 1000)
+                }
+                val pendingAdd1000 = PendingIntent.getBroadcast(
+                    context,
+                    107,
+                    add1000Intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_btn_1000, pendingAdd1000)
+            }
+
             return views
         }
 
@@ -157,7 +206,7 @@ class HydroWidgetProvider : AppWidgetProvider() {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             val intake = checkMidnightRollover(prefs)
             val goal = getSafeInt(prefs, KEY_GOAL, 2500)
-            return buildWidgetViews(context, intake, goal, isExpanded = false)
+            return buildWidgetViews(context, intake, goal, tier = 1)
         }
 
         fun updateAllWidgets(context: Context, intakeMl: Int, goalMl: Int) {
@@ -190,19 +239,29 @@ class HydroWidgetProvider : AppWidgetProvider() {
         ) {
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val compactViews = buildWidgetViews(context, intakeMl, goalMl, isExpanded = false)
-                    val expandedViews = buildWidgetViews(context, intakeMl, goalMl, isExpanded = true)
+                    val tier1 = buildWidgetViews(context, intakeMl, goalMl, tier = 1)
+                    val tier2 = buildWidgetViews(context, intakeMl, goalMl, tier = 2)
+                    val tier3 = buildWidgetViews(context, intakeMl, goalMl, tier = 3)
+                    val tier4 = buildWidgetViews(context, intakeMl, goalMl, tier = 4)
                     val viewMapping = mapOf(
-                        SizeF(120f, 40f) to compactViews,
-                        SizeF(150f, 95f) to expandedViews
+                        SizeF(120f, 40f) to tier1,
+                        SizeF(220f, 85f) to tier2,
+                        SizeF(260f, 130f) to tier3,
+                        SizeF(280f, 180f) to tier4
                     )
                     val responsiveViews = RemoteViews(viewMapping)
                     appWidgetManager.updateAppWidget(appWidgetId, responsiveViews)
                 } else {
                     val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
+                    val minWidth = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH) ?: 180
                     val minHeight = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT) ?: 60
-                    val isExpanded = minHeight >= 95
-                    val views = buildWidgetViews(context, intakeMl, goalMl, isExpanded)
+                    val tier = when {
+                        minWidth >= 280 && minHeight >= 180 -> 4
+                        minWidth >= 260 && minHeight >= 130 -> 3
+                        minWidth >= 220 && minHeight >= 85 -> 2
+                        else -> 1
+                    }
+                    val views = buildWidgetViews(context, intakeMl, goalMl, tier)
                     appWidgetManager.updateAppWidget(appWidgetId, views)
                 }
             } catch (e: Exception) {
