@@ -13,6 +13,11 @@
         android:label="Hydro Tracker"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- Disable experimental Impeller OpenGLES backend on Android to prevent blank screen driver failures on emulators and older devices -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

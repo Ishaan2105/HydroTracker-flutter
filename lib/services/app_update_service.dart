@@ -36,21 +36,6 @@ class AppUpdateService {
       final snapshot = await docRef.get(const GetOptions(source: Source.serverAndCache));
 
       if (!snapshot.exists || snapshot.data() == null) {
-        // Initialize the version gate config in Firestore if not already present
-        try {
-          await docRef.set({
-            'min_version_code': currentVersionCode,
-            'latest_version_name': currentVersionName,
-            'is_force_update': false,
-            'title': 'Update Required',
-            'message':
-                'A mandatory update of Hydro Tracker is available on Google Play. Please update to continue tracking your hydration, competing on the leaderboard, and using the smart home widget.',
-            'play_store_url':
-                'https://play.google.com/store/apps/details?id=com.threestack.hydrotracker',
-            'updated_at': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
-        } catch (_) {}
-
         return const UpdateGateResult(needsForceUpdate: false);
       }
 

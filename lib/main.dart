@@ -119,7 +119,6 @@ class AppStartupGate extends StatefulWidget {
 }
 
 class _AppStartupGateState extends State<AppStartupGate> {
-  bool _isCheckingUpdate = true;
   UpdateGateResult? _forceUpdateResult;
 
   @override
@@ -132,33 +131,19 @@ class _AppStartupGateState extends State<AppStartupGate> {
     // Check Firestore Version Gate (remote killswitch / mandatory update barrier)
     try {
       final gate = await AppUpdateService.checkFirestoreVersionGate().timeout(
-        const Duration(seconds: 4),
+        const Duration(seconds: 3),
         onTimeout: () => const UpdateGateResult(needsForceUpdate: false),
       );
-      if (mounted) {
+      if (mounted && gate.needsForceUpdate) {
         setState(() {
-          _forceUpdateResult = gate.needsForceUpdate ? gate : null;
-          _isCheckingUpdate = false;
+          _forceUpdateResult = gate;
         });
       }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _isCheckingUpdate = false);
-      }
-    }
+    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isCheckingUpdate) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF0B1329),
-        body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF00E5FF)),
-        ),
-      );
-    }
-
     if (_forceUpdateResult != null) {
       return ForceUpdateScreen(
         title: _forceUpdateResult!.title,

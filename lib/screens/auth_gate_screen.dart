@@ -328,14 +328,22 @@ class _AuthGateScreenState extends State<AuthGateScreen> with SingleTickerProvid
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   // Google "G" Icon Badge
-                                  Image.network(
-                                    'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+                                  Container(
                                     width: 22,
                                     height: 22,
-                                    errorBuilder: (_, __, ___) => const Icon(
-                                      Icons.account_circle,
+                                    alignment: Alignment.center,
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
                                       color: Color(0xFF4285F4),
-                                      size: 24,
+                                    ),
+                                    child: Text(
+                                      'G',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        height: 1.1,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
