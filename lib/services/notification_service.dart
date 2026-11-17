@@ -32,6 +32,7 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   static bool _initialized = false;
+  static String _activeIcon = '@mipmap/ic_launcher';
   static const String channelId = 'hydro_tracker_reminders';
   static const String channelName = 'Hydration Reminders';
   static final StreamController<int> notificationIntakeStream = StreamController<int>.broadcast();
@@ -96,25 +97,47 @@ class NotificationService {
     try {
       await _initTimeZone();
 
-      const AndroidInitializationSettings androidSettings =
-          AndroidInitializationSettings('ic_stat_hydro_logo');
-
       const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
         requestAlertPermission: true,
         requestBadgePermission: true,
         requestSoundPermission: true,
       );
 
-      const InitializationSettings initSettings = InitializationSettings(
-        android: androidSettings,
-        iOS: iosSettings,
-      );
+      // Attempt initialization with ic_stat_hydro_logo, gracefully fallback to @mipmap/ic_launcher
+      bool initialized = false;
+      for (final iconCandidate in ['ic_stat_hydro_logo', '@mipmap/ic_launcher']) {
+        try {
+          final AndroidInitializationSettings androidSettings =
+              AndroidInitializationSettings(iconCandidate);
+          final InitializationSettings initSettings = InitializationSettings(
+            android: androidSettings,
+            iOS: iosSettings,
+          );
 
-      await _notificationsPlugin.initialize(
-        initSettings,
-        onDidReceiveNotificationResponse: _handleNotificationResponse,
-        onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
-      );
+          await _notificationsPlugin.initialize(
+            initSettings,
+            onDidReceiveNotificationResponse: _handleNotificationResponse,
+            onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
+          );
+          _activeIcon = iconCandidate;
+          initialized = true;
+          AppLogger.info('NotificationService', 'Initialized notifications with icon: $iconCandidate');
+          break;
+        } catch (iconErr) {
+          AppLogger.warn('NotificationService', 'Failed to initialize with icon $iconCandidate: $iconErr');
+        }
+      }
+
+      if (!initialized) {
+        const AndroidInitializationSettings androidSettings =
+            AndroidInitializationSettings('@mipmap/ic_launcher');
+        await _notificationsPlugin.initialize(
+          const InitializationSettings(android: androidSettings, iOS: iosSettings),
+          onDidReceiveNotificationResponse: _handleNotificationResponse,
+          onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
+        );
+        _activeIcon = '@mipmap/ic_launcher';
+      }
 
       // Create explicit Android Notification Channel with max priority & sound
       final androidImplementation = _notificationsPlugin
@@ -130,17 +153,11 @@ class NotificationService {
           showBadge: true,
         );
         await androidImplementation.createNotificationChannel(channel);
-        try {
-          await androidImplementation.requestNotificationsPermission();
-        } catch (_) {}
-        try {
-          await androidImplementation.requestExactAlarmsPermission();
-        } catch (_) {}
       }
 
       _initialized = true;
-    } catch (e) {
-      debugPrint('NotificationService init error: $e');
+    } catch (e, st) {
+      AppLogger.error('NotificationService', 'NotificationService init error: $e', e, st);
     }
   }
 
@@ -178,6 +195,21 @@ class NotificationService {
       }
     } catch (e) {
       debugPrint('Timezone config error: $e');
+    }
+  }
+
+  /// Check if the app can schedule exact alarms on Android 12+ (API 31+)
+  static Future<bool> canScheduleExactAlarms() async {
+    try {
+      await init();
+      final androidImplementation = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      if (androidImplementation != null) {
+        return await androidImplementation.canScheduleExactNotifications() ?? false;
+      }
+      return true;
+    } catch (_) {
+      return true;
     }
   }
 
@@ -229,13 +261,15 @@ class NotificationService {
       if (androidImplementation != null) {
         final areEnabled = await androidImplementation.areNotificationsEnabled();
         if (areEnabled != true) {
-          final granted = await androidImplementation.requestNotificationsPermission() ?? false;
+          await androidImplementation.requestNotificationsPermission();
+        }
+        final canExact = await androidImplementation.canScheduleExactNotifications();
+        if (canExact == false) {
           try {
             await androidImplementation.requestExactAlarmsPermission();
           } catch (_) {}
-          return granted;
         }
-        return true;
+        return (await androidImplementation.areNotificationsEnabled()) ?? true;
       }
       return true;
     } catch (e) {
@@ -412,6 +446,28 @@ class NotificationService {
   }
 
 
+  /// Helper to build Android notification details with fallback icon support
+  static AndroidNotificationDetails _buildAndroidNotificationDetails({
+    String? customIcon,
+    List<AndroidNotificationAction>? actions,
+  }) {
+    return AndroidNotificationDetails(
+      channelId,
+      channelName,
+      channelDescription: 'Scheduled alarms and daily water intake reminders',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+      icon: customIcon ?? _activeIcon,
+      color: const Color(0xFF00E5FF),
+      category: AndroidNotificationCategory.reminder,
+      visibility: NotificationVisibility.public,
+      showWhen: true,
+      actions: actions ?? _notificationActions,
+    );
+  }
+
   /// Point-in-time alarm scheduling.
   /// For [isDaily] = true: registers a native daily-repeating alarm (wallClockTime +
   /// matchDateTimeComponents).
@@ -424,31 +480,13 @@ class NotificationService {
     String timeStr = '',
     bool isDaily = true,
   }) async {
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      channelId,
-      channelName,
-      channelDescription: 'Scheduled alarms and daily water intake reminders',
-      importance: Importance.max,
-      priority: Priority.high,
-      playSound: true,
-      enableVibration: true,
-      icon: 'ic_stat_hydro_logo',
-      color: Color(0xFF00E5FF),
-      category: AndroidNotificationCategory.reminder,
-      visibility: NotificationVisibility.public,
-      showWhen: true,
-      actions: _notificationActions,
-    );
-
-    const NotificationDetails notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: DarwinNotificationDetails(presentAlert: true, presentSound: true),
+    final notificationDetails = NotificationDetails(
+      android: _buildAndroidNotificationDetails(),
+      iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
     );
 
     if (isDaily) {
-      // --- Clean single schedule for DAILY alarms ---
-      // Registers native daily-repeating alarm (wallClockTime + matchDateTimeComponents.time).
-      // Handled cleanly by the OS without duplicate backup alarms or timers.
+      // --- Clean schedule for DAILY alarms ---
       try {
         await _notificationsPlugin.zonedSchedule(
           id,
@@ -461,8 +499,9 @@ class NotificationService {
               UILocalNotificationDateInterpretation.wallClockTime,
           matchDateTimeComponents: DateTimeComponents.time,
         );
+        AppLogger.info('NotificationService', 'Daily alarm $id scheduled at $target (exactAllowWhileIdle)');
       } catch (e1) {
-        debugPrint('Daily recurring alarm fallback: $e1');
+        AppLogger.warn('NotificationService', 'Daily alarm exactAllowWhileIdle failed: $e1. Trying alarmClock...');
         try {
           await _notificationsPlugin.zonedSchedule(
             id,
@@ -470,16 +509,38 @@ class NotificationService {
             body,
             target,
             notificationDetails,
-            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+            androidScheduleMode: AndroidScheduleMode.alarmClock,
             uiLocalNotificationDateInterpretation:
                 UILocalNotificationDateInterpretation.wallClockTime,
             matchDateTimeComponents: DateTimeComponents.time,
           );
-        } catch (_) {}
+          AppLogger.info('NotificationService', 'Daily alarm $id scheduled at $target (alarmClock)');
+        } catch (e2) {
+          AppLogger.warn('NotificationService', 'Daily alarm alarmClock failed: $e2. Trying inexact fallback...');
+          try {
+            final fallbackDetails = NotificationDetails(
+              android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher'),
+              iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
+            );
+            await _notificationsPlugin.zonedSchedule(
+              id,
+              title,
+              body,
+              target,
+              fallbackDetails,
+              androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+              uiLocalNotificationDateInterpretation:
+                  UILocalNotificationDateInterpretation.wallClockTime,
+              matchDateTimeComponents: DateTimeComponents.time,
+            );
+            AppLogger.info('NotificationService', 'Daily alarm $id scheduled at $target (inexact fallback)');
+          } catch (e3, st) {
+            AppLogger.error('NotificationService', 'All daily alarm scheduling attempts failed for ID $id', e3, st);
+          }
+        }
       }
     } else {
-      // --- Clean single schedule for ONE-TIME alarms ---
-      // Single absoluteTime alarm without duplicate timers.
+      // --- Clean schedule for ONE-TIME alarms ---
       try {
         await _notificationsPlugin.zonedSchedule(
           id,
@@ -491,7 +552,9 @@ class NotificationService {
           uiLocalNotificationDateInterpretation:
               UILocalNotificationDateInterpretation.absoluteTime,
         );
+        AppLogger.info('NotificationService', 'One-time alarm $id scheduled at $target (exactAllowWhileIdle)');
       } catch (e1) {
+        AppLogger.warn('NotificationService', 'One-time alarm exactAllowWhileIdle failed: $e1. Trying alarmClock...');
         try {
           await _notificationsPlugin.zonedSchedule(
             id,
@@ -499,11 +562,33 @@ class NotificationService {
             body,
             target,
             notificationDetails,
-            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+            androidScheduleMode: AndroidScheduleMode.alarmClock,
             uiLocalNotificationDateInterpretation:
                 UILocalNotificationDateInterpretation.absoluteTime,
           );
-        } catch (_) {}
+          AppLogger.info('NotificationService', 'One-time alarm $id scheduled at $target (alarmClock)');
+        } catch (e2) {
+          AppLogger.warn('NotificationService', 'One-time alarm alarmClock failed: $e2. Trying inexact fallback...');
+          try {
+            final fallbackDetails = NotificationDetails(
+              android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher'),
+              iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
+            );
+            await _notificationsPlugin.zonedSchedule(
+              id,
+              title,
+              body,
+              target,
+              fallbackDetails,
+              androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+              uiLocalNotificationDateInterpretation:
+                  UILocalNotificationDateInterpretation.absoluteTime,
+            );
+            AppLogger.info('NotificationService', 'One-time alarm $id scheduled at $target (inexact fallback)');
+          } catch (e3, st) {
+            AppLogger.error('NotificationService', 'All one-time alarm scheduling attempts failed for ID $id', e3, st);
+          }
+        }
       }
     }
   }
@@ -518,22 +603,9 @@ class NotificationService {
     final now = tz.TZDateTime.now(tz.local);
     final target = now.add(const Duration(seconds: 60));
 
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      channelId,
-      channelName,
-      channelDescription: 'Scheduled alarms and daily water intake reminders',
-      importance: Importance.max,
-      priority: Priority.high,
-      playSound: true,
-      enableVibration: true,
-      icon: 'ic_stat_hydro_logo',
-      color: Color(0xFF00E5FF),
-      actions: _notificationActions,
-    );
-
-    const NotificationDetails notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: DarwinNotificationDetails(presentAlert: true, presentSound: true),
+    final notificationDetails = NotificationDetails(
+      android: _buildAndroidNotificationDetails(),
+      iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
     );
 
     try {
@@ -547,8 +619,9 @@ class NotificationService {
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
       );
+      AppLogger.info('NotificationService', '1-min test alarm scheduled via exactAllowWhileIdle');
     } catch (e1) {
-      debugPrint('zonedSchedule exact error: $e1');
+      AppLogger.warn('NotificationService', '1-min test exactAllowWhileIdle failed: $e1. Trying alarmClock...');
       try {
         await _notificationsPlugin.zonedSchedule(
           999,
@@ -556,12 +629,28 @@ class NotificationService {
           'Scheduled alarm test succeeded! Background notification working.',
           target,
           notificationDetails,
+          androidScheduleMode: AndroidScheduleMode.alarmClock,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+        );
+        AppLogger.info('NotificationService', '1-min test alarm scheduled via alarmClock');
+      } catch (e2) {
+        AppLogger.warn('NotificationService', '1-min test alarmClock failed: $e2. Trying inexact fallback...');
+        final fallbackDetails = NotificationDetails(
+          android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher'),
+          iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
+        );
+        await _notificationsPlugin.zonedSchedule(
+          999,
+          '⏰ Hydro Tracker 1-Min Test Alarm!',
+          'Scheduled alarm test succeeded! Background notification working.',
+          target,
+          fallbackDetails,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
           uiLocalNotificationDateInterpretation:
               UILocalNotificationDateInterpretation.absoluteTime,
         );
-      } catch (e2) {
-        debugPrint('zonedSchedule inexact error: $e2');
+        AppLogger.info('NotificationService', '1-min test alarm scheduled via inexact fallback');
       }
     }
 
@@ -604,25 +693,9 @@ class NotificationService {
         return false;
       }
 
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        channelId,
-        channelName,
-        channelDescription: 'Scheduled alarms and daily water intake reminders',
-        importance: Importance.max,
-        priority: Priority.high,
-        playSound: true,
-        enableVibration: true,
-        icon: 'ic_stat_hydro_logo',
-        color: Color(0xFF00E5FF),
-        category: AndroidNotificationCategory.reminder,
-        visibility: NotificationVisibility.public,
-        showWhen: true,
-        actions: _notificationActions,
-      );
-
-      const NotificationDetails notificationDetails = NotificationDetails(
-        android: androidDetails,
-        iOS: DarwinNotificationDetails(),
+      final notificationDetails = NotificationDetails(
+        android: _buildAndroidNotificationDetails(),
+        iOS: const DarwinNotificationDetails(),
       );
 
       try {
@@ -636,21 +709,7 @@ class NotificationService {
       } catch (iconErr) {
         // Fallback to mipmap/ic_launcher if custom drawable lookup encounters an issue
         final fallbackDetails = NotificationDetails(
-          android: AndroidNotificationDetails(
-            channelId,
-            channelName,
-            channelDescription: 'Scheduled alarms and daily water intake reminders',
-            importance: Importance.max,
-            priority: Priority.high,
-            playSound: true,
-            enableVibration: true,
-            icon: '@mipmap/ic_launcher',
-            color: const Color(0xFF00E5FF),
-            category: AndroidNotificationCategory.reminder,
-            visibility: NotificationVisibility.public,
-            showWhen: true,
-            actions: _notificationActions,
-          ),
+          android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher'),
           iOS: const DarwinNotificationDetails(),
         );
         await _notificationsPlugin.show(
@@ -677,25 +736,9 @@ class NotificationService {
         return false;
       }
 
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        channelId,
-        channelName,
-        channelDescription: 'Scheduled alarms and daily water intake reminders',
-        importance: Importance.max,
-        priority: Priority.high,
-        playSound: true,
-        enableVibration: true,
-        icon: 'ic_stat_hydro_logo',
-        color: Color(0xFF00E5FF),
-        category: AndroidNotificationCategory.reminder,
-        visibility: NotificationVisibility.public,
-        showWhen: true,
-        actions: _notificationActions,
-      );
-
-      const NotificationDetails notificationDetails = NotificationDetails(
-        android: androidDetails,
-        iOS: DarwinNotificationDetails(),
+      final notificationDetails = NotificationDetails(
+        android: _buildAndroidNotificationDetails(),
+        iOS: const DarwinNotificationDetails(),
       );
 
       try {
@@ -708,21 +751,7 @@ class NotificationService {
         return true;
       } catch (_) {
         final fallbackDetails = NotificationDetails(
-          android: AndroidNotificationDetails(
-            channelId,
-            channelName,
-            channelDescription: 'Scheduled alarms and daily water intake reminders',
-            importance: Importance.max,
-            priority: Priority.high,
-            playSound: true,
-            enableVibration: true,
-            icon: '@mipmap/ic_launcher',
-            color: const Color(0xFF00E5FF),
-            category: AndroidNotificationCategory.reminder,
-            visibility: NotificationVisibility.public,
-            showWhen: true,
-            actions: _notificationActions,
-          ),
+          android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher'),
           iOS: const DarwinNotificationDetails(),
         );
         await _notificationsPlugin.show(

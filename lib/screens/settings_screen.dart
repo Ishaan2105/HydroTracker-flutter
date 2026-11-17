@@ -669,7 +669,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                               ),
                             ),
-                            /*
                             const SizedBox(width: 8),
                             Expanded(
                               child: ElevatedButton.icon(
@@ -710,7 +709,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                               ),
                             ),
-                            */
                           ],
                         ),
                       ],
