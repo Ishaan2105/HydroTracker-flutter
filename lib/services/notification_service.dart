@@ -195,18 +195,47 @@ class NotificationService {
     }
   }
 
-  /// Request permissions on demand (e.g., when toggle is switched on)
+  /// Check if notifications are enabled by the user in Android OS
+  static Future<bool> areNotificationsEnabled() async {
+    try {
+      await init();
+      final androidImplementation = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      if (androidImplementation != null) {
+        return await androidImplementation.areNotificationsEnabled() ?? false;
+      }
+      return true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /// Opens the device App Notification Settings page
+  static Future<bool> openNotificationSettings() async {
+    try {
+      final res = await _batteryChannel.invokeMethod<bool>('openNotificationSettings');
+      return res ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Request permissions on demand or on app startup
   static Future<bool> requestPermissions() async {
     try {
       await init();
       final androidImplementation = _notificationsPlugin
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       if (androidImplementation != null) {
-        final granted = await androidImplementation.requestNotificationsPermission() ?? false;
-        try {
-          await androidImplementation.requestExactAlarmsPermission();
-        } catch (_) {}
-        return granted;
+        final areEnabled = await androidImplementation.areNotificationsEnabled();
+        if (areEnabled != true) {
+          final granted = await androidImplementation.requestNotificationsPermission() ?? false;
+          try {
+            await androidImplementation.requestExactAlarmsPermission();
+          } catch (_) {}
+          return granted;
+        }
+        return true;
       }
       return true;
     } catch (e) {
@@ -566,9 +595,15 @@ class NotificationService {
   }
 
   /// Trigger an instant test notification
-  static Future<void> showTestNotification() async {
+  static Future<bool> showTestNotification() async {
     try {
       await init();
+      final hasPerm = await requestPermissions();
+      if (!hasPerm) {
+        AppLogger.warn('NotificationService', 'showTestNotification: permission denied');
+        return false;
+      }
+
       const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
         channelId,
         channelName,
@@ -590,14 +625,117 @@ class NotificationService {
         iOS: DarwinNotificationDetails(),
       );
 
-      await _notificationsPlugin.show(
-        0,
-        'Hydro Tracker Alarm Active!',
-        'Your scheduled hydration reminders are configured and working smoothly.',
-        notificationDetails,
+      try {
+        await _notificationsPlugin.show(
+          0,
+          'Hydro Tracker Alarm Active! 💧',
+          'Your scheduled hydration reminders are configured and working smoothly.',
+          notificationDetails,
+        );
+        return true;
+      } catch (iconErr) {
+        // Fallback to mipmap/ic_launcher if custom drawable lookup encounters an issue
+        final fallbackDetails = NotificationDetails(
+          android: AndroidNotificationDetails(
+            channelId,
+            channelName,
+            channelDescription: 'Scheduled alarms and daily water intake reminders',
+            importance: Importance.max,
+            priority: Priority.high,
+            playSound: true,
+            enableVibration: true,
+            icon: '@mipmap/ic_launcher',
+            color: const Color(0xFF00E5FF),
+            category: AndroidNotificationCategory.reminder,
+            visibility: NotificationVisibility.public,
+            showWhen: true,
+            actions: _notificationActions,
+          ),
+          iOS: const DarwinNotificationDetails(),
+        );
+        await _notificationsPlugin.show(
+          0,
+          'Hydro Tracker Alarm Active! 💧',
+          'Your scheduled hydration reminders are configured and working smoothly.',
+          fallbackDetails,
+        );
+        return true;
+      }
+    } catch (e, st) {
+      AppLogger.error('NotificationService', 'showTestNotification error: $e', e, st);
+      return false;
+    }
+  }
+
+  /// Trigger an instant test notification for a post-meal reminder
+  static Future<bool> showPostMealTestNotification(String mealName) async {
+    try {
+      await init();
+      final hasPerm = await requestPermissions();
+      if (!hasPerm) {
+        AppLogger.warn('NotificationService', 'showPostMealTestNotification: permission denied');
+        return false;
+      }
+
+      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        channelId,
+        channelName,
+        channelDescription: 'Scheduled alarms and daily water intake reminders',
+        importance: Importance.max,
+        priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
+        icon: 'ic_stat_hydro_logo',
+        color: Color(0xFF00E5FF),
+        category: AndroidNotificationCategory.reminder,
+        visibility: NotificationVisibility.public,
+        showWhen: true,
+        actions: _notificationActions,
       );
-    } catch (e) {
-      debugPrint('showTestNotification error: $e');
+
+      const NotificationDetails notificationDetails = NotificationDetails(
+        android: androidDetails,
+        iOS: DarwinNotificationDetails(),
+      );
+
+      try {
+        await _notificationsPlugin.show(
+          399,
+          'Post-$mealName Hydration 🍽️💧',
+          'It’s been 30 minutes since $mealName. Drink a fresh glass of water for optimal digestion!',
+          notificationDetails,
+        );
+        return true;
+      } catch (_) {
+        final fallbackDetails = NotificationDetails(
+          android: AndroidNotificationDetails(
+            channelId,
+            channelName,
+            channelDescription: 'Scheduled alarms and daily water intake reminders',
+            importance: Importance.max,
+            priority: Priority.high,
+            playSound: true,
+            enableVibration: true,
+            icon: '@mipmap/ic_launcher',
+            color: const Color(0xFF00E5FF),
+            category: AndroidNotificationCategory.reminder,
+            visibility: NotificationVisibility.public,
+            showWhen: true,
+            actions: _notificationActions,
+          ),
+          iOS: const DarwinNotificationDetails(),
+        );
+        await _notificationsPlugin.show(
+          399,
+          'Post-$mealName Hydration 🍽️💧',
+          'It’s been 30 minutes since $mealName. Drink a fresh glass of water for optimal digestion!',
+          fallbackDetails,
+        );
+        return true;
+      }
+    } catch (e, st) {
+      AppLogger.error('NotificationService', 'showPostMealTestNotification error: $e', e, st);
+      return false;
     }
   }
 

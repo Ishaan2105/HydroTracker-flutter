@@ -7,6 +7,7 @@ import '../providers/hydration_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/hydration_ranks_sheet.dart';
 import '../widgets/hydro_top_bar.dart';
+import '../services/notification_service.dart';
 
 class TrendsInsightsScreen extends StatefulWidget {
   const TrendsInsightsScreen({super.key});
@@ -315,8 +316,26 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
     final lunch = _formatTimeOfDay(_lunchTime);
     final dinner = _formatTimeOfDay(_dinnerTime);
 
+    await NotificationService.requestPermissions();
     await provider.saveMealSchedule(bfast, lunch, dinner);
-    _showConfirmationBanner('Meal times schedule saved successfully!');
+
+    final postBfast = _formatTimeOfDay(TimeOfDay(
+      hour: (_bfastTime.hour + (_bfastTime.minute + 30) ~/ 60) % 24,
+      minute: (_bfastTime.minute + 30) % 60,
+    ));
+    final postLunch = _formatTimeOfDay(TimeOfDay(
+      hour: (_lunchTime.hour + (_lunchTime.minute + 30) ~/ 60) % 24,
+      minute: (_lunchTime.minute + 30) % 60,
+    ));
+    final postDinner = _formatTimeOfDay(TimeOfDay(
+      hour: (_dinnerTime.hour + (_dinnerTime.minute + 30) ~/ 60) % 24,
+      minute: (_dinnerTime.minute + 30) % 60,
+    ));
+
+    _showConfirmationBanner(
+      'Meal schedule saved! Post-meal reminders set: Breakfast at $postBfast, Lunch at $postLunch, Dinner at $postDinner',
+      color: const Color(0xFF10B981),
+    );
   }
 
   @override
@@ -1243,20 +1262,57 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                           _buildMealRow(context, 'Lunch', 'lunch', _lunchTime, colors),
                           _buildMealRow(context, 'Dinner', 'dinner', _dinnerTime, colors),
                           const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () => _saveMeals(provider),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1565C0),
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: ElevatedButton.icon(
+                                  onPressed: () => _saveMeals(provider),
+                                  icon: const Icon(Icons.check_circle_outline_rounded, size: 16, color: Colors.white),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF1565C0),
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  label: Text(
+                                    'Save Schedule',
+                                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
+                                  ),
+                                ),
                               ),
-                              child: Text(
-                                'Save Schedule',
-                                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                flex: 2,
+                                child: OutlinedButton.icon(
+                                  onPressed: () async {
+                                    final success = await NotificationService.showPostMealTestNotification('Lunch');
+                                    if (context.mounted) {
+                                      if (success) {
+                                        _showConfirmationBanner(
+                                          'Instant post-meal reminder sent to status bar! 🍽️',
+                                          color: const Color(0xFF10B981),
+                                        );
+                                      } else {
+                                        _showConfirmationBanner(
+                                          'Notifications are disabled. Enable them in Android settings.',
+                                          color: const Color(0xFFEF4444),
+                                        );
+                                      }
+                                    }
+                                  },
+                                  icon: Icon(Icons.notifications_active_outlined, size: 16, color: colors.cyanAccent),
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(color: colors.cyanAccent),
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  label: Text(
+                                    'Test Alert',
+                                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: colors.cyanAccent, fontSize: 13),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         ],
                       ],

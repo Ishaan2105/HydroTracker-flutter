@@ -10,6 +10,7 @@ import 'trends_insights_screen.dart';
 import 'leaderboard_screen.dart';
 import 'advanced_options_screen.dart';
 import 'settings_screen.dart';
+import '../services/notification_service.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -42,12 +43,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
       }
     });
 
-    // After the first frame renders, check if we need to show the battery guidance
-    // bottom sheet. It only shows once (tracked by a SharedPreferences flag) and
-    // only when the device's battery optimization is not yet exempted.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // After the first frame renders, request notification permissions if needed
+    // and check battery optimization guidance.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
-        BatteryGuidanceBottomSheet.showIfNeeded(context);
+        await NotificationService.requestPermissions();
+        if (mounted) {
+          BatteryGuidanceBottomSheet.showIfNeeded(context);
+        }
       }
     });
   }

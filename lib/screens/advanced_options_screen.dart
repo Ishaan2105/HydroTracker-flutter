@@ -703,6 +703,21 @@ class _AdvancedOptionsScreenState extends State<AdvancedOptionsScreen> {
                                     Expanded(
                                       child: ElevatedButton.icon(
                                         onPressed: () async {
+                                          final hasPerm = await NotificationService.requestPermissions();
+                                          if (!hasPerm && context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: const Text('Notifications are disabled in Android Settings.'),
+                                                backgroundColor: const Color(0xFFEF4444),
+                                                action: SnackBarAction(
+                                                  label: 'Settings',
+                                                  textColor: Colors.white,
+                                                  onPressed: () => NotificationService.openNotificationSettings(),
+                                                ),
+                                              ),
+                                            );
+                                            return;
+                                          }
                                           final testTime = await NotificationService.scheduleOneMinuteTest();
                                           if (context.mounted) {
                                             ScaffoldMessenger.of(context).clearSnackBars();

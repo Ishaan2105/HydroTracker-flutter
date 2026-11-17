@@ -631,14 +631,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             Expanded(
                               child: OutlinedButton.icon(
                                 onPressed: () async {
-                                  await NotificationService.showTestNotification();
+                                  final success = await NotificationService.showTestNotification();
                                   if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Instant notification sent to status bar!'),
-                                        duration: Duration(seconds: 2),
-                                      ),
-                                    );
+                                    if (success) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Instant notification sent to status bar! 🔔'),
+                                          backgroundColor: Color(0xFF10B981),
+                                          duration: Duration(seconds: 3),
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: const Text('Notifications are disabled in Android. Please allow notifications.'),
+                                          backgroundColor: const Color(0xFFEF4444),
+                                          duration: const Duration(seconds: 4),
+                                          action: SnackBarAction(
+                                            label: 'Settings',
+                                            textColor: Colors.white,
+                                            onPressed: () => NotificationService.openNotificationSettings(),
+                                          ),
+                                        ),
+                                      );
+                                    }
                                   }
                                 },
                                 icon: Icon(Icons.notifications_active_rounded, size: 16, color: colors.cyanAccent),

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/hydration_provider.dart';
 import '../services/widget_service.dart';
+import '../services/notification_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/wave_progress_ring.dart';
 import '../widgets/hydro_top_bar.dart';
@@ -29,7 +30,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _triggerGlassCreation();
       }
     };
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await NotificationService.requestPermissions();
       _checkWidgetLaunchIntent();
     });
   }

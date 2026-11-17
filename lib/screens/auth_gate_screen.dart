@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/hydration_provider.dart';
 import '../services/app_logger.dart';
 import '../services/cloud_sync_service.dart';
+import '../services/notification_service.dart';
 import '../widgets/waves_background.dart';
 import 'main_navigation_screen.dart';
 
@@ -32,8 +33,9 @@ class _AuthGateScreenState extends State<AuthGateScreen> with SingleTickerProvid
       CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
     );
 
-    // If user is already signed in, seamlessly sync in background and enter main app
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // If user is already signed in, seamlessly sync in background and enter main app; also prompt notification permissions
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await NotificationService.requestPermissions();
       _checkExistingSession();
     });
   }
