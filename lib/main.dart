@@ -120,6 +120,7 @@ class AppStartupGate extends StatefulWidget {
 
 class _AppStartupGateState extends State<AppStartupGate> {
   UpdateGateResult? _forceUpdateResult;
+  bool _isCheckingGate = true;
 
   @override
   void initState() {
@@ -134,12 +135,41 @@ class _AppStartupGateState extends State<AppStartupGate> {
         const Duration(seconds: 3),
         onTimeout: () => const UpdateGateResult(needsForceUpdate: false),
       );
-      if (mounted && gate.needsForceUpdate) {
+      if (mounted) {
+        if (gate.needsForceUpdate) {
+          setState(() {
+            _forceUpdateResult = gate;
+            _isCheckingGate = false;
+          });
+          // Dispatch high-priority status bar notification prompting compulsory update
+          await NotificationService.showUpdateRequiredNotification(
+            title: gate.title,
+            body: gate.message,
+          );
+        } else {
+          setState(() {
+            _isCheckingGate = false;
+          });
+
+          // If developer is logged in, ensure latest version gate config is published to Firestore
+          final user = CloudSyncService.instance.currentUser;
+          if (user != null &&
+              (user.email == 'ishaanhingway@gmail.com' ||
+                  user.uid == 'jQfN84R5ndem0fNqrmWkWf2ilPB2')) {
+            AppUpdateService.publishVersionGate(
+              minVersionCode: 5,
+              latestVersionName: '2.1.0',
+            );
+          }
+        }
+      }
+    } catch (_) {
+      if (mounted) {
         setState(() {
-          _forceUpdateResult = gate;
+          _isCheckingGate = false;
         });
       }
-    } catch (_) {}
+    }
   }
 
   @override
@@ -149,6 +179,15 @@ class _AppStartupGateState extends State<AppStartupGate> {
         title: _forceUpdateResult!.title,
         message: _forceUpdateResult!.message,
         playStoreUrl: _forceUpdateResult!.playStoreUrl,
+      );
+    }
+
+    if (_isCheckingGate) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0B1329),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF00E5FF)),
+        ),
       );
     }
 

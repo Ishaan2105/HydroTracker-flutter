@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:intl/intl.dart';
@@ -67,7 +68,25 @@ class NotificationService {
   }
 
   static Future<void> _handleNotificationResponse(NotificationResponse response) async {
-    AppLogger.info('NotificationService', 'Notification response received: ${response.id}, action: ${response.actionId}');
+    AppLogger.info('NotificationService', 'Notification response received: ${response.id}, action: ${response.actionId}, payload: ${response.payload}');
+
+    if (response.payload == 'open_play_store') {
+      try {
+        final marketUri = Uri.parse('market://details?id=com.threestack.hydrotracker');
+        if (await canLaunchUrl(marketUri)) {
+          await launchUrl(marketUri, mode: LaunchMode.externalApplication);
+          return;
+        }
+      } catch (_) {}
+      try {
+        await launchUrl(
+          Uri.parse('https://play.google.com/store/apps/details?id=com.threestack.hydrotracker'),
+          mode: LaunchMode.externalApplication,
+        );
+      } catch (_) {}
+      return;
+    }
+
     final actionId = response.actionId;
     if (actionId == 'ACTION_LOG_GLASS') {
       final hasGlass = await PrefService.hasConfiguredGlass();
@@ -928,6 +947,36 @@ class NotificationService {
     } catch (e, st) {
       AppLogger.error('NotificationService', 'showPostMealTestNotification error: $e', e, st);
       return false;
+    }
+  }
+
+  /// Displays an urgent notification indicating the app requires a mandatory update from Google Play Store
+  static Future<void> showUpdateRequiredNotification({
+    String title = '🚨 Update Required - Hydro Tracker',
+    String body = 'A mandatory update is available on Google Play. Please update to continue tracking your hydration.',
+  }) async {
+    try {
+      const androidDetails = AndroidNotificationDetails(
+        'hydro_update_channel',
+        'App Updates',
+        channelDescription: 'Mandatory update alerts and version announcements',
+        importance: Importance.max,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+        largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+        color: Color(0xFF00E5FF),
+        autoCancel: true,
+      );
+      const details = NotificationDetails(android: androidDetails);
+      await _notificationsPlugin.show(
+        99999, // Distinct notification ID for update alert
+        title,
+        body,
+        details,
+        payload: 'open_play_store',
+      );
+    } catch (e, st) {
+      AppLogger.error('NotificationService', 'showUpdateRequiredNotification error: $e', e, st);
     }
   }
 
