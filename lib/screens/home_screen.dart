@@ -20,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _customController = TextEditingController();
   bool _isWeeklyAnalyticsExpanded = false;
+  bool _isGlassModalOpen = false;
 
   @override
   void initState() {
@@ -43,14 +44,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _triggerGlassCreation() {
-    if (!mounted) return;
+    if (!mounted || _isGlassModalOpen) return;
     final provider = Provider.of<HydrationProvider>(context, listen: false);
     final colors = AppColors(isDark: Theme.of(context).brightness == Brightness.dark);
     _showGlassTrackerModal(context, provider, colors);
   }
 
   void _checkPendingGlassCreation() {
-    if (NotificationService.pendingGlassCreation && mounted) {
+    if (NotificationService.pendingGlassCreation && mounted && !_isGlassModalOpen) {
       NotificationService.pendingGlassCreation = false;
       _triggerGlassCreation();
     }
@@ -137,14 +138,26 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _showGlassTrackerModal(BuildContext context, HydrationProvider provider, AppColors colors) {
+  void _showGlassTrackerModal(BuildContext context, HydrationProvider provider, AppColors colors) async {
+    if (_isGlassModalOpen || !mounted) return;
+    _isGlassModalOpen = true;
     HapticFeedback.lightImpact();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _GlassTrackerSheet(provider: provider, colors: colors),
-    );
+    try {
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => _GlassTrackerSheet(provider: provider, colors: colors),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGlassModalOpen = false;
+        });
+      } else {
+        _isGlassModalOpen = false;
+      }
+    }
   }
 
   @override

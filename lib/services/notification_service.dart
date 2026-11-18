@@ -42,6 +42,7 @@ class NotificationService {
   static VoidCallback? onGlassCreationRequested;
   static void Function(int tabIndex)? onTabSwitchRequested;
   static bool pendingGlassCreation = false;
+  static bool _launchIntentHandled = false;
 
   /// Dynamic actions builder:
   /// If glass is unconfigured, ACTION_LOG_GLASS launches the app (showsUserInterface = true)
@@ -75,11 +76,13 @@ class NotificationService {
         await logWaterDirectly(customGlassMl);
       } else {
         // User has not configured their custom glass yet:
-        // Open the app, switch to Home tab (0), and trigger the Glass Creation modal!
-        pendingGlassCreation = true;
-        onTabSwitchRequested?.call(0);
-        onGlassCreationRequested?.call();
-        WidgetService.onWidgetActionReceived?.call('create_glass');
+        // Open the app, switch to Home tab (0), and trigger the Glass Creation modal exactly once.
+        if (!_launchIntentHandled) {
+          _launchIntentHandled = true;
+          pendingGlassCreation = true;
+          onTabSwitchRequested?.call(0);
+          onGlassCreationRequested?.call();
+        }
       }
     } else if (actionId == 'ACTION_LOG_250') {
       await logWaterDirectly(250);
@@ -153,6 +156,7 @@ class NotificationService {
 
   /// Check if the app was launched by tapping a notification action while terminated
   static Future<void> checkLaunchIntent() async {
+    if (_launchIntentHandled) return;
     try {
       final details = await _notificationsPlugin.getNotificationAppLaunchDetails();
       if (details != null && details.didNotificationLaunchApp) {
@@ -160,10 +164,10 @@ class NotificationService {
         if (actionId == 'ACTION_LOG_GLASS') {
           final hasGlass = await PrefService.hasConfiguredGlass();
           if (!hasGlass) {
+            _launchIntentHandled = true;
             pendingGlassCreation = true;
             onTabSwitchRequested?.call(0);
             onGlassCreationRequested?.call();
-            WidgetService.onWidgetActionReceived?.call('create_glass');
           }
         }
       }
