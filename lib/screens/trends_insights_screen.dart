@@ -1234,23 +1234,27 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                           onTap: () => setState(() => _isMealsExpanded = !_isMealsExpanded),
                           child: Row(
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Meal Times Schedule',
-                                    style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: colors.textPrimary),
-                                  ),
-                                  Text(
-                                    'Enter roughly when you finish eating for 30-min reminders',
-                                    style: GoogleFonts.poppins(fontSize: 11, color: colors.textSecondary),
-                                  ),
-                                ],
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Meal Times Schedule',
+                                      style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: colors.textPrimary),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Enter roughly when you finish eating for 30-min reminders',
+                                      style: GoogleFonts.poppins(fontSize: 11, color: colors.textSecondary),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              const Spacer(),
+                              const SizedBox(width: 8),
                               Icon(
                                 _isMealsExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                                 color: colors.textSecondary,
+                                size: 22,
                               ),
                             ],
                           ),
@@ -1325,8 +1329,8 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                 elevation: 2,
                               ),
                               label: Text(
-                                'Save Schedule (Compulsory to Apply Changes)',
-                                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
+                                'Save Schedule',
+                                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 14),
                               ),
                             ),
                           ),
