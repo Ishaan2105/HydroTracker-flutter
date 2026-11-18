@@ -52,11 +52,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
       }
     });
 
-    // Periodically evaluate daytime / nighttime schedule every minute
-    // so theme flips smoothly at 6:30 AM / 6:30 PM if app remains active
+    // Periodically evaluate daytime / nighttime schedule and midnight day rollover every minute
     _themeScheduleTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) {
-        context.read<HydrationProvider>().checkThemeSchedule();
+        final provider = context.read<HydrationProvider>();
+        provider.checkThemeSchedule();
+        provider.checkMidnightReset();
       }
     });
 

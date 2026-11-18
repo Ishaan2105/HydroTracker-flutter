@@ -7,6 +7,7 @@ import '../services/notification_service.dart';
 import '../services/app_logger.dart';
 import '../services/cloud_sync_service.dart';
 import '../services/widget_service.dart';
+import '../services/weather_service.dart';
 
 class DayTrendData {
   final String label;
@@ -301,10 +302,27 @@ class HydrationProvider extends ChangeNotifier {
       }
     }
 
+    // Automatic Reset: If a weather goal boost was applied on an earlier day, revert to default goal
+    final restoredGoal = await WeatherService.clearWeatherBoostIfExpired();
+    if (restoredGoal != null && restoredGoal > 0) {
+      _dailyGoalMl = restoredGoal;
+      await PrefService.setGoal(restoredGoal);
+      WidgetService.updateWidgetData(_todayIntakeMl, _dailyGoalMl);
+      AppLogger.info('HydrationProvider', 'Day ended: Reverted weather boost to default goal: ${restoredGoal}ml');
+    }
+
     await PrefService.setLastActiveDate(todayStr);
   }
 
   Future<void> loadTodayData() async {
+    // Check if weather goal boost expired (new day rollover)
+    final expiredBaseGoal = await WeatherService.clearWeatherBoostIfExpired();
+    if (expiredBaseGoal != null && expiredBaseGoal > 0) {
+      _dailyGoalMl = expiredBaseGoal;
+      await PrefService.setGoal(expiredBaseGoal);
+      WidgetService.updateWidgetData(_todayIntakeMl, _dailyGoalMl);
+    }
+
     // 1. Drain pending logs recorded directly from the Android AppWidget
     final pendingLogs = await PrefService.getAndClearPendingWidgetLogs();
     if (pendingLogs.isNotEmpty) {
@@ -972,8 +990,11 @@ class HydrationProvider extends ChangeNotifier {
     return list;
   }
 
-  Future<void> updateGoal(int newGoalMl) async {
+  Future<void> updateGoal(int newGoalMl, {bool fromWeatherBoost = false}) async {
     _dailyGoalMl = newGoalMl;
+    if (!fromWeatherBoost) {
+      await WeatherService.setBaseRegularGoal(newGoalMl);
+    }
     WidgetService.updateWidgetData(_todayIntakeMl, _dailyGoalMl);
     notifyListeners(); // Notify instantly so UI updates in 0ms!
     await PrefService.setGoal(newGoalMl);

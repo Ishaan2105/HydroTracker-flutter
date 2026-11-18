@@ -61,6 +61,8 @@ class WeatherService {
   static const String _prefKeyCachedWeather = 'cached_weather_hydration_data';
   static const String _prefKeyLastAppliedDate = 'weather_goal_applied_date';
   static const String _prefKeyDismissedDate = 'weather_goal_dismissed_date';
+  static const String _prefKeyBaseRegularGoal = 'weather_base_regular_goal';
+  static const String _prefKeyAppliedBoostMl = 'weather_goal_applied_boost_ml';
 
   static WeatherHydrationData? _cachedData;
 
@@ -78,13 +80,88 @@ class WeatherService {
     return true;
   }
 
-  /// Marks today's weather suggestion as applied or dismissed
-  static Future<void> markAppliedForToday() async {
+  /// Returns true if a weather goal adjustment has already been applied today
+  static Future<bool> isBoostAppliedToday() async {
     final prefs = await SharedPreferences.getInstance();
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final lastApplied = prefs.getString(_prefKeyLastAppliedDate);
+    return lastApplied == today;
+  }
+
+  /// Gets the date on which a weather goal adjustment was applied
+  static Future<String?> getAppliedDate() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_prefKeyLastAppliedDate);
+  }
+
+  /// Gets the base regular goal before any weather adjustment
+  static Future<int?> getBaseRegularGoal() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_prefKeyBaseRegularGoal);
+  }
+
+  /// Gets the amount of ml added in today's weather adjustment
+  static Future<int> getAppliedBoostMl() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_prefKeyAppliedBoostMl) ?? 500;
+  }
+
+  /// Applies a weather boost: stores the original base goal, boost amount, and today's date
+  static Future<void> applyWeatherBoost({
+    required int currentGoalMl,
+    required int boostMl,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    // Only set base goal if not already stored
+    final existingBase = prefs.getInt(_prefKeyBaseRegularGoal);
+    if (existingBase == null || existingBase <= 0) {
+      await prefs.setInt(_prefKeyBaseRegularGoal, currentGoalMl);
+    }
+
+    await prefs.setInt(_prefKeyAppliedBoostMl, boostMl);
     await prefs.setString(_prefKeyLastAppliedDate, today);
   }
 
+  /// Undoes today's weather boost and returns the base regular goal
+  static Future<int?> undoWeatherBoost() async {
+    final prefs = await SharedPreferences.getInstance();
+    final baseGoal = prefs.getInt(_prefKeyBaseRegularGoal);
+    await prefs.remove(_prefKeyLastAppliedDate);
+    await prefs.remove(_prefKeyAppliedBoostMl);
+    await prefs.remove(_prefKeyBaseRegularGoal);
+    return baseGoal;
+  }
+
+  /// Clears weather boost when the day has ended and returns base regular goal to restore
+  static Future<int?> clearWeatherBoostIfExpired() async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final lastApplied = prefs.getString(_prefKeyLastAppliedDate);
+
+    if (lastApplied != null && lastApplied != today) {
+      final baseGoal = prefs.getInt(_prefKeyBaseRegularGoal);
+      await prefs.remove(_prefKeyLastAppliedDate);
+      await prefs.remove(_prefKeyAppliedBoostMl);
+      await prefs.remove(_prefKeyBaseRegularGoal);
+      return baseGoal;
+    }
+    return null;
+  }
+
+  /// Saves or updates the user's base regular goal when they change it normally
+  static Future<void> setBaseRegularGoal(int goalMl) async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final lastApplied = prefs.getString(_prefKeyLastAppliedDate);
+    // Only update base regular goal if a weather boost is not actively applied today
+    if (lastApplied != today) {
+      await prefs.setInt(_prefKeyBaseRegularGoal, goalMl);
+    }
+  }
+
+  /// Marks today's weather suggestion as dismissed
   static Future<void> markDismissedForToday() async {
     final prefs = await SharedPreferences.getInstance();
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());

@@ -29,6 +29,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isRefreshingWeather = false;
   bool _showWeatherCard = false;
   bool _hasWeatherBadge = false;
+  bool _isWeatherBoostApplied = false;
+  int _appliedWeatherBoostMl = 500;
+  int? _baseRegularGoalMl;
 
   @override
   void initState() {
@@ -54,9 +57,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _initWeather() async {
     final showBadge = await WeatherService.shouldShowBadge();
+    final isApplied = await WeatherService.isBoostAppliedToday();
+    final boostMl = await WeatherService.getAppliedBoostMl();
+    final baseGoal = await WeatherService.getBaseRegularGoal();
+
     if (mounted) {
-      setState(() => _hasWeatherBadge = showBadge);
+      setState(() {
+        _hasWeatherBadge = showBadge;
+        _isWeatherBoostApplied = isApplied;
+        _appliedWeatherBoostMl = boostMl;
+        _baseRegularGoalMl = baseGoal;
+      });
     }
+
     final data = await WeatherService.getWeatherData();
     if (mounted) {
       setState(() => _weatherData = data);
@@ -69,6 +82,10 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    final isApplied = await WeatherService.isBoostAppliedToday();
+    final boostMl = await WeatherService.getAppliedBoostMl();
+    final baseGoal = await WeatherService.getBaseRegularGoal();
+
     if (_weatherData == null) {
       setState(() => _isLoadingWeather = true);
       final data = await WeatherService.getWeatherData();
@@ -76,20 +93,34 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _weatherData = data;
           _isLoadingWeather = false;
+          _isWeatherBoostApplied = isApplied;
+          _appliedWeatherBoostMl = boostMl;
+          _baseRegularGoalMl = baseGoal;
           _showWeatherCard = true;
         });
       }
     } else {
-      setState(() => _showWeatherCard = true);
+      setState(() {
+        _isWeatherBoostApplied = isApplied;
+        _appliedWeatherBoostMl = boostMl;
+        _baseRegularGoalMl = baseGoal;
+        _showWeatherCard = true;
+      });
     }
   }
 
   Future<void> _refreshWeather() async {
     setState(() => _isRefreshingWeather = true);
     final data = await WeatherService.getWeatherData(forceRefresh: true);
+    final isApplied = await WeatherService.isBoostAppliedToday();
+    final boostMl = await WeatherService.getAppliedBoostMl();
+    final baseGoal = await WeatherService.getBaseRegularGoal();
     if (mounted) {
       setState(() {
         _weatherData = data;
+        _isWeatherBoostApplied = isApplied;
+        _appliedWeatherBoostMl = boostMl;
+        _baseRegularGoalMl = baseGoal;
         _isRefreshingWeather = false;
       });
     }
@@ -1701,113 +1732,203 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Message Description with bold orange +500ml highlight
-          RichText(
-            text: TextSpan(
+          if (_isWeatherBoostApplied) ...[
+            // -------------------------------------------------------------
+            // Applied State: Shows that changes are applied + Undo Button
+            // -------------------------------------------------------------
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Changes Applied (+${_appliedWeatherBoostMl}ml for Today)',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF10B981),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              "Your daily goal was increased to ${(provider.dailyGoalMl / 1000).toStringAsFixed(1)}L based on today's weather in ${data.cityName}. After today is complete, your goal will automatically switch back to your regular ${(_baseRegularGoalMl != null ? (_baseRegularGoalMl! / 1000).toStringAsFixed(1) : ((provider.dailyGoalMl - _appliedWeatherBoostMl) / 1000).toStringAsFixed(1))}L goal.",
               style: GoogleFonts.poppins(
                 fontSize: 12.5,
                 color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
                 height: 1.45,
               ),
-              children: [
-                TextSpan(
-                  text: data.temperature >= 27
-                      ? "It's sunny and hot today ($tempFormatted). High perspiration increases fluid needs. Add "
-                      : "Current temperature is $tempFormatted (${data.condition}). Weather conditions affect hydration. Add ",
-                ),
-                TextSpan(
-                  text: '+$extraMl ml',
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final baseGoal = await WeatherService.undoWeatherBoost() ??
+                      (provider.dailyGoalMl - _appliedWeatherBoostMl);
+                  await provider.updateGoal(baseGoal, fromWeatherBoost: true);
+                  if (mounted) {
+                    setState(() {
+                      _isWeatherBoostApplied = false;
+                      _hasWeatherBadge = false;
+                    });
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '↩️ Daily goal reverted back to ${(baseGoal / 1000).toStringAsFixed(1)}L (${baseGoal}ml)!',
+                        ),
+                        backgroundColor: const Color(0xFF1565C0),
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.undo_rounded, size: 18, color: Colors.white),
+                label: Text(
+                  'Undo Goal Change (Revert to ${(_baseRegularGoalMl != null ? (_baseRegularGoalMl! / 1000).toStringAsFixed(1) : ((provider.dailyGoalMl - _appliedWeatherBoostMl) / 1000).toStringAsFixed(1))}L)',
                   style: GoogleFonts.poppins(
+                    fontSize: 12.5,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFFEA580C),
+                    color: Colors.white,
                   ),
                 ),
-                const TextSpan(
-                  text: ' to your goal for today to stay fully hydrated!',
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEF4444),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 2,
+                ),
+              ),
+            ),
+          ] else ...[
+            // -------------------------------------------------------------
+            // Initial State: Suggestion prompt with Add & Keep options
+            // -------------------------------------------------------------
+            RichText(
+              text: TextSpan(
+                style: GoogleFonts.poppins(
+                  fontSize: 12.5,
+                  color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+                  height: 1.45,
+                ),
+                children: [
+                  TextSpan(
+                    text: data.temperature >= 27
+                        ? "It's sunny and hot today ($tempFormatted). High perspiration increases fluid needs. Add "
+                        : "Current temperature is $tempFormatted (${data.condition}). Weather conditions affect hydration. Add ",
+                  ),
+                  TextSpan(
+                    text: '+$extraMl ml',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFFEA580C),
+                    ),
+                  ),
+                  const TextSpan(
+                    text: ' to your goal for today to stay fully hydrated!',
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Action Buttons: Primary Add & Secondary Keep
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final currentGoal = provider.dailyGoalMl;
+                      await WeatherService.applyWeatherBoost(
+                        currentGoalMl: currentGoal,
+                        boostMl: extraMl,
+                      );
+                      await provider.updateGoal(currentGoal + extraMl, fromWeatherBoost: true);
+                      if (mounted) {
+                        setState(() {
+                          _isWeatherBoostApplied = true;
+                          _appliedWeatherBoostMl = extraMl;
+                          _baseRegularGoalMl = currentGoal;
+                          _hasWeatherBadge = false;
+                        });
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '⚡ Added +${extraMl}ml to your daily goal for today! Stay hydrated! 💧',
+                            ),
+                            backgroundColor: const Color(0xFFF97316),
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.bolt_rounded, size: 18, color: Colors.white),
+                    label: Text(
+                      'Add +${extraMl}ml for Today',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF97316),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 3,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: TextButton(
+                    onPressed: () {
+                      setState(() => _showWeatherCard = false);
+                      WeatherService.markDismissedForToday();
+                    },
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        side: BorderSide(
+                          color: isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFBAE6FD),
+                        ),
+                      ),
+                      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    ),
+                    child: Text(
+                      'Keep Regular Goal (${regularGoalL}L)',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-
-          // Action Buttons: Primary Add & Secondary Keep
-          Row(
-            children: [
-              Expanded(
-                flex: 3,
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    await provider.updateGoal(provider.dailyGoalMl + extraMl);
-                    await WeatherService.markAppliedForToday();
-                    if (mounted) {
-                      setState(() {
-                        _showWeatherCard = false;
-                        _hasWeatherBadge = false;
-                      });
-                      messenger.showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            '⚡ Added +${extraMl}ml to your daily goal for today! Stay hydrated! 💧',
-                          ),
-                          backgroundColor: const Color(0xFFF97316),
-                          duration: const Duration(seconds: 3),
-                        ),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.bolt_rounded, size: 18, color: Colors.white),
-                  label: Text(
-                    'Add +${extraMl}ml for Today',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF97316),
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    elevation: 3,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 2,
-                child: TextButton(
-                  onPressed: () {
-                    setState(() => _showWeatherCard = false);
-                    WeatherService.markDismissedForToday();
-                  },
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      side: BorderSide(
-                        color: isDark
-                            ? const Color(0xFF334155)
-                            : const Color(0xFFBAE6FD),
-                      ),
-                    ),
-                    backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  ),
-                  child: Text(
-                    'Keep Regular Goal (${regularGoalL}L)',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          ],
         ],
       ),
     );
