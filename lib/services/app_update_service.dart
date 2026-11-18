@@ -77,7 +77,7 @@ class AppUpdateService {
       final title = data['title'] as String? ?? 'Update Required';
       final message = data['message'] as String? ??
           'A mandatory update of Hydro Tracker is available on Google Play. Please update to continue.';
-      final storeUrl = data['play_store_url'] as String? ??
+      final storeUrl = (data['play_store_url'] ?? data['play_store_url ']) as String? ??
           'https://play.google.com/store/apps/details?id=com.threestack.hydrotracker';
 
       if (isForceUpdate && currentVersionCode < minVersionCode) {
