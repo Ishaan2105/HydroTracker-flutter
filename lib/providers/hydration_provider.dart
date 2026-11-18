@@ -229,7 +229,8 @@ class HydrationProvider extends ChangeNotifier {
       _bestStreak = await PrefService.getBestStreak();
       _mealSchedule = await PrefService.getMealSchedule();
 
-      _isNotifEnabled = await PrefService.getNotifEnabled();
+      _isNotifEnabled = true; // Hydration alerts are permanently enabled
+      await PrefService.setNotifEnabled(true);
       _isPostMealNotifEnabled = await PrefService.getPostMealNotif();
       _reminderTimes = await PrefService.getReminderTimes();
       _disabledReminderTimes = await PrefService.getDisabledReminderTimes();
@@ -608,13 +609,11 @@ class HydrationProvider extends ChangeNotifier {
     return rounded;
   }
 
-  Future<void> toggleNotif(bool enabled) async {
-    _isNotifEnabled = enabled;
+  Future<void> toggleNotif([bool enabled = true]) async {
+    _isNotifEnabled = true; // Alerts are permanently enabled
     notifyListeners();
-    await PrefService.setNotifEnabled(enabled);
-    if (enabled) {
-      await NotificationService.requestPermissions();
-    }
+    await PrefService.setNotifEnabled(true);
+    await NotificationService.requestPermissions();
     try {
       await NotificationService.scheduleReminders(
         activeReminderTimes,

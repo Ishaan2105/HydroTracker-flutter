@@ -138,6 +138,7 @@ class NotificationService {
           playSound: false,
           enableVibration: false,
           icon: _activeIcon,
+          largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           color: const Color(0xFF00E5FF),
           timeoutAfter: 4000,
         ),
@@ -189,9 +190,9 @@ class NotificationService {
         requestSoundPermission: true,
       );
 
-      // Attempt initialization with ic_stat_hydro_logo, gracefully fallback to @mipmap/ic_launcher
+      // Prioritize @mipmap/ic_launcher so the app logo is displayed in the notification bar
       bool initialized = false;
-      for (final iconCandidate in ['ic_stat_hydro_logo', '@mipmap/ic_launcher']) {
+      for (final iconCandidate in ['@mipmap/ic_launcher', 'ic_stat_hydro_logo']) {
         try {
           final AndroidInitializationSettings androidSettings =
               AndroidInitializationSettings(iconCandidate);
@@ -552,6 +553,7 @@ class NotificationService {
       playSound: true,
       enableVibration: true,
       icon: customIcon ?? _activeIcon,
+      largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
       color: const Color(0xFF00E5FF),
       category: AndroidNotificationCategory.reminder,
       visibility: NotificationVisibility.public,

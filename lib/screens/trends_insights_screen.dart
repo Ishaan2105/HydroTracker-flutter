@@ -307,7 +307,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
           _dinnerTime = picked;
         }
       });
-      _showConfirmationBanner('$mealName time set to $timeFormatted');
+      _showConfirmationBanner('$mealName finish time set to $timeFormatted. Tap "Save Schedule" below to apply changes!');
     }
   }
 
@@ -1242,7 +1242,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                     style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: colors.textPrimary),
                                   ),
                                   Text(
-                                    'Set times to receive post-meal reminders',
+                                    'Enter roughly when you finish eating for 30-min reminders',
                                     style: GoogleFonts.poppins(fontSize: 11, color: colors.textSecondary),
                                   ),
                                 ],
@@ -1258,87 +1258,77 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
 
                         if (_isMealsExpanded) ...[
                           const SizedBox(height: 16),
-                          _buildMealRow(context, 'Breakfast', 'bfast', _bfastTime, colors),
-                          _buildMealRow(context, 'Lunch', 'lunch', _lunchTime, colors),
-                          _buildMealRow(context, 'Dinner', 'dinner', _dinnerTime, colors),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                flex: 3,
-                                child: ElevatedButton.icon(
-                                  onPressed: () => _saveMeals(provider),
-                                  icon: const Icon(Icons.check_circle_outline_rounded, size: 16, color: Colors.white),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF1565C0),
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                  label: Text(
-                                    'Save Schedule',
-                                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                flex: 2,
-                                child: OutlinedButton.icon(
-                                  onPressed: () async {
-                                    final success = await NotificationService.showPostMealTestNotification('Lunch');
-                                    if (context.mounted) {
-                                      if (success) {
-                                        _showConfirmationBanner(
-                                          'Instant post-meal reminder sent to status bar! 🍽️',
-                                          color: const Color(0xFF10B981),
-                                        );
-                                      } else {
-                                        _showConfirmationBanner(
-                                          'Notifications are disabled. Enable them in Android settings.',
-                                          color: const Color(0xFFEF4444),
-                                        );
-                                      }
-                                    }
-                                  },
-                                  icon: Icon(Icons.notifications_active_outlined, size: 15, color: colors.cyanAccent),
-                                  style: OutlinedButton.styleFrom(
-                                    side: BorderSide(color: colors.cyanAccent),
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                  label: Text(
-                                    'Instant',
-                                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: colors.cyanAccent, fontSize: 12),
+                          // Prominent Guidance Notice
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1565C0).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.35)),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(Icons.info_outline_rounded, color: Color(0xFF00E5FF), size: 20),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Enter When You Finish Eating',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF00E5FF),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        'Please enter the time when you roughly finish eating your food (not when you start). Reminders will notify you 30 minutes later to drink water.',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 11,
+                                          color: colors.textPrimary,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        '⚠️ COMPULSORY: You must click the "Save Schedule" button below after making any changes for your new reminder times to take effect!',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFFF59E0B),
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          _buildMealRow(context, 'Breakfast (Finish Time)', 'bfast', _bfastTime, colors),
+                          _buildMealRow(context, 'Lunch (Finish Time)', 'lunch', _lunchTime, colors),
+                          _buildMealRow(context, 'Dinner (Finish Time)', 'dinner', _dinnerTime, colors),
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () => _saveMeals(provider),
+                              icon: const Icon(Icons.check_circle_outline_rounded, size: 18, color: Colors.white),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1565C0),
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                elevation: 2,
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                flex: 2,
-                                child: OutlinedButton.icon(
-                                  onPressed: () async {
-                                    final target = await NotificationService.scheduleOneMinutePostMealTestAlarm();
-                                    final timeStr = DateFormat('hh:mm:ss a').format(target);
-                                    if (context.mounted) {
-                                      _showConfirmationBanner(
-                                        '🍽️ 1-Min Post-Meal Alarm set for $timeStr! Lock phone to test.',
-                                        color: const Color(0xFF10B981),
-                                      );
-                                    }
-                                  },
-                                  icon: Icon(Icons.timer_outlined, size: 15, color: colors.cyanAccent),
-                                  style: OutlinedButton.styleFrom(
-                                    side: BorderSide(color: colors.cyanAccent),
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                  label: Text(
-                                    '1-Min Test',
-                                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: colors.cyanAccent, fontSize: 12),
-                                  ),
-                                ),
+                              label: Text(
+                                'Save Schedule (Compulsory to Apply Changes)',
+                                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
                               ),
-                            ],
+                            ),
                           ),
                         ],
                       ],

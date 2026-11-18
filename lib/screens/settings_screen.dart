@@ -115,50 +115,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  String _calcPostMealTime(String? timeStr) {
-    if (timeStr == null || timeStr.trim().isEmpty) return '--';
-    try {
-      final clean = timeStr.trim();
-      DateTime? dt;
-      if (clean.toUpperCase().contains('AM') || clean.toUpperCase().contains('PM')) {
-        try {
-          dt = DateFormat('hh:mm a').parse(clean);
-        } catch (_) {
-          dt = DateFormat('h:mm a').parse(clean);
-        }
-      } else {
-        dt = DateFormat('HH:mm').parse(clean);
-      }
-      final post = dt.add(const Duration(minutes: 30));
-      return DateFormat('hh:mm a').format(post);
-    } catch (_) {
-      return '--';
-    }
-  }
-
-  Widget _buildPostMealItem(String mealName, String mealTime, AppColors colors) {
-    final alertTime = _calcPostMealTime(mealTime);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(mealName, style: GoogleFonts.poppins(fontSize: 11.5, color: colors.textSecondary)),
-          Row(
-            children: [
-              Text(mealTime, style: GoogleFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.w500, color: colors.textPrimary)),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Icon(Icons.arrow_right_alt_rounded, size: 14, color: colors.textMuted),
-              ),
-              Text('Alert $alertTime', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: colors.cyanAccent)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildGlassPresetChip(HydrationProvider provider, int sizeMl, AppColors colors) {
     final isSelected = provider.customGlassMl == sizeMl;
     return Padding(
@@ -457,83 +413,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: Text('Enable Hydration Alerts', style: GoogleFonts.poppins(fontSize: 13, color: colors.textPrimary)),
-                          subtitle: Text('Receive offline reminders during the day', style: GoogleFonts.poppins(fontSize: 11, color: colors.textSecondary)),
-                          value: provider.isNotifEnabled,
-                          activeColor: colors.cyanAccent,
-                          onChanged: (val) => provider.toggleNotif(val),
-                        ),
-                        Divider(color: colors.surfaceBorder),
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
                           title: Text('Post-Meal Reminder (30 mins)', style: GoogleFonts.poppins(fontSize: 13, color: colors.textPrimary)),
                           subtitle: Text('Alert 30 minutes after scheduled meals', style: GoogleFonts.poppins(fontSize: 11, color: colors.textSecondary)),
                           value: provider.isPostMealNotifEnabled,
                           activeColor: colors.cyanAccent,
                           onChanged: (val) => provider.togglePostMealNotif(val),
                         ),
-                        if (provider.isPostMealNotifEnabled) ...[
-                          Container(
-                            margin: const EdgeInsets.only(top: 6, bottom: 10),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: colors.cardBgAlt,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: colors.cyanAccent.withValues(alpha: 0.25)),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(Icons.restaurant_rounded, size: 15, color: colors.cyanAccent),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'Active Meal Times Schedule',
-                                      style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: colors.textPrimary),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                _buildPostMealItem('Breakfast', provider.mealSchedule['bfast'] ?? '08:30 AM', colors),
-                                _buildPostMealItem('Lunch', provider.mealSchedule['lunch'] ?? '01:00 PM', colors),
-                                _buildPostMealItem('Dinner', provider.mealSchedule['dinner'] ?? '08:00 PM', colors),
-                                const SizedBox(height: 10),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: OutlinedButton.icon(
-                                    onPressed: () async {
-                                      final messenger = ScaffoldMessenger.of(context);
-                                      final target = await NotificationService.scheduleOneMinutePostMealTestAlarm();
-                                      final timeStr = DateFormat('hh:mm:ss a').format(target);
-                                      messenger.clearSnackBars();
-                                      messenger.showSnackBar(
-                                        SnackBar(
-                                          backgroundColor: const Color(0xFF10B981),
-                                          content: Text(
-                                            '🍽️ Post-Meal Test Alarm set for $timeStr (in 60s)! Lock phone or leave app to test.',
-                                            style: GoogleFonts.poppins(fontSize: 12),
-                                          ),
-                                          duration: const Duration(seconds: 4),
-                                        ),
-                                      );
-                                    },
-                                    icon: Icon(Icons.timer_outlined, size: 15, color: colors.cyanAccent),
-                                    label: Text(
-                                      'Test 1-Min Post-Meal Alarm',
-                                      style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: colors.cyanAccent),
-                                    ),
-                                    style: OutlinedButton.styleFrom(
-                                      side: BorderSide(color: colors.cyanAccent.withValues(alpha: 0.6)),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                      padding: const EdgeInsets.symmetric(vertical: 8),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
                         Divider(color: colors.surfaceBorder),
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
@@ -732,90 +617,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           }).toList(),
                         ),
                         const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () async {
-                                  final success = await NotificationService.showTestNotification();
-                                  if (context.mounted) {
-                                    if (success) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Instant notification sent to status bar! 🔔'),
-                                          backgroundColor: Color(0xFF10B981),
-                                          duration: Duration(seconds: 3),
-                                        ),
-                                      );
-                                    } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: const Text('Notifications are disabled in Android. Please allow notifications.'),
-                                          backgroundColor: const Color(0xFFEF4444),
-                                          duration: const Duration(seconds: 4),
-                                          action: SnackBarAction(
-                                            label: 'Settings',
-                                            textColor: Colors.white,
-                                            onPressed: () => NotificationService.openNotificationSettings(),
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                },
-                                icon: Icon(Icons.notifications_active_rounded, size: 16, color: colors.cyanAccent),
-                                label: Text(
-                                  'Instant Test',
-                                  style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: colors.cyanAccent),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                                  side: BorderSide(color: colors.cyanAccent),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              ),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              final success = await NotificationService.showTestNotification();
+                              if (context.mounted) {
+                                if (success) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Instant notification sent to status bar! 🔔'),
+                                      backgroundColor: Color(0xFF10B981),
+                                      duration: Duration(seconds: 3),
+                                    ),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text('Notifications are disabled in Android. Please allow notifications.'),
+                                      backgroundColor: const Color(0xFFEF4444),
+                                      duration: const Duration(seconds: 4),
+                                      action: SnackBarAction(
+                                        label: 'Settings',
+                                        textColor: Colors.white,
+                                        onPressed: () => NotificationService.openNotificationSettings(),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                            icon: Icon(Icons.notifications_active_rounded, size: 16, color: colors.cyanAccent),
+                            label: Text(
+                              'Instant Test Notification',
+                              style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: colors.cyanAccent),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: () async {
-                                  try {
-                                    final scheduledTime = await NotificationService.scheduleOneMinuteTest();
-                                    final timeStr = DateFormat('hh:mm:ss a').format(scheduledTime);
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('⏳ 1-Min Alarm set for $timeStr! Lock phone & wait 60s.'),
-                                          backgroundColor: const Color(0xFF1565C0),
-                                          duration: const Duration(seconds: 4),
-                                        ),
-                                      );
-                                    }
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('⚠️ Alarm scheduling error: $e'),
-                                          backgroundColor: const Color(0xFFEF4444),
-                                          duration: const Duration(seconds: 4),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                },
-                                icon: const Icon(Icons.timer_outlined, size: 16, color: Colors.white),
-                                label: Text(
-                                  '1-Min Test Alarm',
-                                  style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                                  backgroundColor: const Color(0xFF1565C0),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              ),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                              side: BorderSide(color: colors.cyanAccent),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
-                          ],
+                          ),
                         ),
                       ],
                     ),
