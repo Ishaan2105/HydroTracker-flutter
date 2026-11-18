@@ -8,6 +8,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:intl/intl.dart';
 import '../models/water_log.dart';
 import 'app_logger.dart';
+import 'cloud_sync_service.dart';
 import 'db_helper.dart';
 import 'pref_service.dart';
 import 'widget_service.dart';
@@ -37,20 +38,32 @@ class NotificationService {
   static const String channelName = 'Hydration Reminders';
   static final StreamController<int> notificationIntakeStream = StreamController<int>.broadcast();
 
-  static const List<AndroidNotificationAction> _notificationActions = [
-    AndroidNotificationAction(
-      'ACTION_LOG_GLASS',
-      'Glass',
-      showsUserInterface: false,
-      cancelNotification: true,
-    ),
-    AndroidNotificationAction(
-      'ACTION_LOG_250',
-      '+250 ml',
-      showsUserInterface: false,
-      cancelNotification: true,
-    ),
-  ];
+  // Navigation & UI callbacks for notification actions
+  static VoidCallback? onGlassCreationRequested;
+  static void Function(int tabIndex)? onTabSwitchRequested;
+  static bool pendingGlassCreation = false;
+
+  /// Dynamic actions builder:
+  /// If glass is unconfigured, ACTION_LOG_GLASS launches the app (showsUserInterface = true)
+  /// so the user can be redirected to the Glass Creation modal.
+  /// If configured, it logs silently in the background (showsUserInterface = false).
+  static Future<List<AndroidNotificationAction>> getNotificationActions() async {
+    final hasGlass = await PrefService.hasConfiguredGlass();
+    return [
+      AndroidNotificationAction(
+        'ACTION_LOG_GLASS',
+        'Glass',
+        showsUserInterface: !hasGlass,
+        cancelNotification: true,
+      ),
+      const AndroidNotificationAction(
+        'ACTION_LOG_250',
+        '+250 ml',
+        showsUserInterface: false,
+        cancelNotification: true,
+      ),
+    ];
+  }
 
   static Future<void> _handleNotificationResponse(NotificationResponse response) async {
     AppLogger.info('NotificationService', 'Notification response received: ${response.id}, action: ${response.actionId}');
@@ -61,6 +74,11 @@ class NotificationService {
         final customGlassMl = await PrefService.getCustomGlassMl();
         await logWaterDirectly(customGlassMl);
       } else {
+        // User has not configured their custom glass yet:
+        // Open the app, switch to Home tab (0), and trigger the Glass Creation modal!
+        pendingGlassCreation = true;
+        onTabSwitchRequested?.call(0);
+        onGlassCreationRequested?.call();
         WidgetService.onWidgetActionReceived?.call('create_glass');
       }
     } else if (actionId == 'ACTION_LOG_250') {
@@ -68,6 +86,9 @@ class NotificationService {
     }
   }
 
+  /// Directly logs water intake into SQLite, SharedPreferences, and the AppWidget,
+  /// then triggers a brief auto-dismissing confirmation notification so the user
+  /// sees their updated total immediately in the status bar.
   static Future<void> logWaterDirectly(int amountMl) async {
     try {
       final now = DateTime.now();
@@ -82,11 +103,72 @@ class NotificationService {
       final total = logs.fold<int>(0, (sum, l) => sum + l.amountMl);
       await PrefService.setTodayIntake(total);
       final goal = await PrefService.getGoal();
-      await WidgetService.updateWidgetData(total, goal);
+      try {
+        await WidgetService.updateWidgetData(total, goal);
+      } catch (e) {
+        AppLogger.warn('NotificationService', 'Widget update skipped: $e');
+      }
+      try {
+        await CloudSyncService.instance.syncSingleLog(log);
+      } catch (e) {
+        AppLogger.warn('NotificationService', 'Cloud sync skipped: $e');
+      }
       notificationIntakeStream.add(amountMl);
+      await showConfirmationNotification(amountMl, total, goal);
       AppLogger.info('NotificationService', 'Directly logged $amountMl ml via notification action');
     } catch (e, st) {
       AppLogger.error('NotificationService', 'logWaterDirectly failed', e, st);
+    }
+  }
+
+  /// Displays an immediate auto-dismissing confirmation alert in the status bar
+  static Future<void> showConfirmationNotification(int addedMl, int totalMl, int goalMl) async {
+    try {
+      final pct = goalMl > 0 ? ((totalMl / goalMl) * 100).toInt() : 0;
+      final details = NotificationDetails(
+        android: AndroidNotificationDetails(
+          'hydro_confirmations',
+          'Intake Confirmations',
+          channelDescription: 'Quick confirmation alerts when logging water via notifications',
+          importance: Importance.high,
+          priority: Priority.high,
+          playSound: false,
+          enableVibration: false,
+          icon: _activeIcon,
+          color: const Color(0xFF00E5FF),
+          timeoutAfter: 4000,
+        ),
+        iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: false),
+      );
+      await _notificationsPlugin.show(
+        998,
+        '💧 Logged +$addedMl ml!',
+        'Today’s Total: $totalMl / $goalMl ml ($pct%)',
+        details,
+      );
+    } catch (e) {
+      AppLogger.warn('NotificationService', 'showConfirmationNotification error: $e');
+    }
+  }
+
+  /// Check if the app was launched by tapping a notification action while terminated
+  static Future<void> checkLaunchIntent() async {
+    try {
+      final details = await _notificationsPlugin.getNotificationAppLaunchDetails();
+      if (details != null && details.didNotificationLaunchApp) {
+        final actionId = details.notificationResponse?.actionId;
+        if (actionId == 'ACTION_LOG_GLASS') {
+          final hasGlass = await PrefService.hasConfiguredGlass();
+          if (!hasGlass) {
+            pendingGlassCreation = true;
+            onTabSwitchRequested?.call(0);
+            onGlassCreationRequested?.call();
+            WidgetService.onWidgetActionReceived?.call('create_glass');
+          }
+        }
+      }
+    } catch (e) {
+      AppLogger.warn('NotificationService', 'checkLaunchIntent error: $e');
     }
   }
 
@@ -375,6 +457,8 @@ class NotificationService {
         );
       }
 
+      final actions = await getNotificationActions();
+
       int id = 100;
       for (String timeStr in reminderTimes) {
         final target = calculateNextTzOccurrence(timeStr);
@@ -386,6 +470,7 @@ class NotificationService {
           title: 'Time to Hydrate!',
           body: 'Stay on top of your goal with a fresh glass of water.',
           isDaily: isDaily,
+          actions: actions,
         );
       }
       AppLogger.info('NotificationService', 'Successfully scheduled ${reminderTimes.length} reminder alarms.');
@@ -411,6 +496,8 @@ class NotificationService {
         return;
       }
 
+      final actions = await getNotificationActions();
+
       final meals = [
         {'key': 'bfast', 'name': 'Breakfast', 'id': 300},
         {'key': 'lunch', 'name': 'Lunch', 'id': 301},
@@ -433,9 +520,10 @@ class NotificationService {
           id: meal['id'] as int,
           target: target,
           timeStr: postMealTimeStr,
-          title: 'Post-${meal['name']} Hydration',
-          body: 'It’s been 30 minutes since ${meal['name']}. Drink a glass of water for optimal digestion!',
+          title: 'Post-${meal['name']} Hydration 🍽️💧',
+          body: 'It’s been 30 minutes since ${meal['name']}. Drink a fresh glass of water for optimal digestion!',
           isDaily: true,
+          actions: actions,
         );
         AppLogger.info('NotificationService', 'Scheduled Post-${meal['name']} alarm for $postMealTimeStr (Target: $target)');
       }
@@ -464,7 +552,7 @@ class NotificationService {
       category: AndroidNotificationCategory.reminder,
       visibility: NotificationVisibility.public,
       showWhen: true,
-      actions: actions ?? _notificationActions,
+      actions: actions,
     );
   }
 
@@ -479,9 +567,10 @@ class NotificationService {
     required String body,
     String timeStr = '',
     bool isDaily = true,
+    List<AndroidNotificationAction>? actions,
   }) async {
     final notificationDetails = NotificationDetails(
-      android: _buildAndroidNotificationDetails(),
+      android: _buildAndroidNotificationDetails(actions: actions),
       iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
     );
 
@@ -519,7 +608,7 @@ class NotificationService {
           AppLogger.warn('NotificationService', 'Daily alarm alarmClock failed: $e2. Trying inexact fallback...');
           try {
             final fallbackDetails = NotificationDetails(
-              android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher'),
+              android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher', actions: actions),
               iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
             );
             await _notificationsPlugin.zonedSchedule(
@@ -571,7 +660,7 @@ class NotificationService {
           AppLogger.warn('NotificationService', 'One-time alarm alarmClock failed: $e2. Trying inexact fallback...');
           try {
             final fallbackDetails = NotificationDetails(
-              android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher'),
+              android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher', actions: actions),
               iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
             );
             await _notificationsPlugin.zonedSchedule(
@@ -602,9 +691,10 @@ class NotificationService {
 
     final now = tz.TZDateTime.now(tz.local);
     final target = now.add(const Duration(seconds: 60));
+    final actions = await getNotificationActions();
 
     final notificationDetails = NotificationDetails(
-      android: _buildAndroidNotificationDetails(),
+      android: _buildAndroidNotificationDetails(actions: actions),
       iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
     );
 
@@ -637,7 +727,7 @@ class NotificationService {
       } catch (e2) {
         AppLogger.warn('NotificationService', '1-min test alarmClock failed: $e2. Trying inexact fallback...');
         final fallbackDetails = NotificationDetails(
-          android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher'),
+          android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher', actions: actions),
           iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
         );
         await _notificationsPlugin.zonedSchedule(
@@ -651,6 +741,71 @@ class NotificationService {
               UILocalNotificationDateInterpretation.absoluteTime,
         );
         AppLogger.info('NotificationService', '1-min test alarm scheduled via inexact fallback');
+      }
+    }
+
+    return DateTime.now().add(const Duration(seconds: 60));
+  }
+
+  /// Schedule a 1-minute test alarm specifically for post-meal verification (fires in 60s)
+  static Future<DateTime> scheduleOneMinutePostMealTestAlarm() async {
+    await init();
+    try {
+      await requestPermissions();
+    } catch (_) {}
+
+    final now = tz.TZDateTime.now(tz.local);
+    final target = now.add(const Duration(seconds: 60));
+    final actions = await getNotificationActions();
+
+    final notificationDetails = NotificationDetails(
+      android: _buildAndroidNotificationDetails(actions: actions),
+      iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
+    );
+
+    try {
+      await _notificationsPlugin.zonedSchedule(
+        398,
+        'Post-Meal Hydration 🍽️💧',
+        'It’s been 30 minutes since your meal. Drink a fresh glass of water for optimal digestion!',
+        target,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+      AppLogger.info('NotificationService', '1-min post-meal test alarm scheduled via exactAllowWhileIdle');
+    } catch (e1) {
+      AppLogger.warn('NotificationService', '1-min post-meal test exactAllowWhileIdle failed: $e1. Trying alarmClock...');
+      try {
+        await _notificationsPlugin.zonedSchedule(
+          398,
+          'Post-Meal Hydration 🍽️💧',
+          'It’s been 30 minutes since your meal. Drink a fresh glass of water for optimal digestion!',
+          target,
+          notificationDetails,
+          androidScheduleMode: AndroidScheduleMode.alarmClock,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+        );
+        AppLogger.info('NotificationService', '1-min post-meal test alarm scheduled via alarmClock');
+      } catch (e2) {
+        AppLogger.warn('NotificationService', '1-min post-meal test alarmClock failed: $e2. Trying inexact fallback...');
+        final fallbackDetails = NotificationDetails(
+          android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher', actions: actions),
+          iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
+        );
+        await _notificationsPlugin.zonedSchedule(
+          398,
+          'Post-Meal Hydration 🍽️💧',
+          'It’s been 30 minutes since your meal. Drink a fresh glass of water for optimal digestion!',
+          target,
+          fallbackDetails,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+        );
+        AppLogger.info('NotificationService', '1-min post-meal test alarm scheduled via inexact fallback');
       }
     }
 
@@ -693,8 +848,9 @@ class NotificationService {
         return false;
       }
 
+      final actions = await getNotificationActions();
       final notificationDetails = NotificationDetails(
-        android: _buildAndroidNotificationDetails(),
+        android: _buildAndroidNotificationDetails(actions: actions),
         iOS: const DarwinNotificationDetails(),
       );
 
@@ -709,7 +865,7 @@ class NotificationService {
       } catch (iconErr) {
         // Fallback to mipmap/ic_launcher if custom drawable lookup encounters an issue
         final fallbackDetails = NotificationDetails(
-          android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher'),
+          android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher', actions: actions),
           iOS: const DarwinNotificationDetails(),
         );
         await _notificationsPlugin.show(
@@ -736,8 +892,9 @@ class NotificationService {
         return false;
       }
 
+      final actions = await getNotificationActions();
       final notificationDetails = NotificationDetails(
-        android: _buildAndroidNotificationDetails(),
+        android: _buildAndroidNotificationDetails(actions: actions),
         iOS: const DarwinNotificationDetails(),
       );
 

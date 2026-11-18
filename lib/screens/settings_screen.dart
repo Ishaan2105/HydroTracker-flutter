@@ -115,6 +115,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  String _calcPostMealTime(String? timeStr) {
+    if (timeStr == null || timeStr.trim().isEmpty) return '--';
+    try {
+      final clean = timeStr.trim();
+      DateTime? dt;
+      if (clean.toUpperCase().contains('AM') || clean.toUpperCase().contains('PM')) {
+        try {
+          dt = DateFormat('hh:mm a').parse(clean);
+        } catch (_) {
+          dt = DateFormat('h:mm a').parse(clean);
+        }
+      } else {
+        dt = DateFormat('HH:mm').parse(clean);
+      }
+      final post = dt.add(const Duration(minutes: 30));
+      return DateFormat('hh:mm a').format(post);
+    } catch (_) {
+      return '--';
+    }
+  }
+
+  Widget _buildPostMealItem(String mealName, String mealTime, AppColors colors) {
+    final alertTime = _calcPostMealTime(mealTime);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(mealName, style: GoogleFonts.poppins(fontSize: 11.5, color: colors.textSecondary)),
+          Row(
+            children: [
+              Text(mealTime, style: GoogleFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.w500, color: colors.textPrimary)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Icon(Icons.arrow_right_alt_rounded, size: 14, color: colors.textMuted),
+              ),
+              Text('Alert $alertTime', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: colors.cyanAccent)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildGlassPresetChip(HydrationProvider provider, int sizeMl, AppColors colors) {
     final isSelected = provider.customGlassMl == sizeMl;
     return Padding(
@@ -428,6 +472,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           activeColor: colors.cyanAccent,
                           onChanged: (val) => provider.togglePostMealNotif(val),
                         ),
+                        if (provider.isPostMealNotifEnabled) ...[
+                          Container(
+                            margin: const EdgeInsets.only(top: 6, bottom: 10),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: colors.cardBgAlt,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: colors.cyanAccent.withValues(alpha: 0.25)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.restaurant_rounded, size: 15, color: colors.cyanAccent),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Active Meal Times Schedule',
+                                      style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: colors.textPrimary),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                _buildPostMealItem('Breakfast', provider.mealSchedule['bfast'] ?? '08:30 AM', colors),
+                                _buildPostMealItem('Lunch', provider.mealSchedule['lunch'] ?? '01:00 PM', colors),
+                                _buildPostMealItem('Dinner', provider.mealSchedule['dinner'] ?? '08:00 PM', colors),
+                                const SizedBox(height: 10),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () async {
+                                      final messenger = ScaffoldMessenger.of(context);
+                                      final target = await NotificationService.scheduleOneMinutePostMealTestAlarm();
+                                      final timeStr = DateFormat('hh:mm:ss a').format(target);
+                                      messenger.clearSnackBars();
+                                      messenger.showSnackBar(
+                                        SnackBar(
+                                          backgroundColor: const Color(0xFF10B981),
+                                          content: Text(
+                                            '🍽️ Post-Meal Test Alarm set for $timeStr (in 60s)! Lock phone or leave app to test.',
+                                            style: GoogleFonts.poppins(fontSize: 12),
+                                          ),
+                                          duration: const Duration(seconds: 4),
+                                        ),
+                                      );
+                                    },
+                                    icon: Icon(Icons.timer_outlined, size: 15, color: colors.cyanAccent),
+                                    label: Text(
+                                      'Test 1-Min Post-Meal Alarm',
+                                      style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: colors.cyanAccent),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      side: BorderSide(color: colors.cyanAccent.withValues(alpha: 0.6)),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         Divider(color: colors.surfaceBorder),
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,

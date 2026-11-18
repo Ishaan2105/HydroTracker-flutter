@@ -1280,7 +1280,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: 8),
                               Expanded(
                                 flex: 2,
                                 child: OutlinedButton.icon(
@@ -1300,15 +1300,41 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                       }
                                     }
                                   },
-                                  icon: Icon(Icons.notifications_active_outlined, size: 16, color: colors.cyanAccent),
+                                  icon: Icon(Icons.notifications_active_outlined, size: 15, color: colors.cyanAccent),
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(color: colors.cyanAccent),
                                     padding: const EdgeInsets.symmetric(vertical: 10),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                   ),
                                   label: Text(
-                                    'Test Alert',
-                                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: colors.cyanAccent, fontSize: 13),
+                                    'Instant',
+                                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: colors.cyanAccent, fontSize: 12),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                flex: 2,
+                                child: OutlinedButton.icon(
+                                  onPressed: () async {
+                                    final target = await NotificationService.scheduleOneMinutePostMealTestAlarm();
+                                    final timeStr = DateFormat('hh:mm:ss a').format(target);
+                                    if (context.mounted) {
+                                      _showConfirmationBanner(
+                                        '🍽️ 1-Min Post-Meal Alarm set for $timeStr! Lock phone to test.',
+                                        color: const Color(0xFF10B981),
+                                      );
+                                    }
+                                  },
+                                  icon: Icon(Icons.timer_outlined, size: 15, color: colors.cyanAccent),
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(color: colors.cyanAccent),
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  label: Text(
+                                    '1-Min Test',
+                                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: colors.cyanAccent, fontSize: 12),
                                   ),
                                 ),
                               ),

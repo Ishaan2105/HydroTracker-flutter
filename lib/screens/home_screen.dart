@@ -30,9 +30,15 @@ class _HomeScreenState extends State<HomeScreen> {
         _triggerGlassCreation();
       }
     };
+    NotificationService.onGlassCreationRequested = () {
+      if (mounted) {
+        _triggerGlassCreation();
+      }
+    };
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await NotificationService.requestPermissions();
       _checkWidgetLaunchIntent();
+      _checkPendingGlassCreation();
     });
   }
 
@@ -41,6 +47,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final provider = Provider.of<HydrationProvider>(context, listen: false);
     final colors = AppColors(isDark: Theme.of(context).brightness == Brightness.dark);
     _showGlassTrackerModal(context, provider, colors);
+  }
+
+  void _checkPendingGlassCreation() {
+    if (NotificationService.pendingGlassCreation && mounted) {
+      NotificationService.pendingGlassCreation = false;
+      _triggerGlassCreation();
+    }
   }
 
   Future<void> _checkWidgetLaunchIntent() async {
@@ -53,6 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     WidgetService.onWidgetActionReceived = null;
+    NotificationService.onGlassCreationRequested = null;
     _customController.dispose();
     super.dispose();
   }

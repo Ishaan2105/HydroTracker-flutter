@@ -22,6 +22,7 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> with WidgetsBindingObserver {
   int _currentIndex = 0;
   Timer? _themeScheduleTimer;
+  StreamSubscription<int>? _intakeSub;
 
   final List<Widget> _screens = const [
     HomeScreen(),
@@ -35,6 +36,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
+    // Register tab switcher callback for notification redirection (e.g. switch to Home for custom glass creation)
+    NotificationService.onTabSwitchRequested = (tabIndex) {
+      if (mounted) {
+        setState(() => _currentIndex = tabIndex);
+      }
+    };
+
+    // Listen to real-time notification action logging events so in-app state stays 100% synchronized
+    _intakeSub = NotificationService.notificationIntakeStream.stream.listen((_) {
+      if (mounted) {
+        final provider = context.read<HydrationProvider>();
+        provider.loadTodayData();
+        provider.loadHistoryStats();
+      }
+    });
+
     // Periodically evaluate daytime / nighttime schedule every minute
     // so theme flips smoothly at 6:30 AM / 6:30 PM if app remains active
     _themeScheduleTimer = Timer.periodic(const Duration(minutes: 1), (_) {
@@ -43,11 +60,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
       }
     });
 
-    // After the first frame renders, request notification permissions if needed
-    // and check battery optimization guidance.
+    // After the first frame renders, request notification permissions if needed,
+    // check if app was launched via notification action, and check battery optimization guidance.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
         await NotificationService.requestPermissions();
+        await NotificationService.checkLaunchIntent();
         if (mounted) {
           BatteryGuidanceBottomSheet.showIfNeeded(context);
         }
@@ -58,6 +76,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
   @override
   void dispose() {
     _themeScheduleTimer?.cancel();
+    _intakeSub?.cancel();
+    NotificationService.onTabSwitchRequested = null;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -68,6 +88,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
       final provider = context.read<HydrationProvider>();
       provider.checkThemeSchedule();
       provider.loadTodayData();
+      provider.loadHistoryStats();
+      provider.loadInsightsData();
+      NotificationService.checkLaunchIntent();
     }
   }
 

@@ -903,6 +903,17 @@ class HydrationProvider extends ChangeNotifier {
     await PrefService.setHasConfiguredGlass(true);
     await WidgetService.updateWidgetData(todayIntakeMl, dailyGoalMl);
     notifyListeners();
+    try {
+      await NotificationService.scheduleReminders(
+        activeReminderTimes,
+        _isNotifEnabled,
+        dailyTimes: _buildDailySet(),
+      );
+      await NotificationService.schedulePostMealReminders(
+        _mealSchedule,
+        _isPostMealNotifEnabled && _isNotifEnabled,
+      );
+    } catch (_) {}
   }
 
   Future<void> logGlasses(int glassCount) async {
