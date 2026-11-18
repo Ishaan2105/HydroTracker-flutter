@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../providers/hydration_provider.dart';
 import '../services/widget_service.dart';
 import '../services/notification_service.dart';
+import '../services/weather_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/wave_progress_ring.dart';
 import '../widgets/hydro_top_bar.dart';
@@ -21,6 +22,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _customController = TextEditingController();
   bool _isWeeklyAnalyticsExpanded = false;
   bool _isGlassModalOpen = false;
+
+  // Weather Hydration Suggestion state
+  WeatherHydrationData? _weatherData;
+  bool _isLoadingWeather = false;
+  bool _isRefreshingWeather = false;
+  bool _showWeatherCard = false;
+  bool _hasWeatherBadge = false;
 
   @override
   void initState() {
@@ -40,7 +48,51 @@ class _HomeScreenState extends State<HomeScreen> {
       await NotificationService.requestPermissions();
       _checkWidgetLaunchIntent();
       _checkPendingGlassCreation();
+      _initWeather();
     });
+  }
+
+  void _initWeather() async {
+    final showBadge = await WeatherService.shouldShowBadge();
+    if (mounted) {
+      setState(() => _hasWeatherBadge = showBadge);
+    }
+    final data = await WeatherService.getWeatherData();
+    if (mounted) {
+      setState(() => _weatherData = data);
+    }
+  }
+
+  Future<void> _onWeatherSunTapped(HydrationProvider provider) async {
+    if (_showWeatherCard) {
+      setState(() => _showWeatherCard = false);
+      return;
+    }
+
+    if (_weatherData == null) {
+      setState(() => _isLoadingWeather = true);
+      final data = await WeatherService.getWeatherData();
+      if (mounted) {
+        setState(() {
+          _weatherData = data;
+          _isLoadingWeather = false;
+          _showWeatherCard = true;
+        });
+      }
+    } else {
+      setState(() => _showWeatherCard = true);
+    }
+  }
+
+  Future<void> _refreshWeather() async {
+    setState(() => _isRefreshingWeather = true);
+    final data = await WeatherService.getWeatherData(forceRefresh: true);
+    if (mounted) {
+      setState(() {
+        _weatherData = data;
+        _isRefreshingWeather = false;
+      });
+    }
   }
 
   void _triggerGlassCreation() {
@@ -213,14 +265,35 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // 2. Hero Circular Water Intake Progress Ring
                   Center(
-                    child: WaveProgressRing(
-                      progress: provider.progressRatio,
-                      currentMl: provider.todayIntakeMl,
-                      goalMl: provider.dailyGoalMl,
-                      size: 240,
-                      isDark: provider.isDarkMode,
+                    child: SizedBox(
+                      width: 250,
+                      height: 250,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          WaveProgressRing(
+                            progress: provider.progressRatio,
+                            currentMl: provider.todayIntakeMl,
+                            goalMl: provider.dailyGoalMl,
+                            size: 240,
+                            isDark: provider.isDarkMode,
+                          ),
+                          // Sun Weather Emoji Button at ~1:30 position on circle perimeter
+                          Positioned(
+                            top: 4,
+                            right: 14,
+                            child: _buildWeatherSunButton(context, provider, colors),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
+
+                  // Weather Hydration Suggestion Card
+                  if (_showWeatherCard && _weatherData != null) ...[
+                    const SizedBox(height: 16),
+                    _buildWeatherHydrationCard(context, provider, colors),
+                  ],
 
                   const SizedBox(height: 28),
 
@@ -1385,6 +1458,357 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // Weather Hydration Suggestion Widgets (Sun Button + Insight Card)
+  // ===========================================================================
+
+  Widget _buildWeatherSunButton(
+    BuildContext context,
+    HydrationProvider provider,
+    AppColors colors,
+  ) {
+    final isDark = provider.isDarkMode;
+
+    return GestureDetector(
+      onTap: () => _onWeatherSunTapped(provider),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Circular Button Disc
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isDark
+                  ? const Color(0xFF1E293B)
+                  : const Color(0xFFE0F2FE).withValues(alpha: 0.95),
+              border: Border.all(
+                color: const Color(0xFF38BDF8).withValues(alpha: 0.5),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0284C7).withValues(alpha: 0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Center(
+              child: _isLoadingWeather
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFFF97316),
+                      ),
+                    )
+                  : Text(
+                      _weatherData?.emoji ?? '☀️',
+                      style: const TextStyle(fontSize: 22),
+                    ),
+            ),
+          ),
+
+          // Orange Indicator Badge (shown when suggestion is available and not yet applied/dismissed)
+          if (_hasWeatherBadge)
+            Positioned(
+              top: -1,
+              right: -1,
+              child: Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF97316),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFF97316).withValues(alpha: 0.6),
+                      blurRadius: 5,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Container(
+                    width: 4,
+                    height: 4,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeatherHydrationCard(
+    BuildContext context,
+    HydrationProvider provider,
+    AppColors colors,
+  ) {
+    final isDark = provider.isDarkMode;
+    final data = _weatherData;
+    if (data == null) return const SizedBox.shrink();
+
+    final tempFormatted = '${data.temperature.round()}°C';
+    final int extraMl = data.suggestedExtraMl;
+    final regularGoalL = (provider.dailyGoalMl / 1000).toStringAsFixed(1);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF131D38)
+            : const Color(0xFFE0F2FE).withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: const Color(0xFF38BDF8).withValues(alpha: 0.45),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0284C7).withValues(alpha: 0.16),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top row: Weather Pill on Left, Actions on Right
+          Row(
+            children: [
+              // Weather Pill
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFBAE6FD),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(data.emoji, style: const TextStyle(fontSize: 16)),
+                      const SizedBox(width: 6),
+                      Text(
+                        tempFormatted,
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFFEA580C),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          '${data.condition} • ${data.cityName}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Refresh Button
+              InkWell(
+                onTap: _refreshWeather,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFBAE6FD),
+                    ),
+                  ),
+                  child: _isRefreshingWeather
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFF0284C7),
+                          ),
+                        )
+                      : const Icon(
+                          Icons.refresh_rounded,
+                          size: 16,
+                          color: Color(0xFF0284C7),
+                        ),
+                ),
+              ),
+              const SizedBox(width: 6),
+
+              // Close Button
+              InkWell(
+                onTap: () {
+                  setState(() => _showWeatherCard = false);
+                  WeatherService.markDismissedForToday();
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFBAE6FD),
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 16,
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Message Description with bold orange +500ml highlight
+          RichText(
+            text: TextSpan(
+              style: GoogleFonts.poppins(
+                fontSize: 12.5,
+                color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+                height: 1.45,
+              ),
+              children: [
+                TextSpan(
+                  text: data.temperature >= 27
+                      ? "It's sunny and hot today ($tempFormatted). High perspiration increases fluid needs. Add "
+                      : "Current temperature is $tempFormatted (${data.condition}). Weather conditions affect hydration. Add ",
+                ),
+                TextSpan(
+                  text: '+$extraMl ml',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFEA580C),
+                  ),
+                ),
+                const TextSpan(
+                  text: ' to your goal for today to stay fully hydrated!',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Action Buttons: Primary Add & Secondary Keep
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    await provider.updateGoal(provider.dailyGoalMl + extraMl);
+                    await WeatherService.markAppliedForToday();
+                    if (mounted) {
+                      setState(() {
+                        _showWeatherCard = false;
+                        _hasWeatherBadge = false;
+                      });
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '⚡ Added +${extraMl}ml to your daily goal for today! Stay hydrated! 💧',
+                          ),
+                          backgroundColor: const Color(0xFFF97316),
+                          duration: const Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.bolt_rounded, size: 18, color: Colors.white),
+                  label: Text(
+                    'Add +${extraMl}ml for Today',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF97316),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 3,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 2,
+                child: TextButton(
+                  onPressed: () {
+                    setState(() => _showWeatherCard = false);
+                    WeatherService.markDismissedForToday();
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      side: BorderSide(
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFBAE6FD),
+                      ),
+                    ),
+                    backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  ),
+                  child: Text(
+                    'Keep Regular Goal (${regularGoalL}L)',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
