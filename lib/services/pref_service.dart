@@ -18,6 +18,7 @@ class PrefService {
   static const String keyLeaderboardOptIn = 'leaderboard_opt_in';
   static const String keyCustomGlassMl = 'custom_glass_ml';
   static const String keyHasConfiguredGlass = 'has_configured_glass';
+  static const String keyHasPromptedUsername = 'has_prompted_username_setup';
 
   static String formatTo12H(String timeStr) {
     try {
@@ -312,6 +313,16 @@ class PrefService {
   }
 
   /// Retrieve and clear any pending water logs recorded directly from the Android AppWidget
+  static Future<bool> hasPromptedUsernameSetup() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(keyHasPromptedUsername) ?? false;
+  }
+
+  static Future<void> setHasPromptedUsernameSetup(bool val) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(keyHasPromptedUsername, val);
+  }
+
   static Future<List<Map<String, dynamic>>> getAndClearPendingWidgetLogs() async {
     final prefs = await SharedPreferences.getInstance();
     try {

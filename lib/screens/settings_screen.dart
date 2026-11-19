@@ -14,7 +14,8 @@ import 'auth_gate_screen.dart';
 // import '../widgets/diagnostic_logs_sheet.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final bool autoFocusUsername;
+  const SettingsScreen({super.key, this.autoFocusUsername = false});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -22,6 +23,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _nameController;
+  late FocusNode _nameFocusNode;
   late TextEditingController _goalController;
   late TextEditingController _glassController;
   final ScrollController _glassScrollController = ScrollController();
@@ -33,9 +35,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     final provider = Provider.of<HydrationProvider>(context, listen: false);
     _nameController = TextEditingController(text: provider.userName);
+    _nameFocusNode = FocusNode();
     _goalController = TextEditingController(text: (provider.baseRegularGoalMl / 1000).toStringAsFixed(1));
     _glassController = TextEditingController(text: '${provider.customGlassMl}');
     _checkBatteryStatus();
+
+    if (widget.autoFocusUsername) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _nameFocusNode.requestFocus();
+          _nameController.selection = TextSelection(
+            baseOffset: 0,
+            extentOffset: _nameController.text.length,
+          );
+        }
+      });
+    }
   }
 
   Future<void> _checkBatteryStatus() async {
@@ -48,6 +63,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _nameFocusNode.dispose();
     _goalController.dispose();
     _glassController.dispose();
     _glassScrollController.dispose();
@@ -57,12 +73,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _saveName(HydrationProvider provider) async {
     final name = _nameController.text.trim();
     if (name.isNotEmpty) {
+      _nameFocusNode.unfocus();
       await provider.updateUserName(name);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Name updated to $name',
+              'Username updated to $name! Synced to Leaderboard.',
               style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
             ),
             backgroundColor: const Color(0xFF1565C0),
@@ -236,6 +253,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Expanded(
                           child: TextField(
                             controller: _nameController,
+                            focusNode: _nameFocusNode,
                             style: GoogleFonts.poppins(color: colors.textPrimary, fontSize: 14),
                             decoration: InputDecoration(
                               hintText: 'Enter name...',

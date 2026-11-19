@@ -11,6 +11,7 @@ import 'leaderboard_screen.dart';
 import 'advanced_options_screen.dart';
 import 'settings_screen.dart';
 import '../services/notification_service.dart';
+import '../widgets/username_setup_dialog.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -67,6 +68,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
       if (mounted) {
         await NotificationService.requestPermissions();
         await NotificationService.checkLaunchIntent();
+        if (mounted) {
+          await UsernameSetupDialog.showIfNeeded(context);
+        }
         if (mounted) {
           BatteryGuidanceBottomSheet.showIfNeeded(context);
         }

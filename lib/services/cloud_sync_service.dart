@@ -310,11 +310,21 @@ class CloudSyncService {
     if (!provider.isLeaderboardOptIn) return;
 
     try {
-      final name = (provider.userName.trim().isNotEmpty && provider.userName.trim() != 'HydroBuddy')
-          ? provider.userName.trim()
-          : ((user.displayName != null && user.displayName!.trim().isNotEmpty)
+      final String name;
+      final customName = provider.userName.trim();
+      if (customName.isNotEmpty && customName != 'HydroBuddy') {
+        name = customName;
+      } else {
+        // User kept default HydroBuddy -> display his email name
+        final email = user.email?.trim() ?? '';
+        if (email.isNotEmpty) {
+          name = email.contains('@') ? email.split('@').first : email;
+        } else {
+          name = (user.displayName != null && user.displayName!.trim().isNotEmpty)
               ? user.displayName!.trim()
-              : 'HydroBuddy');
+              : 'HydroBuddy';
+        }
+      }
 
       await _firestore.collection('public_leaderboard').doc(user.uid).set({
         'uid': user.uid,
@@ -374,6 +384,7 @@ class CloudSyncService {
           .timeout(const Duration(seconds: 3));
 
       for (var doc in snapshot.docs) {
+        if (doc.id == 'app_version_gate') continue;
         final entry = LeaderboardEntry.fromMap(doc.data(), docId: doc.id);
         if (entry.uid.isNotEmpty) {
           entryMap[entry.uid] = entry;
@@ -391,6 +402,7 @@ class CloudSyncService {
             .timeout(const Duration(seconds: 1));
 
         for (var doc in cachedSnapshot.docs) {
+          if (doc.id == 'app_version_gate') continue;
           final entry = LeaderboardEntry.fromMap(doc.data(), docId: doc.id);
           if (entry.uid.isNotEmpty) {
             entryMap[entry.uid] = entry;
@@ -402,11 +414,20 @@ class CloudSyncService {
     // Ensure current signed-in Firebase user has their latest live streak & volume reflected
     final user = currentUser;
     if (user != null && provider.isLeaderboardOptIn) {
-      final currentName = (provider.userName.trim().isNotEmpty && provider.userName.trim() != 'HydroBuddy')
-          ? provider.userName.trim()
-          : ((user.displayName != null && user.displayName!.trim().isNotEmpty)
+      final String currentName;
+      final customName = provider.userName.trim();
+      if (customName.isNotEmpty && customName != 'HydroBuddy') {
+        currentName = customName;
+      } else {
+        final email = user.email?.trim() ?? '';
+        if (email.isNotEmpty) {
+          currentName = email.contains('@') ? email.split('@').first : email;
+        } else {
+          currentName = (user.displayName != null && user.displayName!.trim().isNotEmpty)
               ? user.displayName!.trim()
-              : 'Hydro User');
+              : 'Hydro User';
+        }
+      }
 
       entryMap[user.uid] = LeaderboardEntry(
         uid: user.uid,
