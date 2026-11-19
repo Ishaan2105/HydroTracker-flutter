@@ -18,14 +18,14 @@ class UpdateGateResult {
 }
 
 class AppUpdateService {
-  static const int currentVersionCode = 5;
-  static const String currentVersionName = '2.1.0';
+  static const int currentVersionCode = 6;
+  static const String currentVersionName = '2.1.1';
 
   /// Publishes or updates the server-side version gate document in Cloud Firestore.
-  /// When called, sets the remote min_version_code to 5 and enables mandatory force update.
+  /// When called, sets the remote min_version_code to 6 and enables mandatory force update.
   static Future<bool> publishVersionGate({
-    int minVersionCode = 5,
-    String latestVersionName = '2.1.0',
+    int minVersionCode = 6,
+    String latestVersionName = '2.1.1',
     bool isForceUpdate = true,
   }) async {
     try {
@@ -72,12 +72,27 @@ class AppUpdateService {
       }
 
       final data = snapshot.data()!;
-      final minVersionCode = (data['min_version_code'] as num?)?.toInt() ?? 1;
-      final isForceUpdate = (data['is_force_update'] as bool?) ?? false;
-      final title = data['title'] as String? ?? 'Update Required';
-      final message = data['message'] as String? ??
+      num? rawMinCode;
+      bool? rawForceUpdate;
+      String? rawTitle;
+      String? rawMessage;
+      String? rawStoreUrl;
+
+      for (final entry in data.entries) {
+        final key = entry.key.trim().toLowerCase();
+        if (key == 'min_version_code') rawMinCode = entry.value as num?;
+        if (key == 'is_force_update') rawForceUpdate = entry.value as bool?;
+        if (key == 'title') rawTitle = entry.value as String?;
+        if (key == 'message') rawMessage = entry.value as String?;
+        if (key == 'play_store_url') rawStoreUrl = entry.value as String?;
+      }
+
+      final minVersionCode = rawMinCode?.toInt() ?? 1;
+      final isForceUpdate = rawForceUpdate ?? false;
+      final title = rawTitle ?? 'Update Required';
+      final message = rawMessage ??
           'A mandatory update of Hydro Tracker is available on Google Play. Please update to continue.';
-      final storeUrl = (data['play_store_url'] ?? data['play_store_url ']) as String? ??
+      final storeUrl = rawStoreUrl ??
           'https://play.google.com/store/apps/details?id=com.threestack.hydrotracker';
 
       if (isForceUpdate && currentVersionCode < minVersionCode) {

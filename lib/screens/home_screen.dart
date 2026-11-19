@@ -29,9 +29,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isRefreshingWeather = false;
   bool _showWeatherCard = false;
   bool _hasWeatherBadge = false;
-  bool _isWeatherBoostApplied = false;
-  int _appliedWeatherBoostMl = 500;
-  int? _baseRegularGoalMl;
 
   @override
   void initState() {
@@ -57,16 +54,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _initWeather() async {
     final showBadge = await WeatherService.shouldShowBadge();
-    final isApplied = await WeatherService.isBoostAppliedToday();
-    final boostMl = await WeatherService.getAppliedBoostMl();
-    final baseGoal = await WeatherService.getBaseRegularGoal();
 
     if (mounted) {
       setState(() {
         _hasWeatherBadge = showBadge;
-        _isWeatherBoostApplied = isApplied;
-        _appliedWeatherBoostMl = boostMl;
-        _baseRegularGoalMl = baseGoal;
       });
     }
 
@@ -82,10 +73,6 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    final isApplied = await WeatherService.isBoostAppliedToday();
-    final boostMl = await WeatherService.getAppliedBoostMl();
-    final baseGoal = await WeatherService.getBaseRegularGoal();
-
     if (_weatherData == null) {
       setState(() => _isLoadingWeather = true);
       final data = await WeatherService.getWeatherData();
@@ -93,17 +80,11 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _weatherData = data;
           _isLoadingWeather = false;
-          _isWeatherBoostApplied = isApplied;
-          _appliedWeatherBoostMl = boostMl;
-          _baseRegularGoalMl = baseGoal;
           _showWeatherCard = true;
         });
       }
     } else {
       setState(() {
-        _isWeatherBoostApplied = isApplied;
-        _appliedWeatherBoostMl = boostMl;
-        _baseRegularGoalMl = baseGoal;
         _showWeatherCard = true;
       });
     }
@@ -112,15 +93,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _refreshWeather() async {
     setState(() => _isRefreshingWeather = true);
     final data = await WeatherService.getWeatherData(forceRefresh: true);
-    final isApplied = await WeatherService.isBoostAppliedToday();
-    final boostMl = await WeatherService.getAppliedBoostMl();
-    final baseGoal = await WeatherService.getBaseRegularGoal();
     if (mounted) {
       setState(() {
         _weatherData = data;
-        _isWeatherBoostApplied = isApplied;
-        _appliedWeatherBoostMl = boostMl;
-        _baseRegularGoalMl = baseGoal;
         _isRefreshingWeather = false;
       });
     }
@@ -1598,7 +1573,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final tempFormatted = '${data.temperature.round()}°C';
     final int extraMl = data.suggestedExtraMl;
-    final regularGoalL = (provider.dailyGoalMl / 1000).toStringAsFixed(1);
+    final regularGoalL = (provider.baseRegularGoalMl / 1000).toStringAsFixed(1);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -1732,7 +1707,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 12),
 
-          if (_isWeatherBoostApplied) ...[
+          if (provider.isWeatherBoostActive) ...[
             // -------------------------------------------------------------
             // Applied State: Shows that changes are applied + Undo Button
             // -------------------------------------------------------------
@@ -1749,7 +1724,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)),
                   const SizedBox(width: 6),
                   Text(
-                    'Changes Applied (+${_appliedWeatherBoostMl}ml for Today)',
+                    'Changes Applied (+${provider.appliedWeatherBoostMl}ml for Today)',
                     style: GoogleFonts.poppins(
                       fontSize: 11.5,
                       fontWeight: FontWeight.bold,
@@ -1761,7 +1736,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              "Your daily goal was increased to ${(provider.dailyGoalMl / 1000).toStringAsFixed(1)}L based on today's weather in ${data.cityName}. After today is complete, your goal will automatically switch back to your regular ${(_baseRegularGoalMl != null ? (_baseRegularGoalMl! / 1000).toStringAsFixed(1) : ((provider.dailyGoalMl - _appliedWeatherBoostMl) / 1000).toStringAsFixed(1))}L goal.",
+              "Your daily goal was increased to ${(provider.dailyGoalMl / 1000).toStringAsFixed(1)}L based on today's weather in ${data.cityName}. After today is complete, your goal will automatically switch back to your regular ${(provider.baseRegularGoalMl / 1000).toStringAsFixed(1)}L goal.",
               style: GoogleFonts.poppins(
                 fontSize: 12.5,
                 color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
@@ -1775,10 +1750,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () async {
                   final messenger = ScaffoldMessenger.of(context);
                   await provider.undoWeatherGoalBoost();
-                  final baseGoal = provider.dailyGoalMl;
+                  final baseGoal = provider.baseRegularGoalMl;
                   if (mounted) {
                     setState(() {
-                      _isWeatherBoostApplied = false;
                       _hasWeatherBadge = false;
                     });
                     messenger.showSnackBar(
@@ -1794,7 +1768,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
                 icon: const Icon(Icons.undo_rounded, size: 18, color: Colors.white),
                 label: Text(
-                  'Undo Goal Change (Revert to ${(_baseRegularGoalMl != null ? (_baseRegularGoalMl! / 1000).toStringAsFixed(1) : ((provider.dailyGoalMl - _appliedWeatherBoostMl) / 1000).toStringAsFixed(1))}L)',
+                  'Undo Goal Change (Revert to ${(provider.baseRegularGoalMl / 1000).toStringAsFixed(1)}L)',
                   style: GoogleFonts.poppins(
                     fontSize: 12.5,
                     fontWeight: FontWeight.bold,
@@ -1854,9 +1828,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       await provider.applyWeatherGoalBoost(boostMl: extraMl);
                       if (mounted) {
                         setState(() {
-                          _isWeatherBoostApplied = true;
-                          _appliedWeatherBoostMl = extraMl;
-                          _baseRegularGoalMl = provider.baseRegularGoalMl;
                           _hasWeatherBadge = false;
                         });
                         messenger.showSnackBar(

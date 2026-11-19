@@ -80,7 +80,7 @@ class HydrationProvider extends ChangeNotifier {
 
   int get todayIntakeMl => _todayIntakeMl;
   int get dailyGoalMl => _dailyGoalMl;
-  int get baseRegularGoalMl => _isWeatherBoostActive ? _baseRegularGoalMl : _dailyGoalMl;
+  int get baseRegularGoalMl => _baseRegularGoalMl;
   bool get isWeatherBoostActive => _isWeatherBoostActive;
   int get appliedWeatherBoostMl => _appliedWeatherBoostMl;
   int get currentStreak => _currentStreak;
@@ -230,7 +230,9 @@ class HydrationProvider extends ChangeNotifier {
 
   Future<void> init() async {
     try {
-      _dailyGoalMl = await PrefService.getGoal();
+      final savedGoal = await PrefService.getGoal();
+      _baseRegularGoalMl = savedGoal > 0 ? savedGoal : 2500;
+      _dailyGoalMl = _baseRegularGoalMl;
       _userName = await PrefService.getUserName();
       _currentStreak = await PrefService.getCurrentStreak();
       _bestStreak = await PrefService.getBestStreak();
@@ -341,13 +343,14 @@ class HydrationProvider extends ChangeNotifier {
         final base = await WeatherService.getBaseRegularGoal();
         if (base != null && base > 0) {
           _baseRegularGoalMl = base;
-          _isWeatherBoostActive = true;
-          _appliedWeatherBoostMl = await WeatherService.getAppliedBoostMl();
         }
+        _appliedWeatherBoostMl = await WeatherService.getAppliedBoostMl();
+        _isWeatherBoostActive = true;
+        _dailyGoalMl = _baseRegularGoalMl + _appliedWeatherBoostMl;
       } else {
-        _baseRegularGoalMl = _dailyGoalMl;
         _isWeatherBoostActive = false;
         _appliedWeatherBoostMl = 0;
+        _dailyGoalMl = _baseRegularGoalMl;
       }
     }
 
@@ -1025,15 +1028,15 @@ class HydrationProvider extends ChangeNotifier {
       _isWeatherBoostActive = false;
       _appliedWeatherBoostMl = 0;
       await WeatherService.setBaseRegularGoal(newGoalMl);
+      await PrefService.setGoal(newGoalMl);
+      CloudSyncService.instance.syncProfileSettings(
+        dailyGoalMl: newGoalMl,
+        userName: _userName,
+        themeMode: _themeMode,
+      );
     }
     WidgetService.updateWidgetData(_todayIntakeMl, _dailyGoalMl);
     notifyListeners(); // Notify instantly so UI updates in 0ms!
-    await PrefService.setGoal(newGoalMl);
-    CloudSyncService.instance.syncProfileSettings(
-      dailyGoalMl: newGoalMl,
-      userName: _userName,
-      themeMode: _themeMode,
-    );
     await loadHistoryStats();
     await loadInsightsData();
   }
@@ -1041,35 +1044,36 @@ class HydrationProvider extends ChangeNotifier {
   /// Sets the user's base regular goal from settings
   Future<void> updateBaseRegularGoal(int newBaseGoalMl) async {
     _baseRegularGoalMl = newBaseGoalMl;
+    await PrefService.setGoal(newBaseGoalMl);
     await WeatherService.setBaseRegularGoal(newBaseGoalMl);
     if (_isWeatherBoostActive) {
-      final boosted = newBaseGoalMl + _appliedWeatherBoostMl;
-      _dailyGoalMl = boosted;
-      await PrefService.setGoal(boosted);
-      WidgetService.updateWidgetData(_todayIntakeMl, _dailyGoalMl);
-      CloudSyncService.instance.syncProfileSettings(
-        dailyGoalMl: boosted,
-        userName: _userName,
-        themeMode: _themeMode,
-      );
-      notifyListeners();
-      await loadHistoryStats();
-      await loadInsightsData();
+      _dailyGoalMl = newBaseGoalMl + _appliedWeatherBoostMl;
     } else {
-      await updateGoal(newBaseGoalMl);
+      _dailyGoalMl = newBaseGoalMl;
     }
+    WidgetService.updateWidgetData(_todayIntakeMl, _dailyGoalMl);
+    CloudSyncService.instance.syncProfileSettings(
+      dailyGoalMl: newBaseGoalMl,
+      userName: _userName,
+      themeMode: _themeMode,
+    );
+    notifyListeners();
+    await loadHistoryStats();
+    await loadInsightsData();
   }
 
   Future<void> applyWeatherGoalBoost({required int boostMl}) async {
-    final currentGoal = _dailyGoalMl;
-    _baseRegularGoalMl = _isWeatherBoostActive ? _baseRegularGoalMl : currentGoal;
     _isWeatherBoostActive = true;
     _appliedWeatherBoostMl = boostMl;
+    _dailyGoalMl = _baseRegularGoalMl + boostMl;
     await WeatherService.applyWeatherBoost(
       currentGoalMl: _baseRegularGoalMl,
       boostMl: boostMl,
     );
-    await updateGoal(_baseRegularGoalMl + boostMl, fromWeatherBoost: true);
+    WidgetService.updateWidgetData(_todayIntakeMl, _dailyGoalMl);
+    notifyListeners();
+    await loadHistoryStats();
+    await loadInsightsData();
   }
 
   Future<void> undoWeatherGoalBoost() async {
@@ -1077,7 +1081,11 @@ class HydrationProvider extends ChangeNotifier {
     _isWeatherBoostActive = false;
     _baseRegularGoalMl = baseGoal;
     _appliedWeatherBoostMl = 0;
-    await updateGoal(baseGoal, fromWeatherBoost: false);
+    _dailyGoalMl = baseGoal;
+    WidgetService.updateWidgetData(_todayIntakeMl, _dailyGoalMl);
+    notifyListeners();
+    await loadHistoryStats();
+    await loadInsightsData();
   }
 
   Future<void> setThemeMode(String mode) async {

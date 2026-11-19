@@ -114,12 +114,7 @@ class WeatherService {
     final prefs = await SharedPreferences.getInstance();
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
-    // Only set base goal if not already stored
-    final existingBase = prefs.getInt(_prefKeyBaseRegularGoal);
-    if (existingBase == null || existingBase <= 0) {
-      await prefs.setInt(_prefKeyBaseRegularGoal, currentGoalMl);
-    }
-
+    await prefs.setInt(_prefKeyBaseRegularGoal, currentGoalMl);
     await prefs.setInt(_prefKeyAppliedBoostMl, boostMl);
     await prefs.setString(_prefKeyLastAppliedDate, today);
   }
