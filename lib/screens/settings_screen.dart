@@ -33,7 +33,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     final provider = Provider.of<HydrationProvider>(context, listen: false);
     _nameController = TextEditingController(text: provider.userName);
-    _goalController = TextEditingController(text: (provider.dailyGoalMl / 1000).toStringAsFixed(1));
+    _goalController = TextEditingController(text: (provider.baseRegularGoalMl / 1000).toStringAsFixed(1));
     _glassController = TextEditingController(text: '${provider.customGlassMl}');
     _checkBatteryStatus();
   }
@@ -78,7 +78,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _goalController.text = goalLiters.toStringAsFixed(1);
     });
-    await provider.updateGoal(goalMl);
+    await provider.updateBaseRegularGoal(goalMl);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -315,6 +315,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             _buildPresetChip(provider, 3.5, colors),
                           ],
                         ),
+                        if (provider.isWeatherBoostActive) ...[
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF97316).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFF97316).withValues(alpha: 0.35)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.wb_sunny_rounded, color: Color(0xFFF97316), size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Weather boost (+${provider.appliedWeatherBoostMl}ml) is active for today only. Resets to ${(provider.baseRegularGoalMl / 1000).toStringAsFixed(1)}L at 12:00 AM midnight.',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 11,
+                                      color: const Color(0xFFEA580C),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -898,7 +925,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildPresetChip(HydrationProvider provider, double liters, AppColors colors) {
-    final isSelected = (provider.dailyGoalMl / 1000).toStringAsFixed(1) == liters.toStringAsFixed(1);
+    final isSelected = (provider.baseRegularGoalMl / 1000).toStringAsFixed(1) == liters.toStringAsFixed(1);
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: ChoiceChip(

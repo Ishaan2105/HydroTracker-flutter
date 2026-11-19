@@ -88,6 +88,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
     if (state == AppLifecycleState.resumed && mounted) {
       final provider = context.read<HydrationProvider>();
       provider.checkThemeSchedule();
+      provider.checkMidnightReset();
       provider.loadTodayData();
       provider.loadHistoryStats();
       provider.loadInsightsData();

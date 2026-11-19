@@ -310,9 +310,11 @@ class CloudSyncService {
     if (!provider.isLeaderboardOptIn) return;
 
     try {
-      final name = (provider.userName.trim().isNotEmpty && provider.userName != 'HydroBuddy')
-          ? provider.userName
-          : (user.displayName ?? 'HydroBuddy');
+      final name = (provider.userName.trim().isNotEmpty && provider.userName.trim() != 'HydroBuddy')
+          ? provider.userName.trim()
+          : ((user.displayName != null && user.displayName!.trim().isNotEmpty)
+              ? user.displayName!.trim()
+              : 'HydroBuddy');
 
       await _firestore.collection('public_leaderboard').doc(user.uid).set({
         'uid': user.uid,
@@ -400,9 +402,11 @@ class CloudSyncService {
     // Ensure current signed-in Firebase user has their latest live streak & volume reflected
     final user = currentUser;
     if (user != null && provider.isLeaderboardOptIn) {
-      final currentName = (provider.userName.trim().isNotEmpty && provider.userName != 'HydroBuddy')
-          ? provider.userName
-          : (user.displayName ?? 'Hydro User');
+      final currentName = (provider.userName.trim().isNotEmpty && provider.userName.trim() != 'HydroBuddy')
+          ? provider.userName.trim()
+          : ((user.displayName != null && user.displayName!.trim().isNotEmpty)
+              ? user.displayName!.trim()
+              : 'Hydro User');
 
       entryMap[user.uid] = LeaderboardEntry(
         uid: user.uid,

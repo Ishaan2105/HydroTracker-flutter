@@ -1774,9 +1774,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ElevatedButton.icon(
                 onPressed: () async {
                   final messenger = ScaffoldMessenger.of(context);
-                  final baseGoal = await WeatherService.undoWeatherBoost() ??
-                      (provider.dailyGoalMl - _appliedWeatherBoostMl);
-                  await provider.updateGoal(baseGoal, fromWeatherBoost: true);
+                  await provider.undoWeatherGoalBoost();
+                  final baseGoal = provider.dailyGoalMl;
                   if (mounted) {
                     setState(() {
                       _isWeatherBoostApplied = false;
@@ -1852,17 +1851,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       final messenger = ScaffoldMessenger.of(context);
-                      final currentGoal = provider.dailyGoalMl;
-                      await WeatherService.applyWeatherBoost(
-                        currentGoalMl: currentGoal,
-                        boostMl: extraMl,
-                      );
-                      await provider.updateGoal(currentGoal + extraMl, fromWeatherBoost: true);
+                      await provider.applyWeatherGoalBoost(boostMl: extraMl);
                       if (mounted) {
                         setState(() {
                           _isWeatherBoostApplied = true;
                           _appliedWeatherBoostMl = extraMl;
-                          _baseRegularGoalMl = currentGoal;
+                          _baseRegularGoalMl = provider.baseRegularGoalMl;
                           _hasWeatherBadge = false;
                         });
                         messenger.showSnackBar(

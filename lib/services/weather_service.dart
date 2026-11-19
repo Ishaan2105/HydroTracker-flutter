@@ -150,15 +150,10 @@ class WeatherService {
     return null;
   }
 
-  /// Saves or updates the user's base regular goal when they change it normally
+  /// Saves or updates the user's base regular goal
   static Future<void> setBaseRegularGoal(int goalMl) async {
     final prefs = await SharedPreferences.getInstance();
-    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final lastApplied = prefs.getString(_prefKeyLastAppliedDate);
-    // Only update base regular goal if a weather boost is not actively applied today
-    if (lastApplied != today) {
-      await prefs.setInt(_prefKeyBaseRegularGoal, goalMl);
-    }
+    await prefs.setInt(_prefKeyBaseRegularGoal, goalMl);
   }
 
   /// Marks today's weather suggestion as dismissed

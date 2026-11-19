@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Sleek Frosted Glassmorphic Hydro Tracker Expanded / Tier 4 AppWidget Layout (5 Buttons: Glass, +250ml, +500ml, +750ml, +1000ml) -->
+<!-- Sleek Frosted Glassmorphic Hydro Tracker Expanded / Tier 4 AppWidget Layout (5 Buttons: Glass & 250 on top, 500, 750, 1000 below) -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
@@ -19,18 +19,18 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <!-- Scaled Progress Circle (68dp x 68dp) -->
+        <!-- Scaled Progress Circle (64dp x 64dp) -->
         <FrameLayout
             android:id="@+id/widget_circle_container"
-            android:layout_width="68dp"
-            android:layout_height="68dp"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
             android:layout_gravity="center_vertical">
 
             <ProgressBar
                 android:id="@+id/widget_progress_bar"
                 style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="68dp"
-                android:layout_height="68dp"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
                 android:indeterminate="false"
                 android:max="100"
                 android:progress="0"
@@ -38,8 +38,8 @@
 
             <ImageView
                 android:id="@+id/widget_logo_icon"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:layout_gravity="center"
                 android:src="@drawable/widget_logo"
                 android:contentDescription="Hydro Logo" />
@@ -61,7 +61,7 @@
                 android:text="0 / 2500 ml"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold"
-                android:textSize="18sp"
+                android:textSize="17sp"
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:includeFontPadding="false" />
@@ -84,32 +84,32 @@
             android:text="0%"
             android:textColor="#00E5FF"
             android:textStyle="bold"
-            android:textSize="12.5sp"
+            android:textSize="12sp"
             android:paddingStart="9dp"
             android:paddingEnd="9dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp"
             android:background="@drawable/widget_badge_bg"
             android:includeFontPadding="false" />
     </LinearLayout>
 
-    <!-- Lower Section: 5 Thumb-Friendly Action Buttons -->
+    <!-- Lower Section: Quick Log Action Buttons (Row 1: Glass & +250ml) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="8dp"
         android:orientation="horizontal">
 
         <TextView
             android:id="@+id/widget_btn_glass"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="34dp"
             android:layout_weight="1"
-            android:layout_marginEnd="4dp"
+            android:layout_marginEnd="6dp"
             android:background="@drawable/widget_btn_bg"
             android:text="Glass"
             android:textColor="#00E5FF"
-            android:textSize="10.5sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:gravity="center"
             android:clickable="true"
@@ -119,29 +119,36 @@
         <TextView
             android:id="@+id/widget_btn_250"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="34dp"
             android:layout_weight="1"
-            android:layout_marginEnd="4dp"
             android:background="@drawable/widget_btn_bg"
             android:text="+250 ml"
             android:textColor="#00E5FF"
-            android:textSize="10.5sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:gravity="center"
             android:clickable="true"
             android:focusable="true"
             android:includeFontPadding="false" />
+    </LinearLayout>
+
+    <!-- Lower Section: Row 2 (Added BELOW Glass & +250ml: +500ml, +750ml, +1000ml) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:orientation="horizontal">
 
         <TextView
             android:id="@+id/widget_btn_500"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="34dp"
             android:layout_weight="1"
-            android:layout_marginEnd="4dp"
+            android:layout_marginEnd="5dp"
             android:background="@drawable/widget_btn_bg"
             android:text="+500 ml"
             android:textColor="#00E5FF"
-            android:textSize="10.5sp"
+            android:textSize="11.5sp"
             android:textStyle="bold"
             android:gravity="center"
             android:clickable="true"
@@ -151,13 +158,13 @@
         <TextView
             android:id="@+id/widget_btn_750"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="34dp"
             android:layout_weight="1"
-            android:layout_marginEnd="4dp"
+            android:layout_marginEnd="5dp"
             android:background="@drawable/widget_btn_bg"
             android:text="+750 ml"
             android:textColor="#00E5FF"
-            android:textSize="10.5sp"
+            android:textSize="11.5sp"
             android:textStyle="bold"
             android:gravity="center"
             android:clickable="true"
@@ -167,17 +174,16 @@
         <TextView
             android:id="@+id/widget_btn_1000"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="34dp"
             android:layout_weight="1"
             android:background="@drawable/widget_btn_bg"
             android:text="+1000 ml"
             android:textColor="#00E5FF"
-            android:textSize="10sp"
+            android:textSize="11sp"
             android:textStyle="bold"
             android:gravity="center"
             android:clickable="true"
             android:focusable="true"
             android:includeFontPadding="false" />
     </LinearLayout>
-
 </LinearLayout>
