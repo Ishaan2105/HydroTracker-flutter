@@ -150,17 +150,6 @@ class _AppStartupGateState extends State<AppStartupGate> {
           setState(() {
             _isCheckingGate = false;
           });
-
-          // If developer is logged in, ensure latest version gate config is published to Firestore
-          final user = CloudSyncService.instance.currentUser;
-          if (user != null &&
-              (user.email == 'ishaanhingway@gmail.com' ||
-                  user.uid == 'jQfN84R5ndem0fNqrmWkWf2ilPB2')) {
-            AppUpdateService.publishVersionGate(
-              minVersionCode: 5,
-              latestVersionName: '2.1.0',
-            );
-          }
         }
       }
     } catch (_) {
