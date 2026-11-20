@@ -68,9 +68,11 @@ class MainActivity : FlutterActivity() {
                         val appWidgetManager = AppWidgetManager.getInstance(this)
                         if (appWidgetManager.isRequestPinAppWidgetSupported) {
                             val myProvider = ComponentName(this, HydroWidgetProvider::class.java)
-                            // Passing null for extras lets the OS and Samsung One UI use
-                            // android:previewLayout and previewImage natively without remote inflation errors.
-                            appWidgetManager.requestPinAppWidget(myProvider, null, null)
+                            val previewViews = HydroWidgetProvider.buildPreviewViews(this)
+                            val extras = Bundle().apply {
+                                putParcelable(AppWidgetManager.EXTRA_APPWIDGET_PREVIEW, previewViews)
+                            }
+                            appWidgetManager.requestPinAppWidget(myProvider, extras, null)
                             result.success(true)
                         } else {
                             result.success(false)
