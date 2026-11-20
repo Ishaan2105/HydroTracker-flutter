@@ -1,189 +1,132 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Sleek Frosted Glassmorphic Hydro Tracker Vertical AppWidget Layout (Buttons Below Glass & 250) -->
+<!-- Sleek Frosted Glassmorphic Hydro Tracker AppWidget Layout Matching widget_preview.png -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:orientation="horizontal"
     android:background="@drawable/widget_bg"
+    android:gravity="center_vertical"
     android:paddingStart="12dp"
     android:paddingEnd="12dp"
-    android:paddingTop="8dp"
-    android:paddingBottom="8dp"
-    android:gravity="center">
+    android:paddingTop="3dp"
+    android:paddingBottom="3dp">
 
-    <!-- Top Header: Ring + Intake + Percent Badge -->
+    <!-- Progress Circle with Centered Circular Water Logo (HY LOGO) -->
+    <FrameLayout
+        android:id="@+id/widget_circle_container"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:layout_gravity="center_vertical">
+
+        <ProgressBar
+            android:id="@+id/widget_progress_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:indeterminate="false"
+            android:max="100"
+            android:progress="0"
+            android:progressDrawable="@drawable/widget_progress_ring" />
+
+        <ImageView
+            android:id="@+id/widget_logo_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:src="@drawable/widget_logo"
+            android:contentDescription="Hydro Logo" />
+    </FrameLayout>
+
+    <!-- Intake Metrics & Quick Add Buttons -->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:layout_weight="1"
+        android:layout_marginStart="10dp"
+        android:layout_gravity="center_vertical"
+        android:orientation="vertical">
 
-        <!-- Progress Circle with Centered Water Logo -->
-        <FrameLayout
-            android:id="@+id/widget_circle_container"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:layout_gravity="center_vertical">
-
-            <ProgressBar
-                android:id="@+id/widget_progress_bar"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:indeterminate="false"
-                android:max="100"
-                android:progress="0"
-                android:progressDrawable="@drawable/widget_progress_ring" />
-
-            <ImageView
-                android:id="@+id/widget_logo_icon"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="center"
-                android:src="@drawable/widget_logo"
-                android:contentDescription="Hydro Logo" />
-        </FrameLayout>
-
-        <!-- Intake Metric Text -->
-        <TextView
-            android:id="@+id/widget_text_intake"
-            android:layout_width="0dp"
+        <!-- Intake Header Row (Target Metric + Percent Badge) -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="10dp"
-            android:text="0 / 2500 ml"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
-            android:textSize="13.5sp"
-            android:singleLine="true"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:includeFontPadding="false" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-        <!-- Percent Badge -->
-        <TextView
-            android:id="@+id/widget_text_percent"
-            android:layout_width="wrap_content"
+            <TextView
+                android:id="@+id/widget_text_intake"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="0 / 3000 ml"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="12.5sp"
+                android:singleLine="true"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false" />
+
+            <TextView
+                android:id="@+id/widget_text_percent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0%"
+                android:textColor="#00E5FF"
+                android:textStyle="bold"
+                android:textSize="10sp"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
+                android:paddingTop="1.5dp"
+                android:paddingBottom="1.5dp"
+                android:background="@drawable/widget_badge_bg"
+                android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <!-- Quick Log Options: ONLY Button 1 (Glass) & Button 2 (250 ml) -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="0%"
-            android:textColor="#00E5FF"
-            android:textStyle="bold"
-            android:textSize="11sp"
-            android:paddingStart="7dp"
-            android:paddingEnd="7dp"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp"
-            android:background="@drawable/widget_badge_bg"
-            android:includeFontPadding="false" />
-    </LinearLayout>
+            android:layout_marginTop="2.5dp"
+            android:orientation="horizontal">
 
-    <!-- Quick Log Section: Row 1 (Glass & 250 ml) -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:orientation="horizontal">
+            <TextView
+                android:id="@+id/widget_btn_glass"
+                android:layout_width="0dp"
+                android:layout_height="23dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/widget_btn_bg"
+                android:text="Glass"
+                android:textColor="#00E5FF"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:singleLine="true"
+                android:maxLines="1"
+                android:ellipsize="none"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:includeFontPadding="false" />
 
-        <TextView
-            android:id="@+id/widget_btn_glass"
-            android:layout_width="0dp"
-            android:layout_height="28dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="5dp"
-            android:background="@drawable/widget_btn_bg"
-            android:text="Glass"
-            android:textColor="#00E5FF"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:singleLine="true"
-            android:maxLines="1"
-            android:ellipsize="none"
-            android:gravity="center"
-            android:clickable="true"
-            android:focusable="true"
-            android:includeFontPadding="false" />
-
-        <TextView
-            android:id="@+id/widget_btn_250"
-            android:layout_width="0dp"
-            android:layout_height="28dp"
-            android:layout_weight="1"
-            android:background="@drawable/widget_btn_bg"
-            android:text="250 ml"
-            android:textColor="#00E5FF"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:singleLine="true"
-            android:maxLines="1"
-            android:ellipsize="none"
-            android:gravity="center"
-            android:clickable="true"
-            android:focusable="true"
-            android:includeFontPadding="false" />
-    </LinearLayout>
-
-    <!-- Quick Log Section: Row 2 (Added BELOW: 500 ml, 750 ml, 1000 ml) -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/widget_btn_500"
-            android:layout_width="0dp"
-            android:layout_height="28dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="4dp"
-            android:background="@drawable/widget_btn_bg"
-            android:text="500 ml"
-            android:textColor="#00E5FF"
-            android:textSize="10.5sp"
-            android:textStyle="bold"
-            android:singleLine="true"
-            android:maxLines="1"
-            android:ellipsize="none"
-            android:gravity="center"
-            android:clickable="true"
-            android:focusable="true"
-            android:includeFontPadding="false" />
-
-        <TextView
-            android:id="@+id/widget_btn_750"
-            android:layout_width="0dp"
-            android:layout_height="28dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="4dp"
-            android:background="@drawable/widget_btn_bg"
-            android:text="750 ml"
-            android:textColor="#00E5FF"
-            android:textSize="10.5sp"
-            android:textStyle="bold"
-            android:singleLine="true"
-            android:maxLines="1"
-            android:ellipsize="none"
-            android:gravity="center"
-            android:clickable="true"
-            android:focusable="true"
-            android:includeFontPadding="false" />
-
-        <TextView
-            android:id="@+id/widget_btn_1000"
-            android:layout_width="0dp"
-            android:layout_height="28dp"
-            android:layout_weight="1"
-            android:background="@drawable/widget_btn_bg"
-            android:text="1000 ml"
-            android:textColor="#00E5FF"
-            android:textSize="10.5sp"
-            android:textStyle="bold"
-            android:singleLine="true"
-            android:maxLines="1"
-            android:ellipsize="none"
-            android:gravity="center"
-            android:clickable="true"
-            android:focusable="true"
-            android:includeFontPadding="false" />
+            <TextView
+                android:id="@+id/widget_btn_250"
+                android:layout_width="0dp"
+                android:layout_height="23dp"
+                android:layout_weight="1"
+                android:background="@drawable/widget_btn_bg"
+                android:text="250 ml"
+                android:textColor="#00E5FF"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:singleLine="true"
+                android:maxLines="1"
+                android:ellipsize="none"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:includeFontPadding="false" />
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>
