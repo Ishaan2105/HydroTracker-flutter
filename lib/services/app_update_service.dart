@@ -18,8 +18,8 @@ class UpdateGateResult {
 }
 
 class AppUpdateService {
-  static const int currentVersionCode = 11;
-  static const String currentVersionName = '2.1.6';
+  static const int currentVersionCode = 12;
+  static const String currentVersionName = '2.1.7';
 
   /// Publishes or updates the server-side version gate document in Cloud Firestore.
   /// When called, sets the remote min_version_code to 7 and enables mandatory force update.

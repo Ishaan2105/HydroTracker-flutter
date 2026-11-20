@@ -54,15 +54,24 @@ class WidgetService {
     }
   }
 
-  /// Synchronize today's intake and goal with the Android AppWidget
-  static Future<void> updateWidgetData(int intakeMl, int goalMl) async {
+  /// Synchronize today's intake, goal, and custom glass configuration with the Android AppWidget
+  static Future<void> updateWidgetData(
+    int intakeMl,
+    int goalMl, {
+    int? customGlassMl,
+    bool? hasConfiguredGlass,
+  }) async {
     try {
       await PrefService.setTodayIntake(intakeMl);
+      final glassMl = customGlassMl ?? await PrefService.getCustomGlassMl();
+      final hasGlass = hasConfiguredGlass ?? await PrefService.hasConfiguredGlass();
       await _channel.invokeMethod('updateWidgetData', {
         'todayIntake': intakeMl,
         'todayIntakeMl': intakeMl,
         'dailyGoal': goalMl,
         'dailyGoalMl': goalMl,
+        'customGlassMl': glassMl,
+        'hasConfiguredGlass': hasGlass,
       });
     } catch (e) {
       debugPrint('WidgetService.updateWidgetData error: $e');

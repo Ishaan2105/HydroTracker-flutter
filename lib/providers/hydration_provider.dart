@@ -255,6 +255,12 @@ class HydrationProvider extends ChangeNotifier {
       await loadTodayData();
       await loadHistoryStats();
       await loadInsightsData();
+      await WidgetService.updateWidgetData(
+        _todayIntakeMl,
+        _dailyGoalMl,
+        customGlassMl: _customGlassMl,
+        hasConfiguredGlass: _hasConfiguredGlass,
+      );
 
       NotificationService.notificationIntakeStream.stream.listen((amount) async {
         await loadTodayData();
@@ -949,7 +955,12 @@ class HydrationProvider extends ChangeNotifier {
     _hasConfiguredGlass = true;
     await PrefService.setCustomGlassMl(_customGlassMl);
     await PrefService.setHasConfiguredGlass(true);
-    await WidgetService.updateWidgetData(todayIntakeMl, dailyGoalMl);
+    await WidgetService.updateWidgetData(
+      todayIntakeMl,
+      dailyGoalMl,
+      customGlassMl: _customGlassMl,
+      hasConfiguredGlass: true,
+    );
     notifyListeners();
     try {
       await NotificationService.scheduleReminders(
@@ -961,6 +972,17 @@ class HydrationProvider extends ChangeNotifier {
         _mealSchedule,
         _isPostMealNotifEnabled && _isNotifEnabled,
       );
+    } catch (_) {}
+    try {
+      if (CloudSyncService.instance.isSignedIn) {
+        await CloudSyncService.instance.syncProfileSettings(
+          dailyGoalMl: dailyGoalMl,
+          userName: userName,
+          themeMode: themeMode,
+          customGlassMl: _customGlassMl,
+          hasConfiguredGlass: true,
+        );
+      }
     } catch (_) {}
   }
 

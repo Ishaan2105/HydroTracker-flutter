@@ -88,7 +88,9 @@ class MainActivity : FlutterActivity() {
                     val goal = call.argument<Int>("dailyGoalMl")
                         ?: call.argument<Int>("dailyGoal")
                         ?: 2500
-                    HydroWidgetProvider.updateAllWidgets(this, intake, goal)
+                    val customGlass = call.argument<Int>("customGlassMl")
+                    val hasConfiguredGlass = call.argument<Boolean>("hasConfiguredGlass")
+                    HydroWidgetProvider.updateAllWidgets(this, intake, goal, customGlass, hasConfiguredGlass)
                     result.success(true)
                 }
                 else -> result.notImplemented()

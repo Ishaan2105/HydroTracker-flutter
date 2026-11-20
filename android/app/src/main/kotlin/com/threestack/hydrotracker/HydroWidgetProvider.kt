@@ -167,15 +167,29 @@ class HydroWidgetProvider : AppWidgetProvider() {
             return buildWidgetViews(context, intake, goal, tier = TIER_COMPACT)
         }
 
-        fun updateAllWidgets(context: Context, intakeMl: Int, goalMl: Int) {
+        fun updateAllWidgets(
+            context: Context,
+            intakeMl: Int,
+            goalMl: Int,
+            customGlassMl: Int? = null,
+            hasConfiguredGlass: Boolean? = null
+        ) {
             try {
                 val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
                 val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                prefs.edit()
+                val editor = prefs.edit()
                     .putLong(KEY_INTAKE, intakeMl.toLong())
                     .putLong(KEY_GOAL, goalMl.toLong())
                     .putString(KEY_WIDGET_DATE, todayStr)
-                    .apply()
+
+                if (customGlassMl != null) {
+                    editor.putLong(KEY_CUSTOM_GLASS_ML, customGlassMl.toLong())
+                    editor.putInt(KEY_CUSTOM_GLASS_ML, customGlassMl)
+                }
+                if (hasConfiguredGlass != null) {
+                    editor.putBoolean(KEY_HAS_CONFIGURED_GLASS, hasConfiguredGlass)
+                }
+                editor.apply()
 
                 val appWidgetManager = AppWidgetManager.getInstance(context)
                 val thisWidget = ComponentName(context, HydroWidgetProvider::class.java)

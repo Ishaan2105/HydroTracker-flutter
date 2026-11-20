@@ -1927,6 +1927,11 @@ class _GlassTrackerSheetState extends State<_GlassTrackerSheet> {
 
   @override
   void dispose() {
+    final parsed = int.tryParse(_customSizeController.text.trim()) ?? _selectedGlassMl;
+    final clamped = parsed.clamp(50, 1000);
+    if (clamped != widget.provider.customGlassMl || !widget.provider.hasConfiguredGlass) {
+      widget.provider.setCustomGlassMl(clamped);
+    }
     _customSizeController.dispose();
     super.dispose();
   }
@@ -1939,14 +1944,14 @@ class _GlassTrackerSheetState extends State<_GlassTrackerSheet> {
     final total = count * glassSize;
 
     HapticFeedback.mediumImpact();
-    Navigator.pop(context);
 
-    // If glass size was changed or not configured yet, update persistent preference
-    if (glassSize != widget.provider.customGlassMl || !widget.provider.hasConfiguredGlass) {
-      await widget.provider.setCustomGlassMl(glassSize);
-    }
-
+    // ALWAYS ensure the selected/created glass is persistently saved
+    await widget.provider.setCustomGlassMl(glassSize);
     await widget.provider.logGlasses(count);
+
+    if (mounted) {
+      Navigator.pop(context);
+    }
 
     messenger.clearSnackBars();
     messenger.showSnackBar(
@@ -2044,10 +2049,17 @@ class _GlassTrackerSheetState extends State<_GlassTrackerSheet> {
               ),
               if (widget.provider.hasConfiguredGlass)
                 TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _isCustomizingSize = !_isCustomizingSize;
-                    });
+                  onPressed: () async {
+                    if (_isCustomizingSize) {
+                      final parsed = int.tryParse(_customSizeController.text.trim()) ?? _selectedGlassMl;
+                      final clamped = parsed.clamp(50, 1000);
+                      await widget.provider.setCustomGlassMl(clamped);
+                    }
+                    if (mounted) {
+                      setState(() {
+                        _isCustomizingSize = !_isCustomizingSize;
+                      });
+                    }
                   },
                   icon: Icon(
                     _isCustomizingSize ? Icons.check_circle_outline : Icons.tune_rounded,
@@ -2126,12 +2138,13 @@ class _GlassTrackerSheetState extends State<_GlassTrackerSheet> {
                     children: _sizePresets.map((size) {
                       final isSelected = size == _selectedGlassMl;
                       return InkWell(
-                        onTap: () {
+                        onTap: () async {
                           HapticFeedback.selectionClick();
                           setState(() {
                             _selectedGlassMl = size;
                             _customSizeController.text = '$size';
                           });
+                          await widget.provider.setCustomGlassMl(size);
                         },
                         borderRadius: BorderRadius.circular(10),
                         child: Container(

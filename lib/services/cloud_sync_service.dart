@@ -7,6 +7,7 @@ import '../models/leaderboard_entry.dart';
 import '../providers/hydration_provider.dart';
 import 'app_logger.dart';
 import 'db_helper.dart';
+import 'pref_service.dart';
 
 class CloudSyncService {
   static final CloudSyncService instance = CloudSyncService._init();
@@ -138,17 +139,14 @@ class CloudSyncService {
     required int dailyGoalMl,
     required String userName,
     required String themeMode,
+    int? customGlassMl,
+    bool? hasConfiguredGlass,
   }) async {
     final user = currentUser;
     if (user == null) return;
 
     try {
-      await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('profile')
-          .doc('settings')
-          .set({
+      final data = <String, dynamic>{
         'daily_goal_ml': dailyGoalMl,
         'user_name': userName,
         'theme_mode': themeMode,
@@ -156,7 +154,16 @@ class CloudSyncService {
         'display_name': user.displayName,
         'photo_url': user.photoURL,
         'last_synced_at': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      };
+      if (customGlassMl != null) data['custom_glass_ml'] = customGlassMl;
+      if (hasConfiguredGlass != null) data['has_configured_glass'] = hasConfiguredGlass;
+
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('profile')
+          .doc('settings')
+          .set(data, SetOptions(merge: true));
     } catch (e, st) {
       AppLogger.error('CloudSyncService', 'syncProfileSettings failed: $e', e, st);
     }
@@ -201,12 +208,21 @@ class CloudSyncService {
         if (cloudTheme != null) {
           await provider.setThemeMode(cloudTheme);
         }
+        final cloudGlass = (data['custom_glass_ml'] as num?)?.toInt();
+        final cloudHasGlass = data['has_configured_glass'] as bool?;
+        if (cloudGlass != null && cloudGlass >= 50 && cloudGlass <= 1000) {
+          await provider.setCustomGlassMl(cloudGlass);
+        } else if (cloudHasGlass == true) {
+          await PrefService.setHasConfiguredGlass(true);
+        }
       } else {
         // First-time sync: Upload existing local profile settings to cloud
         await syncProfileSettings(
           dailyGoalMl: provider.dailyGoalMl,
           userName: provider.userName,
           themeMode: provider.themeMode,
+          customGlassMl: provider.customGlassMl,
+          hasConfiguredGlass: provider.hasConfiguredGlass,
         );
       }
 
