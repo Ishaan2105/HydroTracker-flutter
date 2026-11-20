@@ -72,7 +72,7 @@ class ForceUpdateScreen extends StatelessWidget {
                         ),
                         child: ClipOval(
                           child: Image.asset(
-                            'assets/images/app_logo.png',
+                            'assets/images/logo.jpeg',
                             width: 80,
                             height: 80,
                             fit: BoxFit.cover,
