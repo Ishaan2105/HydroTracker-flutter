@@ -18,14 +18,14 @@ class UpdateGateResult {
 }
 
 class AppUpdateService {
-  static const int currentVersionCode = 6;
-  static const String currentVersionName = '2.1.1';
+  static const int currentVersionCode = 7;
+  static const String currentVersionName = '2.1.2';
 
   /// Publishes or updates the server-side version gate document in Cloud Firestore.
-  /// When called, sets the remote min_version_code to 6 and enables mandatory force update.
+  /// When called, sets the remote min_version_code to 7 and enables mandatory force update.
   static Future<bool> publishVersionGate({
-    int minVersionCode = 6,
-    String latestVersionName = '2.1.1',
+    int minVersionCode = 7,
+    String latestVersionName = '2.1.2',
     bool isForceUpdate = true,
   }) async {
     try {
