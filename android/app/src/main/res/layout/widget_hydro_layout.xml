@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Sleek Frosted Glassmorphic Hydro Tracker Compact AppWidget Layout -->
+<!-- Sleek Frosted Glassmorphic Hydro Tracker Compact (2x1) AppWidget Layout -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
@@ -7,23 +7,23 @@
     android:orientation="horizontal"
     android:background="@drawable/widget_bg"
     android:gravity="center_vertical"
-    android:paddingStart="12dp"
-    android:paddingEnd="12dp"
-    android:paddingTop="8dp"
-    android:paddingBottom="8dp">
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:paddingTop="3dp"
+    android:paddingBottom="3dp">
 
-    <!-- Progress Circle with Centered Circular Water Logo (Zero White Edges) -->
+    <!-- Progress Circle with Centered Circular Water Logo -->
     <FrameLayout
         android:id="@+id/widget_circle_container"
-        android:layout_width="54dp"
-        android:layout_height="54dp"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
         android:layout_gravity="center_vertical">
 
         <ProgressBar
             android:id="@+id/widget_progress_bar"
             style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="54dp"
-            android:layout_height="54dp"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:indeterminate="false"
             android:max="100"
             android:progress="0"
@@ -31,8 +31,8 @@
 
         <ImageView
             android:id="@+id/widget_logo_icon"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
             android:layout_gravity="center"
             android:src="@drawable/widget_logo"
             android:contentDescription="Hydro Logo" />
@@ -43,7 +43,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:layout_marginStart="12dp"
+        android:layout_marginStart="8dp"
         android:layout_gravity="center_vertical"
         android:orientation="vertical">
 
@@ -59,10 +59,11 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="0 / 2500 ml"
+                android:text="0 / 2.5L"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold"
-                android:textSize="14sp"
+                android:textSize="12sp"
+                android:singleLine="true"
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:includeFontPadding="false" />
@@ -74,33 +75,36 @@
                 android:text="0%"
                 android:textColor="#00E5FF"
                 android:textStyle="bold"
-                android:textSize="11sp"
-                android:paddingStart="7dp"
-                android:paddingEnd="7dp"
-                android:paddingTop="2dp"
-                android:paddingBottom="2dp"
+                android:textSize="10sp"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
+                android:paddingTop="1.5dp"
+                android:paddingBottom="1.5dp"
                 android:background="@drawable/widget_badge_bg"
                 android:includeFontPadding="false" />
         </LinearLayout>
 
-        <!-- Quick Log Options: Button 1 (Glass) & Button 2 (+250 ml) -->
+        <!-- Quick Log Options: Button 1 (Glass) & Button 2 (250) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="3dp"
             android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/widget_btn_glass"
                 android:layout_width="0dp"
-                android:layout_height="32dp"
+                android:layout_height="24dp"
                 android:layout_weight="1"
-                android:layout_marginEnd="6dp"
+                android:layout_marginEnd="4dp"
                 android:background="@drawable/widget_btn_bg"
                 android:text="Glass"
                 android:textColor="#00E5FF"
-                android:textSize="12sp"
+                android:textSize="10.5sp"
                 android:textStyle="bold"
+                android:singleLine="true"
+                android:maxLines="1"
+                android:ellipsize="none"
                 android:gravity="center"
                 android:clickable="true"
                 android:focusable="true"
@@ -109,13 +113,16 @@
             <TextView
                 android:id="@+id/widget_btn_250"
                 android:layout_width="0dp"
-                android:layout_height="32dp"
+                android:layout_height="24dp"
                 android:layout_weight="1"
                 android:background="@drawable/widget_btn_bg"
-                android:text="+250 ml"
+                android:text="250"
                 android:textColor="#00E5FF"
-                android:textSize="12sp"
+                android:textSize="10.5sp"
                 android:textStyle="bold"
+                android:singleLine="true"
+                android:maxLines="1"
+                android:ellipsize="none"
                 android:gravity="center"
                 android:clickable="true"
                 android:focusable="true"

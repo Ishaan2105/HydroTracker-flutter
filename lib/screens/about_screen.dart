@@ -204,7 +204,7 @@ class AboutScreen extends StatelessWidget {
                     _buildParagraph(
                       'The widget displays two primary capsule buttons:\n\n'
                       '1. Button 1: "Glass" Button: Records your configured glass capacity in the background with zero latency. If you haven\'t configured a glass size yet, tapping "Glass" automatically opens the Glass Setup Sheet inside the app so you can set your capacity.\n'
-                      '2. Button 2: "+250 ml" Button: Instantly logs 250 mL directly to your daily intake and synchronizes across all devices.',
+                      '2. Button 2: "250 ml" Button: Instantly logs 250 mL directly to your daily intake and synchronizes across all devices.',
                       colors,
                     ),
                     const SizedBox(height: 12),

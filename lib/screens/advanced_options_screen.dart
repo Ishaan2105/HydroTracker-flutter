@@ -457,7 +457,7 @@ class _AdvancedOptionsScreenState extends State<AdvancedOptionsScreen> {
                                             Expanded(
                                               child: _buildWidgetAddButton(
                                                 context: context,
-                                                label: '+250 ml',
+                                                label: '250 ml',
                                                 amountMl: 250,
                                                 colors: colors,
                                               ),
