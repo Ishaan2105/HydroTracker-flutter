@@ -60,7 +60,7 @@ class NotificationService {
       ),
       const AndroidNotificationAction(
         'ACTION_LOG_250',
-        '+250 ml',
+        '250 ml',
         showsUserInterface: false,
         cancelNotification: true,
       ),
@@ -157,7 +157,6 @@ class NotificationService {
           playSound: false,
           enableVibration: false,
           icon: _activeIcon,
-          largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           color: const Color(0xFF00E5FF),
           timeoutAfter: 4000,
         ),
@@ -572,7 +571,6 @@ class NotificationService {
       playSound: true,
       enableVibration: true,
       icon: customIcon ?? _activeIcon,
-      largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
       color: const Color(0xFF00E5FF),
       category: AndroidNotificationCategory.reminder,
       visibility: NotificationVisibility.public,
@@ -963,7 +961,6 @@ class NotificationService {
         importance: Importance.max,
         priority: Priority.high,
         icon: '@mipmap/ic_launcher',
-        largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
         color: Color(0xFF00E5FF),
         autoCancel: true,
       );
