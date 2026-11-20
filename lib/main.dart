@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -121,21 +122,52 @@ class AppStartupGate extends StatefulWidget {
 class _AppStartupGateState extends State<AppStartupGate> {
   UpdateGateResult? _forceUpdateResult;
   bool _isCheckingGate = true;
+  StreamSubscription<UpdateGateResult>? _gateSub;
 
   @override
   void initState() {
     super.initState();
     _checkAppUpdateStatus();
+    _listenToVersionGate();
+  }
+
+  void _listenToVersionGate() {
+    _gateSub = AppUpdateService.streamVersionGate().listen((gate) {
+      if (mounted) {
+        context.read<HydrationProvider>().setUpdateGateResult(gate);
+        if (gate.needsForceUpdate) {
+          setState(() {
+            _forceUpdateResult = gate;
+            _isCheckingGate = false;
+          });
+          NotificationService.showUpdateRequiredNotification(
+            title: gate.title,
+            body: gate.message,
+          );
+        } else if (_forceUpdateResult != null) {
+          setState(() {
+            _forceUpdateResult = null;
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _gateSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _checkAppUpdateStatus() async {
     // Check Firestore Version Gate (remote killswitch / mandatory update barrier)
     try {
       final gate = await AppUpdateService.checkFirestoreVersionGate().timeout(
-        const Duration(seconds: 3),
-        onTimeout: () => const UpdateGateResult(needsForceUpdate: false),
+        const Duration(seconds: 5),
+        onTimeout: () => const UpdateGateResult(needsForceUpdate: false, isUpdateAvailable: false),
       );
       if (mounted) {
+        context.read<HydrationProvider>().setUpdateGateResult(gate);
         if (gate.needsForceUpdate) {
           setState(() {
             _forceUpdateResult = gate;

@@ -11,6 +11,8 @@ import 'leaderboard_screen.dart';
 import 'advanced_options_screen.dart';
 import 'settings_screen.dart';
 import '../services/notification_service.dart';
+import '../services/app_update_service.dart';
+import 'force_update_screen.dart';
 import '../widgets/username_setup_dialog.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -97,6 +99,25 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
       provider.loadHistoryStats();
       provider.loadInsightsData();
       NotificationService.checkLaunchIntent();
+
+      // Check version gate upon resuming from background
+      AppUpdateService.checkFirestoreVersionGate().then((gate) {
+        if (mounted) {
+          provider.setUpdateGateResult(gate);
+          if (gate.needsForceUpdate) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (_) => ForceUpdateScreen(
+                  title: gate.title,
+                  message: gate.message,
+                  playStoreUrl: gate.playStoreUrl,
+                ),
+              ),
+              (route) => false,
+            );
+          }
+        }
+      });
     }
   }
 

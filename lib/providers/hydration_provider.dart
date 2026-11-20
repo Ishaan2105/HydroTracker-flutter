@@ -8,6 +8,7 @@ import '../services/app_logger.dart';
 import '../services/cloud_sync_service.dart';
 import '../services/widget_service.dart';
 import '../services/weather_service.dart';
+import '../services/app_update_service.dart';
 
 class DayTrendData {
   final String label;
@@ -77,6 +78,21 @@ class HydrationProvider extends ChangeNotifier {
   bool _hasConfiguredGlass = false;
   String _themeMode = 'auto'; // 'auto' (schedule: 6:30 AM Light / 6:30 PM Dark), 'light', 'dark'
   bool _isDarkMode = true;
+  UpdateGateResult? _updateGateResult;
+  bool _isUpdateBannerDismissed = false;
+
+  UpdateGateResult? get updateGateResult => _updateGateResult;
+  bool get isUpdateBannerDismissed => _isUpdateBannerDismissed;
+
+  void setUpdateGateResult(UpdateGateResult? result) {
+    _updateGateResult = result;
+    notifyListeners();
+  }
+
+  void dismissUpdateBanner() {
+    _isUpdateBannerDismissed = true;
+    notifyListeners();
+  }
 
   int get todayIntakeMl => _todayIntakeMl;
   int get dailyGoalMl => _dailyGoalMl;
