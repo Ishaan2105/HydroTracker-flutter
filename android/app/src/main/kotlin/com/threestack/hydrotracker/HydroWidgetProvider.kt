@@ -257,19 +257,25 @@ class HydroWidgetProvider : AppWidgetProvider() {
                     val vExpanded = buildWidgetViews(context, intakeMl, goalMl, tier = TIER_EXPANDED)
 
                     val viewMapping = mapOf(
-                        // 1-cell height variations (height 35dp - 69dp): Clean 2-button layout (Glass & 250 ml ONLY)
+                        // 1-cell height variations (1-row horizontal widgets, height 35dp - 110dp):
+                        // Clean 2-button layout (Glass & 250 ml ONLY) - fits perfectly without any vertical clipping!
                         SizeF(100f, 35f) to vCompact,
                         SizeF(120f, 35f) to vCompact,
-                        SizeF(155f, 35f) to vCompact,  // 3x1 size: Glass & 250 ml ONLY
-                        SizeF(215f, 35f) to vCompact,  // 4x1 size: Glass & 250 ml ONLY
-                        SizeF(270f, 35f) to vCompact,  // 5x1 size: Glass & 250 ml ONLY
+                        SizeF(155f, 35f) to vCompact,
+                        SizeF(215f, 35f) to vCompact,
+                        SizeF(270f, 35f) to vCompact,
 
-                        // Square / 2x2 size (narrow width < 155dp, taller height >= 70dp)
-                        SizeF(100f, 70f) to vSquare,   // 2x2 square layout
+                        // Modern phones have 1-row widget cell height between 70dp and 100dp:
+                        SizeF(155f, 70f) to vCompact,
+                        SizeF(215f, 70f) to vCompact,
+                        SizeF(270f, 70f) to vCompact,
 
-                        // Vertical expansions (width >= 155dp, taller height >= 70dp: buttons added below)
-                        SizeF(155f, 70f) to vVertical, // 3x2, 4x2 vertical 2-row layout
-                        SizeF(240f, 115f) to vExpanded // 4x3+ large expanded widget
+                        // Square 2x2 size (narrow width < 155dp, taller height >= 110dp)
+                        SizeF(100f, 110f) to vSquare,
+
+                        // Vertical expansions: 2-ROW widgets (height >= 120dp: 3x2, 4x2)
+                        SizeF(155f, 120f) to vVertical, // 3x2, 4x2 vertical 2-row layout
+                        SizeF(240f, 180f) to vExpanded  // 4x3+ large expanded widget
                     )
                     val responsiveViews = RemoteViews(viewMapping)
                     appWidgetManager.updateAppWidget(appWidgetId, responsiveViews)
@@ -279,10 +285,10 @@ class HydroWidgetProvider : AppWidgetProvider() {
                     val minHeight = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT) ?: 60
 
                     val tier = when {
-                        minHeight >= 115 && minWidth >= 240 -> TIER_EXPANDED
-                        minHeight >= 70 && minWidth >= 155 -> TIER_VERTICAL_2ROW
-                        minHeight >= 70 && minWidth < 155 -> TIER_SQUARE
-                        else -> TIER_COMPACT  // All 1-row horizontal widgets: Glass & 250 ml ONLY
+                        minHeight >= 180 && minWidth >= 240 -> TIER_EXPANDED
+                        minHeight >= 120 && minWidth >= 155 -> TIER_VERTICAL_2ROW
+                        minHeight >= 110 && minWidth < 155 -> TIER_SQUARE
+                        else -> TIER_COMPACT  // All 1-row horizontal widgets (height < 120dp): Glass & 250 ml ONLY
                     }
                     val views = buildWidgetViews(context, intakeMl, goalMl, tier)
                     appWidgetManager.updateAppWidget(appWidgetId, views)
