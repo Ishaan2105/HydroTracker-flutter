@@ -255,16 +255,22 @@ class HydroWidgetProvider : AppWidgetProvider() {
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     val vCompact = buildWidgetViews(context, intakeMl, goalMl, tier = TIER_COMPACT)
+                    val vRow4 = buildWidgetViews(context, intakeMl, goalMl, tier = TIER_ROW_4)
+                    val vWide5 = buildWidgetViews(context, intakeMl, goalMl, tier = TIER_WIDE_5)
                     val vSquare = buildWidgetViews(context, intakeMl, goalMl, tier = TIER_SQUARE)
                     val vVertical = buildWidgetViews(context, intakeMl, goalMl, tier = TIER_VERTICAL_2ROW)
                     val vExpanded = buildWidgetViews(context, intakeMl, goalMl, tier = TIER_EXPANDED)
 
                     val viewMapping = mapOf(
-                        // 1-cell height variations (height 35dp - 69dp): Clean 2-button layout (Glass & 250 ml ONLY)
-                        SizeF(100f, 35f) to vCompact,
-                        SizeF(155f, 35f) to vCompact,  // 3x1 size: Glass & 250 ml
-                        SizeF(215f, 35f) to vCompact,  // 4x1 size: Glass & 250 ml
-                        SizeF(270f, 35f) to vCompact,  // 5x1 size: Glass & 250 ml
+                        // 1-cell height variations (height 35dp - 69dp)
+                        // Default 3x1 size (and smaller): Clean 2-button layout (Glass & 250 ml ONLY)
+                        SizeF(120f, 35f) to vCompact,
+                        SizeF(155f, 35f) to vCompact,  // 3x1 default size: Glass & 250 ml ONLY
+
+                        // Horizontal expansion: 4x1 (width >= 220dp) -> 4 buttons (Glass, 250 ml, 500 ml, 750 ml)
+                        SizeF(220f, 35f) to vRow4,
+                        // Horizontal expansion: 5x1 (width >= 280dp) -> 5 buttons (Glass, 250 ml, 500 ml, 750 ml, 1000 ml)
+                        SizeF(280f, 35f) to vWide5,
 
                         // Square / 2x2 size (narrow width < 155dp, taller height >= 70dp)
                         SizeF(100f, 70f) to vSquare,   // 2x2 square layout
@@ -284,7 +290,9 @@ class HydroWidgetProvider : AppWidgetProvider() {
                         minHeight >= 115 && minWidth >= 240 -> TIER_EXPANDED
                         minHeight >= 70 && minWidth >= 155 -> TIER_VERTICAL_2ROW
                         minHeight >= 70 && minWidth < 155 -> TIER_SQUARE
-                        else -> TIER_COMPACT  // 1-row widgets: Glass & 250 ml ONLY
+                        minHeight < 70 && minWidth >= 280 -> TIER_WIDE_5
+                        minHeight < 70 && minWidth >= 220 -> TIER_ROW_4
+                        else -> TIER_COMPACT  // Default 3x1 1-row widget: Glass & 250 ml ONLY
                     }
                     val views = buildWidgetViews(context, intakeMl, goalMl, tier)
                     appWidgetManager.updateAppWidget(appWidgetId, views)
