@@ -3,14 +3,14 @@
     android:minWidth="180dp"
     android:minHeight="60dp"
     android:minResizeWidth="130dp"
-    android:minResizeHeight="50dp"
+    android:minResizeHeight="45dp"
     android:targetCellWidth="3"
     android:targetCellHeight="1"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:previewImage="@drawable/widget_preview"
-    android:previewLayout="@layout/widget_hydro_layout_tier2"
-    android:initialLayout="@layout/widget_hydro_layout_tier2"
+    android:previewLayout="@layout/widget_hydro_layout"
+    android:initialLayout="@layout/widget_hydro_layout"
     android:updatePeriodMillis="0"
     android:description="@string/widget_description">
 </appwidget-provider>

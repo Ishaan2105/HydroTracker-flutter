@@ -98,15 +98,7 @@ class HydroWidgetProvider : AppWidgetProvider() {
             val progressPct = ((intakeMl.toFloat() / safeGoal.toFloat()) * 100).toInt().coerceIn(0, 100)
 
             views.setProgressBar(R.id.widget_progress_bar, 100, progressPct, false)
-
-            val intakeText = if (tier == TIER_COMPACT && (intakeMl >= 1000 || safeGoal >= 1000)) {
-                val inL = String.format(Locale.US, "%.1f", intakeMl / 1000f)
-                val goalL = String.format(Locale.US, "%.1f", safeGoal / 1000f)
-                "$inL / ${goalL}L"
-            } else {
-                "$intakeMl / $safeGoal ml"
-            }
-            views.setTextViewText(R.id.widget_text_intake, intakeText)
+            views.setTextViewText(R.id.widget_text_intake, "$intakeMl / $safeGoal ml")
             views.setTextViewText(R.id.widget_text_percent, "$progressPct%")
 
             // Body / Circle tap opens app
@@ -157,7 +149,7 @@ class HydroWidgetProvider : AppWidgetProvider() {
             }
 
             // Button 2 (Priority #2): 250 ml Button (NO plus sign)
-            val btn250Text = if (tier == TIER_COMPACT) "250" else "250 ml"
+            val btn250Text = "250 ml"
             views.setTextViewText(R.id.widget_btn_250, btn250Text)
             val add250Intent = Intent(context, HydroWidgetProvider::class.java).apply {
                 action = ACTION_ADD_WATER
@@ -229,7 +221,7 @@ class HydroWidgetProvider : AppWidgetProvider() {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             val intake = checkMidnightRollover(prefs)
             val goal = getSafeInt(prefs, KEY_GOAL, 2500)
-            return buildWidgetViews(context, intake, goal, tier = TIER_ROW_3)
+            return buildWidgetViews(context, intake, goal, tier = TIER_COMPACT)
         }
 
         fun updateAllWidgets(context: Context, intakeMl: Int, goalMl: Int) {
@@ -264,23 +256,20 @@ class HydroWidgetProvider : AppWidgetProvider() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     val vCompact = buildWidgetViews(context, intakeMl, goalMl, tier = TIER_COMPACT)
                     val vSquare = buildWidgetViews(context, intakeMl, goalMl, tier = TIER_SQUARE)
-                    val vRow3 = buildWidgetViews(context, intakeMl, goalMl, tier = TIER_ROW_3)
-                    val vRow4 = buildWidgetViews(context, intakeMl, goalMl, tier = TIER_ROW_4)
-                    val vWide5 = buildWidgetViews(context, intakeMl, goalMl, tier = TIER_WIDE_5)
                     val vVertical = buildWidgetViews(context, intakeMl, goalMl, tier = TIER_VERTICAL_2ROW)
                     val vExpanded = buildWidgetViews(context, intakeMl, goalMl, tier = TIER_EXPANDED)
 
                     val viewMapping = mapOf(
-                        // 1-cell height variations (height 35dp - 69dp)
+                        // 1-cell height variations (height 35dp - 69dp): Clean 2-button layout (Glass & 250 ml ONLY)
                         SizeF(100f, 35f) to vCompact,
-                        SizeF(155f, 35f) to vRow3,     // Default 3x1 size
-                        SizeF(215f, 35f) to vRow4,     // 4x1 size
-                        SizeF(270f, 35f) to vWide5,    // 5x1 size
+                        SizeF(155f, 35f) to vCompact,  // 3x1 size: Glass & 250 ml
+                        SizeF(215f, 35f) to vCompact,  // 4x1 size: Glass & 250 ml
+                        SizeF(270f, 35f) to vCompact,  // 5x1 size: Glass & 250 ml
 
                         // Square / 2x2 size (narrow width < 155dp, taller height >= 70dp)
                         SizeF(100f, 70f) to vSquare,   // 2x2 square layout
 
-                        // Vertical expansions (width >= 155dp, taller height >= 70dp)
+                        // Vertical expansions (width >= 155dp, taller height >= 70dp: buttons added below)
                         SizeF(155f, 70f) to vVertical, // 3x2, 4x2 vertical 2-row layout
                         SizeF(240f, 115f) to vExpanded // 4x3+ large expanded widget
                     )
@@ -295,10 +284,7 @@ class HydroWidgetProvider : AppWidgetProvider() {
                         minHeight >= 115 && minWidth >= 240 -> TIER_EXPANDED
                         minHeight >= 70 && minWidth >= 155 -> TIER_VERTICAL_2ROW
                         minHeight >= 70 && minWidth < 155 -> TIER_SQUARE
-                        minWidth >= 270 -> TIER_WIDE_5
-                        minWidth >= 215 -> TIER_ROW_4
-                        minWidth >= 155 -> TIER_ROW_3
-                        else -> TIER_COMPACT
+                        else -> TIER_COMPACT  // 1-row widgets: Glass & 250 ml ONLY
                     }
                     val views = buildWidgetViews(context, intakeMl, goalMl, tier)
                     appWidgetManager.updateAppWidget(appWidgetId, views)
