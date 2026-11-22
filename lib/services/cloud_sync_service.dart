@@ -76,12 +76,17 @@ class CloudSyncService {
     }
   }
 
-  /// Sign out of Google & Firebase
-  Future<void> signOut() async {
+  /// Sign out of Google & Firebase and clean local device cache
+  Future<void> signOut([HydrationProvider? provider]) async {
     try {
       await _googleSignIn.signOut();
       await _auth.signOut();
-      AppLogger.info('CloudSyncService', 'Signed out from Google & Firebase.');
+      await PrefService.setLastSyncedUid(null);
+      await DBHelper.instance.clearAllLogs();
+      if (provider != null) {
+        await provider.resetForSignOut();
+      }
+      AppLogger.info('CloudSyncService', 'Signed out from Google & Firebase and cleared local session.');
     } catch (e, st) {
       AppLogger.error('CloudSyncService', 'SignOut error: $e', e, st);
     }
@@ -183,6 +188,15 @@ class CloudSyncService {
 
     try {
       AppLogger.info('CloudSyncService', 'Starting full two-way cloud sync for UID ${user.uid}...');
+
+      // 0. Account Isolation Check: If switching to a different account, wipe previous user's local logs
+      final lastSyncedUid = await PrefService.getLastSyncedUid();
+      if (lastSyncedUid != null && lastSyncedUid != user.uid) {
+        AppLogger.info('CloudSyncService', 'Account switch detected ($lastSyncedUid -> ${user.uid}). Clearing previous user local database.');
+        await DBHelper.instance.clearAllLogs();
+        await provider.resetForSignOut();
+      }
+      await PrefService.setLastSyncedUid(user.uid);
 
       // 1. Fetch Cloud Settings & Profile
       final settingsDocRef = _firestore

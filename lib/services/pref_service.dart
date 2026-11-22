@@ -19,6 +19,7 @@ class PrefService {
   static const String keyCustomGlassMl = 'custom_glass_ml';
   static const String keyHasConfiguredGlass = 'has_configured_glass';
   static const String keyHasPromptedUsername = 'has_prompted_username_setup';
+  static const String keyLastSyncedUid = 'last_synced_user_uid';
 
   static String formatTo12H(String timeStr) {
     try {
@@ -350,5 +351,19 @@ class PrefService {
       }
     }
     return list;
+  }
+
+  static Future<String?> getLastSyncedUid() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(keyLastSyncedUid);
+  }
+
+  static Future<void> setLastSyncedUid(String? uid) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (uid == null) {
+      await prefs.remove(keyLastSyncedUid);
+    } else {
+      await prefs.setString(keyLastSyncedUid, uid);
+    }
   }
 }

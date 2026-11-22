@@ -898,6 +898,41 @@ class HydrationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Cleanly resets local provider state upon account sign out
+  Future<void> resetForSignOut() async {
+    _todayIntakeMl = 0;
+    _todayLogs = [];
+    _selectedDateLogs = [];
+    _selectedDateIntakeMl = 0;
+    _lifetimeVolumeMl = 0;
+    _perfectDaysCount = 0;
+    _successRatePct = 0.0;
+    _currentStreak = 0;
+    _bestStreak = 0;
+    _dailyTotalsMap = {};
+    _sevenDayTrend = generateDefaultSevenDayTrend();
+    _weeklyAverageMl = 0.0;
+    _weeklyTotalMl = 0;
+    _bestDayLabel = '—';
+    _bestDayMl = 0;
+    _worstDayLabel = '—';
+    _worstDayMl = 0;
+    _hitRateFraction = '0/7';
+    _hitRatePct = 0.0;
+    _morningIntakeMl = 0;
+    _afternoonIntakeMl = 0;
+    _eveningIntakeMl = 0;
+    _userName = 'HydroBuddy';
+    _dailyGoalMl = 2500;
+    _baseRegularGoalMl = 2500;
+    await PrefService.setUserName('HydroBuddy');
+    await PrefService.setGoal(2500);
+    await PrefService.setCurrentStreak(0);
+    await PrefService.setBestStreak(0);
+    await WidgetService.updateWidgetData(0, 2500);
+    notifyListeners();
+  }
+
   Future<void> saveMealSchedule(String bfast, String lunch, String dinner) async {
     _mealSchedule = {
       'bfast': bfast,

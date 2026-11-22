@@ -857,7 +857,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               alignment: Alignment.centerRight,
               child: OutlinedButton.icon(
                 onPressed: () async {
-                  await CloudSyncService.instance.signOut();
+                  final provider = Provider.of<HydrationProvider>(context, listen: false);
+                  await CloudSyncService.instance.signOut(provider);
                   if (context.mounted) {
                     Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute(builder: (_) => const AuthGateScreen()),
