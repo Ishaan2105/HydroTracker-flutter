@@ -18,19 +18,19 @@ class UpdateGateResult {
         'A new update of Hydro Tracker is available on Google Play. Please update to enjoy the latest features, sleek widget, and improvements.',
     this.playStoreUrl =
         'https://play.google.com/store/apps/details?id=com.threestack.hydrotracker',
-    this.latestVersionName = '2.2.0',
+    this.latestVersionName = '2.2.1',
     this.minVersionCode = 1,
   });
 }
 
 class AppUpdateService {
-  static const int currentVersionCode = 15;
-  static const String currentVersionName = '2.2.0';
+  static const int currentVersionCode = 16;
+  static const String currentVersionName = '2.2.1';
 
   /// Publishes or updates the server-side version gate document in Cloud Firestore.
   static Future<bool> publishVersionGate({
-    int minVersionCode = 15,
-    String latestVersionName = '2.2.0',
+    int minVersionCode = 16,
+    String latestVersionName = '2.2.1',
     bool isForceUpdate = true,
   }) async {
     try {

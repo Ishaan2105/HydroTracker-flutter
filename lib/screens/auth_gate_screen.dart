@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/hydration_provider.dart';
 import '../services/app_logger.dart';
+import '../services/app_update_service.dart';
 import '../services/cloud_sync_service.dart';
 import '../services/notification_service.dart';
 import '../widgets/waves_background.dart';
@@ -104,8 +105,12 @@ class _AuthGateScreenState extends State<AuthGateScreen> with SingleTickerProvid
           ),
         );
 
-        // Perform full two-way synchronization
-        await CloudSyncService.instance.performFullTwoWaySync(provider);
+        // Perform full two-way synchronization in background so sync errors never abort login
+        CloudSyncService.instance.performFullTwoWaySync(provider).then((_) {
+          AppLogger.info('AuthGateScreen', 'Cloud sync finished successfully.');
+        }).catchError((syncErr, syncSt) {
+          AppLogger.error('AuthGateScreen', 'Non-fatal background sync error: $syncErr', syncErr, syncSt);
+        });
 
         _navigateToHome();
       } else {
@@ -115,14 +120,25 @@ class _AuthGateScreenState extends State<AuthGateScreen> with SingleTickerProvid
       }
     } catch (e, st) {
       AppLogger.error('AuthGateScreen', 'Google Sign-In caught error: $e', e, st);
+      final rawStr = e.toString();
+      final errorStr = rawStr.toLowerCase();
+      String userFriendly;
+
+      if (errorStr.contains('network') || errorStr.contains('socket') || errorStr.contains('timeout') || errorStr.contains('code 7') || errorStr.contains(': 7')) {
+        userFriendly = 'Network error. Please check your internet connection.';
+      } else if (errorStr.contains('10') || errorStr.contains('developer_error') || errorStr.contains('apiexception: 10')) {
+        userFriendly = 'Google Sign-In Error (Code 10: App signing key mismatch). The installed app was built before the Google Play signing key was added to Firebase.';
+      } else if (errorStr.contains('12500') || errorStr.contains('apiexception: 12500')) {
+        userFriendly = 'Google Sign-In Error (Code 12500: Play Services authentication error).';
+      } else if (errorStr.contains('sign_in_canceled') || errorStr.contains('canceled') || errorStr.contains('cancelled')) {
+        userFriendly = 'Sign in was cancelled.';
+      } else {
+        userFriendly = 'Could not sign in with Google.';
+      }
+
       setState(() {
         _isLoading = false;
-        final errorStr = e.toString().toLowerCase();
-        if (errorStr.contains('network') || errorStr.contains('socket') || errorStr.contains('timeout') || errorStr.contains('7')) {
-          _errorMessage = 'Network error. Please check your internet connection.';
-        } else {
-          _errorMessage = 'Could not sign in with Google. Please try again or continue as guest.';
-        }
+        _errorMessage = '$userFriendly\n\nDetails: $rawStr';
       });
     }
   }
@@ -376,6 +392,17 @@ class _AuthGateScreenState extends State<AuthGateScreen> with SingleTickerProvid
                           fontWeight: FontWeight.w500,
                           decoration: TextDecoration.underline,
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Version & Build Indicator
+                    Text(
+                      'v${AppUpdateService.currentVersionName} (Build ${AppUpdateService.currentVersionCode})',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: textSecondary.withValues(alpha: 0.5),
+                        letterSpacing: 0.3,
                       ),
                     ),
                   ],

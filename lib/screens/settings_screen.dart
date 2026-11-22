@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/hydration_provider.dart';
+import '../services/app_update_service.dart';
 import '../services/pref_service.dart';
 import '../services/notification_service.dart';
 import '../services/cloud_sync_service.dart';
@@ -734,6 +735,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   */
 
+                  Center(
+                    child: Text(
+                      'Hydro Tracker v${AppUpdateService.currentVersionName} (Build ${AppUpdateService.currentVersionCode})',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: colors.textSecondary.withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 20),
                 ],
               ),
