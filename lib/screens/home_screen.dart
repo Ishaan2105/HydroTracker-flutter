@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../providers/hydration_provider.dart';
 import '../services/widget_service.dart';
 import '../services/notification_service.dart';
@@ -235,111 +234,6 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 0. New Version Available In-App Banner
-                  if (provider.updateGateResult != null &&
-                      provider.updateGateResult!.isUpdateAvailable &&
-                      !provider.updateGateResult!.needsForceUpdate &&
-                      !provider.isUpdateBannerDismissed) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0F2646),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.5)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF00E5FF).withValues(alpha: 0.12),
-                            blurRadius: 12,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.system_update_rounded,
-                              size: 18,
-                              color: Color(0xFF00E5FF),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Update Available (v${provider.updateGateResult!.latestVersionName})',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Redesigned 2-button widget & glass persistence live on Play Store.',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 11,
-                                    color: const Color(0xFF94A3B8),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          ElevatedButton(
-                            onPressed: () async {
-                              final marketUri = Uri.parse('market://details?id=com.threestack.hydrotracker');
-                              final webUri = Uri.parse(provider.updateGateResult!.playStoreUrl);
-                              try {
-                                if (await canLaunchUrl(marketUri)) {
-                                  await launchUrl(marketUri, mode: LaunchMode.externalApplication);
-                                  return;
-                                }
-                              } catch (_) {}
-                              try {
-                                await launchUrl(webUri, mode: LaunchMode.externalApplication);
-                              } catch (_) {}
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF00E5FF),
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              minimumSize: const Size(0, 32),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: Text(
-                              'Update',
-                              style: GoogleFonts.poppins(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          InkWell(
-                            onTap: () => provider.dismissUpdateBanner(),
-                            borderRadius: BorderRadius.circular(12),
-                            child: const Padding(
-                              padding: EdgeInsets.all(4),
-                              child: Icon(Icons.close, color: Colors.white60, size: 16),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-
                   // 1. Streak Risk Warning Banner (Dynamic)
                   if (provider.isStreakAtRisk) ...[
                     Container(
