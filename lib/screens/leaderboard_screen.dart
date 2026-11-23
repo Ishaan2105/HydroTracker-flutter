@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -20,15 +21,36 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   List<LeaderboardEntry> _entries = [];
   bool _isLoading = true;
   String? _errorMessage;
+  StreamSubscription<List<LeaderboardEntry>>? _streamSub;
 
   @override
   void initState() {
     super.initState();
     _loadLeaderboard();
+    _subscribeToLiveStream();
+  }
+
+  void _subscribeToLiveStream() {
+    final provider = Provider.of<HydrationProvider>(context, listen: false);
+    _streamSub?.cancel();
+    _streamSub = CloudSyncService.instance
+        .streamLeaderboardEntries(provider)
+        .listen((list) {
+      if (mounted && list.isNotEmpty) {
+        setState(() {
+          _entries = list;
+          _isLoading = false;
+          _errorMessage = null;
+        });
+      }
+    }, onError: (_) {
+      // Non-fatal, falls back to regular fetch
+    });
   }
 
   @override
   void dispose() {
+    _streamSub?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -77,11 +99,66 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     }
   }
 
+  List<LeaderboardEntry> _computeActiveEntries(HydrationProvider provider) {
+    final user = CloudSyncService.instance.currentUser;
+    final currentUid = user?.uid ?? 'local_user';
+    final List<LeaderboardEntry> activeEntries = _entries.map((e) {
+      if (e.uid == currentUid) {
+        final customName = provider.userName.trim();
+        final name = (customName.isNotEmpty && customName != 'HydroBuddy')
+            ? customName
+            : e.displayName;
+        return LeaderboardEntry(
+          uid: e.uid,
+          displayName: name,
+          photoUrl: e.photoUrl,
+          currentStreak: provider.currentStreak,
+          bestStreak: provider.bestStreak,
+          lifetimeVolumeMl: provider.lifetimeVolumeMl,
+          updatedAt: DateTime.now(),
+        );
+      }
+      return e;
+    }).toList();
+
+    if (user != null && provider.isLeaderboardOptIn && !activeEntries.any((e) => e.uid == user.uid)) {
+      final customName = provider.userName.trim();
+      final email = user.email?.trim() ?? '';
+      final name = (customName.isNotEmpty && customName != 'HydroBuddy')
+          ? customName
+          : (email.isNotEmpty ? (email.contains('@') ? email.split('@').first : email) : 'HydroBuddy');
+      activeEntries.add(LeaderboardEntry(
+        uid: user.uid,
+        displayName: name,
+        photoUrl: user.photoURL,
+        currentStreak: provider.currentStreak,
+        bestStreak: provider.bestStreak,
+        lifetimeVolumeMl: provider.lifetimeVolumeMl,
+        updatedAt: DateTime.now(),
+      ));
+    }
+
+    activeEntries.sort((a, b) {
+      final streakCmp = b.currentStreak.compareTo(a.currentStreak);
+      if (streakCmp != 0) return streakCmp;
+      return b.lifetimeVolumeMl.compareTo(a.lifetimeVolumeMl);
+    });
+
+    for (int i = 0; i < activeEntries.length; i++) {
+      activeEntries[i].rank = i + 1;
+    }
+
+    return activeEntries;
+  }
+
   LeaderboardEntry? get _currentUserEntry {
+    if (!mounted) return null;
+    final provider = Provider.of<HydrationProvider>(context, listen: false);
+    final active = _computeActiveEntries(provider);
     final user = CloudSyncService.instance.currentUser;
     final currentUid = user?.uid ?? 'local_user';
     try {
-      return _entries.firstWhere((e) => e.uid == currentUid);
+      return active.firstWhere((e) => e.uid == currentUid);
     } catch (_) {
       return null;
     }
@@ -113,8 +190,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     final isDark = provider.isDarkMode;
     final colors = AppColors(isDark: isDark);
 
-    final top3 = _entries.take(3).toList();
-    final restOfList = _entries.length > 3 ? _entries.sublist(3) : <LeaderboardEntry>[];
+    final activeList = _computeActiveEntries(provider);
+    final top3 = activeList.take(3).toList();
+    final restOfList = activeList.length > 3 ? activeList.sublist(3) : <LeaderboardEntry>[];
     final userEntry = _currentUserEntry;
 
     return Scaffold(

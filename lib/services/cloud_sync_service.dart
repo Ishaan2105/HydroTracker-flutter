@@ -488,4 +488,67 @@ class CloudSyncService {
 
     return list;
   }
+
+  /// Real-time stream of global leaderboard rankings from Firestore.
+  Stream<List<LeaderboardEntry>> streamLeaderboardEntries(HydrationProvider provider) {
+    return _firestore
+        .collection('public_leaderboard')
+        .orderBy('currentStreak', descending: true)
+        .limit(100)
+        .snapshots()
+        .map((snapshot) {
+      final Map<String, LeaderboardEntry> entryMap = {};
+
+      for (var doc in snapshot.docs) {
+        if (doc.id == 'app_version_gate') continue;
+        final entry = LeaderboardEntry.fromMap(doc.data(), docId: doc.id);
+        if (entry.uid.isNotEmpty) {
+          entryMap[entry.uid] = entry;
+        }
+      }
+
+      final user = currentUser;
+      if (user != null && provider.isLeaderboardOptIn) {
+        final String currentName;
+        final customName = provider.userName.trim();
+        if (customName.isNotEmpty && customName != 'HydroBuddy') {
+          currentName = customName;
+        } else {
+          final email = user.email?.trim() ?? '';
+          if (email.isNotEmpty) {
+            currentName = email.contains('@') ? email.split('@').first : email;
+          } else {
+            currentName = (user.displayName != null && user.displayName!.trim().isNotEmpty)
+                ? user.displayName!.trim()
+                : 'Hydro User';
+          }
+        }
+
+        entryMap[user.uid] = LeaderboardEntry(
+          uid: user.uid,
+          displayName: currentName,
+          photoUrl: user.photoURL,
+          currentStreak: provider.currentStreak,
+          bestStreak: provider.bestStreak,
+          lifetimeVolumeMl: provider.lifetimeVolumeMl,
+          updatedAt: DateTime.now(),
+        );
+      } else if (user != null && !provider.isLeaderboardOptIn) {
+        entryMap.remove(user.uid);
+      }
+
+      final list = entryMap.values.toList();
+      list.sort((a, b) {
+        final streakCmp = b.currentStreak.compareTo(a.currentStreak);
+        if (streakCmp != 0) return streakCmp;
+        return b.lifetimeVolumeMl.compareTo(a.lifetimeVolumeMl);
+      });
+
+      for (int i = 0; i < list.length; i++) {
+        list[i].rank = i + 1;
+      }
+
+      return list;
+    });
+  }
 }

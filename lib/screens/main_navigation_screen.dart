@@ -11,6 +11,7 @@ import 'leaderboard_screen.dart';
 import 'advanced_options_screen.dart';
 import 'settings_screen.dart';
 import '../services/notification_service.dart';
+import '../services/cloud_sync_service.dart';
 import '../services/app_update_service.dart';
 import 'force_update_screen.dart';
 import '../widgets/username_setup_dialog.dart';
@@ -125,10 +126,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
   void _onTabTapped(int index) {
     final provider = context.read<HydrationProvider>();
 
-    if (index == 1) {
+    if (index == 0) {
+      provider.loadTodayData();
+    } else if (index == 1) {
       // Trends & Insights tab: reload today's data, history stats, and insights data
       provider.loadTodayData();
       provider.loadHistoryStats().then((_) => provider.loadInsightsData());
+    } else if (index == 2) {
+      // Leaderboard tab: sync latest local stats to cloud immediately
+      if (provider.isLeaderboardOptIn) {
+        CloudSyncService.instance.syncLeaderboardEntry(provider);
+      }
     } else if (index == 3) {
       // Advanced Options tab: make sure today's intake is fresh for the widget preview
       provider.loadTodayData();
