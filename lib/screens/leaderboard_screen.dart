@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/leaderboard_entry.dart';
 import '../providers/hydration_provider.dart';
+import '../services/app_logger.dart';
 import '../services/cloud_sync_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/hydro_top_bar.dart';
@@ -22,12 +23,18 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   StreamSubscription<List<LeaderboardEntry>>? _streamSub;
+  StreamSubscription? _authSub;
 
   @override
   void initState() {
     super.initState();
     _loadLeaderboard();
     _subscribeToLiveStream();
+    _authSub = CloudSyncService.instance.auth.authStateChanges().listen((_) {
+      if (mounted) {
+        _subscribeToLiveStream();
+      }
+    });
   }
 
   void _subscribeToLiveStream() {
@@ -36,20 +43,21 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     _streamSub = CloudSyncService.instance
         .streamLeaderboardEntries(provider)
         .listen((list) {
-      if (mounted && list.isNotEmpty) {
+      if (mounted) {
         setState(() {
           _entries = list;
           _isLoading = false;
           _errorMessage = null;
         });
       }
-    }, onError: (_) {
-      // Non-fatal, falls back to regular fetch
+    }, onError: (err) {
+      AppLogger.warn('LeaderboardScreen', 'Live stream warning: $err');
     });
   }
 
   @override
   void dispose() {
+    _authSub?.cancel();
     _streamSub?.cancel();
     _scrollController.dispose();
     super.dispose();

@@ -336,6 +336,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
+  hydro_widget:
+    dependency: "direct main"
+    description:
+      path: "plugins/hydro_widget"
+      relative: true
+    source: path
+    version: "1.0.0"
   image:
     dependency: transitive
     description:

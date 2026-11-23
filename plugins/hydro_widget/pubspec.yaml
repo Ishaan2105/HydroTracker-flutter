@@ -1,0 +1,15 @@
+name: hydro_widget
+description: Native Android Widget Plugin for Hydro Tracker background isolates
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.7.2
+  flutter: ">=3.3.0"
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.threestack.hydrotracker.widget
+        pluginClass: HydroWidgetPlugin

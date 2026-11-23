@@ -21,6 +21,7 @@ class HydroWidgetProvider : AppWidgetProvider() {
     companion object {
         private const val TAG = "HydroWidget"
         const val ACTION_ADD_WATER = "com.threestack.hydrotracker.ACTION_ADD_WATER"
+        const val ACTION_UPDATE_WIDGET = "com.threestack.hydrotracker.ACTION_UPDATE_WIDGET"
         const val EXTRA_AMOUNT = "extra_amount"
         const val EXTRA_TRIGGER_ACTION = "extra_trigger_action"
         const val ACTION_CREATE_GLASS = "create_glass"
@@ -257,6 +258,18 @@ class HydroWidgetProvider : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
+        if (intent.action == ACTION_UPDATE_WIDGET) {
+            try {
+                val intake = intent.getIntExtra("todayIntake", 0)
+                val goal = intent.getIntExtra("dailyGoal", 2500)
+                val customGlass = if (intent.hasExtra("customGlass")) intent.getIntExtra("customGlass", 200) else null
+                val hasGlass = if (intent.hasExtra("hasGlass")) intent.getBooleanExtra("hasGlass", false) else null
+                updateAllWidgets(context, intake, goal, customGlass, hasGlass)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in onReceive ACTION_UPDATE_WIDGET", e)
+            }
+            return
+        }
         if (intent.action == ACTION_ADD_WATER) {
             try {
                 val amount = intent.getIntExtra(EXTRA_AMOUNT, 250)

@@ -14,6 +14,7 @@ class CloudSyncService {
   CloudSyncService._init();
 
   FirebaseAuth get _auth => FirebaseAuth.instance;
+  FirebaseAuth get auth => _auth;
   FirebaseFirestore get _firestore => FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
@@ -495,7 +496,7 @@ class CloudSyncService {
         .collection('public_leaderboard')
         .orderBy('currentStreak', descending: true)
         .limit(100)
-        .snapshots()
+        .snapshots(includeMetadataChanges: true)
         .map((snapshot) {
       final Map<String, LeaderboardEntry> entryMap = {};
 
