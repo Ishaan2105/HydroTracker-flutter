@@ -29,7 +29,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _glassController;
   final ScrollController _glassScrollController = ScrollController();
   bool _isBatteryExempt = true; // assume OK until checked
-  bool _isThemeExpanded = true;
+  bool _isThemeExpanded = false;
+  bool _isGlassCapacityExpanded = false;
 
   @override
   void initState() {
@@ -136,18 +137,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildGlassPresetChip(HydrationProvider provider, int sizeMl, AppColors colors) {
     final isSelected = provider.customGlassMl == sizeMl;
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.only(right: 6),
       child: ChoiceChip(
         label: Text(
           '$sizeMl ml',
           style: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            color: isSelected ? colors.primaryBlue : colors.textPrimary,
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: isSelected ? (colors.isDark ? Colors.black : Colors.white) : colors.textPrimary,
           ),
         ),
         selected: isSelected,
-        selectedColor: colors.cyanAccent.withValues(alpha: 0.25),
+        selectedColor: colors.cyanAccent,
         backgroundColor: colors.cardBgAlt,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         onSelected: (selected) {
@@ -231,55 +232,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 16),
                   ],
 
-                  // 0. Google Cloud Sync & Account Section
-                  _buildCloudSyncCard(context, provider, colors),
-                  const SizedBox(height: 16),
-
-                  // 1. User Profile Section
-                  _buildCard(
-                    title: 'User Profile',
-                    subtitle: 'Update your display name',
-                    colors: colors,
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: const Color(0xFF1565C0),
-                          child: Text(
-                            provider.userName.isNotEmpty ? provider.userName[0].toUpperCase() : 'U',
-                            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _nameController,
-                            focusNode: _nameFocusNode,
-                            style: GoogleFonts.poppins(color: colors.textPrimary, fontSize: 14),
-                            decoration: InputDecoration(
-                              hintText: 'Enter name...',
-                              hintStyle: GoogleFonts.poppins(color: colors.textMuted, fontSize: 13),
-                              filled: true,
-                              fillColor: colors.cardBgAlt,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () => _saveName(provider),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1565C0),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: Text('Save', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
-                        ),
-                      ],
-                    ),
-                  ),
-
+                  // 0 & 1. Merged Google Cloud Sync & User Profile Section
+                  _buildAccountAndProfileCard(context, provider, colors),
                   const SizedBox(height: 16),
 
                   // 2. Daily Goal Target Section
@@ -367,81 +321,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   const SizedBox(height: 16),
 
-                  // 2.5 Custom Glass Capacity Section
-                  _buildCard(
-                    title: 'Glass Capacity (ml)',
-                    subtitle: 'Customize standard glass intake volume for 1-tap logging & widget',
-                    colors: colors,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _glassController,
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  LengthLimitingTextInputFormatter(4),
-                                ],
-                                style: GoogleFonts.poppins(color: colors.textPrimary, fontSize: 14),
-                                decoration: InputDecoration(
-                                  suffixText: 'ml',
-                                  suffixStyle: GoogleFonts.poppins(color: colors.cyanAccent, fontWeight: FontWeight.bold),
-                                  filled: true,
-                                  fillColor: colors.cardBgAlt,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            ElevatedButton(
-                              onPressed: () {
-                                final val = int.tryParse(_glassController.text);
-                                if (val != null && val >= 50 && val <= 1000) {
-                                  _saveGlassSize(provider, val);
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1565C0),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                              child: Text('Set Size', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        // Presets with Sleek Horizontal Scrollbar
-                        RawScrollbar(
-                          controller: _glassScrollController,
-                          thumbVisibility: true,
-                          thickness: 3.5,
-                          radius: const Radius.circular(2),
-                          thumbColor: colors.cyanAccent.withValues(alpha: 0.6),
-                          padding: const EdgeInsets.only(top: 6),
-                          child: SingleChildScrollView(
-                            controller: _glassScrollController,
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Row(
-                              children: [
-                                _buildGlassPresetChip(provider, 150, colors),
-                                _buildGlassPresetChip(provider, 200, colors),
-                                _buildGlassPresetChip(provider, 250, colors),
-                                _buildGlassPresetChip(provider, 300, colors),
-                                _buildGlassPresetChip(provider, 350, colors),
-                                _buildGlassPresetChip(provider, 500, colors),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
+                  // 2.5 Custom Glass Capacity Section (Collapsible)
+                  _buildGlassCapacityCard(provider, colors),
                   const SizedBox(height: 16),
 
                   // 3. Appearance & Theme Section (Dark Mode vs Light Mode)
@@ -756,83 +637,169 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildCloudSyncCard(BuildContext context, HydrationProvider provider, AppColors colors) {
+  Widget _buildAccountAndProfileCard(BuildContext context, HydrationProvider provider, AppColors colors) {
     final user = CloudSyncService.instance.currentUser;
     final isSignedIn = user != null;
 
-    return _buildCard(
-      title: 'Google Cloud Sync',
-      subtitle: isSignedIn
-          ? 'Real-time backup active across all devices'
-          : 'Connect account to preserve streaks & logs',
-      colors: colors,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.surfaceBorder),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadowColor,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Section Title
+          Text(
+            'Account & User Profile',
+            style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: colors.textPrimary),
+          ),
+          Text(
+            'Manage your display name, cloud account & sync status',
+            style: GoogleFonts.poppins(fontSize: 11, color: colors.textSecondary),
+          ),
+          const SizedBox(height: 14),
+
+          // 1. Display Name Input
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: const Color(0xFF1565C0),
+                backgroundImage: (user != null && user.photoURL != null && user.photoURL!.isNotEmpty)
+                    ? NetworkImage(user.photoURL!)
+                    : null,
+                child: (user == null || user.photoURL == null || user.photoURL!.isEmpty)
+                    ? Text(
+                        provider.userName.isNotEmpty ? provider.userName[0].toUpperCase() : 'U',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: _nameController,
+                  focusNode: _nameFocusNode,
+                  style: GoogleFonts.poppins(color: colors.textPrimary, fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Enter name...',
+                    hintStyle: GoogleFonts.poppins(color: colors.textMuted, fontSize: 13),
+                    filled: true,
+                    fillColor: colors.cardBgAlt,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () => _saveName(provider),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1565C0),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text('Save', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+          Divider(color: colors.surfaceBorder, height: 1),
+          const SizedBox(height: 14),
+
+          // 2. Google Cloud Sync Status / Connection
           if (isSignedIn) ...[
             Row(
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: const Color(0xFF0284C7).withValues(alpha: 0.2),
-                  backgroundImage: (user.photoURL != null && user.photoURL!.isNotEmpty)
-                      ? NetworkImage(user.photoURL!)
-                      : null,
-                  child: (user.photoURL == null || user.photoURL!.isEmpty)
-                      ? Text(
-                          (user.displayName ?? user.email ?? 'U')[0].toUpperCase(),
-                          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: const Color(0xFF0284C7)),
-                        )
-                      : null,
-                ),
-                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        user.displayName ?? 'HydroBuddy',
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: colors.textPrimary, fontSize: 14),
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              user.displayName ?? 'HydroBuddy',
+                              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: colors.textPrimary, fontSize: 13.5),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.check_circle_rounded, size: 11, color: Color(0xFF10B981)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Synced',
+                                  style: GoogleFonts.poppins(fontSize: 10.5, fontWeight: FontWeight.w600, color: const Color(0xFF10B981)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                       Text(
                         user.email ?? '',
-                        style: GoogleFonts.poppins(color: colors.textMuted, fontSize: 12),
+                        style: GoogleFonts.poppins(color: colors.textMuted, fontSize: 11.5),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF10B981)),
-                      const SizedBox(width: 4),
-                      Text('Synced', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF10B981))),
-                    ],
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final provider = Provider.of<HydrationProvider>(context, listen: false);
+                    await CloudSyncService.instance.signOut(provider);
+                    if (context.mounted) {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const AuthGateScreen()),
+                        (route) => false,
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.logout_rounded, size: 13),
+                  label: Text('Sign Out', style: GoogleFonts.poppins(fontSize: 11.5)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                    side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.4)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.25)),
+                color: const Color(0xFF10B981).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
                   Container(
-                    width: 8,
-                    height: 8,
+                    width: 7,
+                    height: 7,
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       color: Color(0xFF10B981),
@@ -841,9 +808,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Real-time cloud sync active • All logs, streaks, and goals save automatically',
+                      'Real-time cloud sync active across all devices',
                       style: GoogleFonts.poppins(
-                        fontSize: 11,
+                        fontSize: 10.5,
                         color: colors.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
@@ -852,52 +819,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  final provider = Provider.of<HydrationProvider>(context, listen: false);
-                  await CloudSyncService.instance.signOut(provider);
-                  if (context.mounted) {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const AuthGateScreen()),
-                      (route) => false,
-                    );
-                  }
-                },
-                icon: const Icon(Icons.logout_rounded, size: 14),
-                label: Text('Sign Out', style: GoogleFonts.poppins(fontSize: 12.5)),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.redAccent,
-                  side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.4)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                ),
-              ),
-            ),
           ] else ...[
             Row(
               children: [
                 Container(
-                  width: 36,
-                  height: 36,
+                  width: 32,
+                  height: 32,
                   decoration: BoxDecoration(
                     color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.cloud_off_rounded, color: Color(0xFFF59E0B), size: 18),
+                  child: const Icon(Icons.cloud_off_rounded, color: Color(0xFFF59E0B), size: 16),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Stored only on this device. Sign in to sync across devices.',
-                    style: GoogleFonts.poppins(color: colors.textMuted, fontSize: 12),
+                    'Stored only on this device. Sign in with Google to sync across devices.',
+                    style: GoogleFonts.poppins(color: colors.textMuted, fontSize: 11.5),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -906,12 +849,135 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     MaterialPageRoute(builder: (_) => const AuthGateScreen()),
                   );
                 },
-                icon: const Icon(Icons.login_rounded, size: 16),
-                label: Text('Link Google Account', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+                icon: const Icon(Icons.login_rounded, size: 15),
+                label: Text('Link Google Account', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 12.5)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1565C0),
                   foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlassCapacityCard(HydrationProvider provider, AppColors colors) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.surfaceBorder),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadowColor,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () => setState(() => _isGlassCapacityExpanded = !_isGlassCapacityExpanded),
+            borderRadius: BorderRadius.circular(12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Glass Capacity (ml)',
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        'Current: ${provider.customGlassMl} ml • Tap to customize',
+                        style: GoogleFonts.poppins(fontSize: 11, color: colors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  _isGlassCapacityExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  color: colors.textSecondary,
+                  size: 22,
+                ),
+              ],
+            ),
+          ),
+          if (_isGlassCapacityExpanded) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _glassController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(4),
+                    ],
+                    style: GoogleFonts.poppins(color: colors.textPrimary, fontSize: 14),
+                    decoration: InputDecoration(
+                      suffixText: 'ml',
+                      suffixStyle: GoogleFonts.poppins(color: colors.cyanAccent, fontWeight: FontWeight.bold),
+                      filled: true,
+                      fillColor: colors.cardBgAlt,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () {
+                    final val = int.tryParse(_glassController.text);
+                    if (val != null && val >= 50 && val <= 1000) {
+                      _saveGlassSize(provider, val);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1565C0),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text('Set Size', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            // Presets with Sleek Horizontal Scrollbar
+            RawScrollbar(
+              controller: _glassScrollController,
+              thumbVisibility: true,
+              thickness: 3.5,
+              radius: const Radius.circular(2),
+              thumbColor: colors.cyanAccent.withValues(alpha: 0.6),
+              padding: const EdgeInsets.only(top: 6),
+              child: SingleChildScrollView(
+                controller: _glassScrollController,
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    _buildGlassPresetChip(provider, 150, colors),
+                    _buildGlassPresetChip(provider, 200, colors),
+                    _buildGlassPresetChip(provider, 250, colors),
+                    _buildGlassPresetChip(provider, 300, colors),
+                    _buildGlassPresetChip(provider, 350, colors),
+                    _buildGlassPresetChip(provider, 500, colors),
+                  ],
                 ),
               ),
             ),

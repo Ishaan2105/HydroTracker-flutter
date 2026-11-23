@@ -33,6 +33,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
 
   // Accordion Toggles
   bool _isMealsExpanded = false;
+  bool _isResearchExpanded = false;
 
   // Monthly Heatmap State
   DateTime _activeHeatmapMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
@@ -743,55 +744,89 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                           ),
                         ],
 
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 10),
 
-                        // Science citation & clickable reference banner
-                        InkWell(
-                          onTap: _launchScienceReferenceUrl,
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: colors.cardBgAlt,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: colors.cyanAccent.withValues(alpha: 0.3)),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(Icons.science_rounded, size: 16, color: colors.cyanAccent),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Based on the human water turnover model published in Science (Yamada et al., 2022). Calculates direct drinking water intake, subtracting ~20% food moisture. Clamped to safe 1,500 – 4,000 mL bounds. Calibrated for adults (18+); pregnant or nursing individuals should consult a physician.',
-                                        style: GoogleFonts.poppins(fontSize: 10, color: colors.textMuted, height: 1.35),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            'Tap to view research article & details',
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                              color: colors.cyanAccent,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Icon(Icons.open_in_new_rounded, size: 11, color: colors.cyanAccent),
-                                        ],
-                                      ),
-                                    ],
+                        // Collapsible Science citation & clickable reference toggle
+                        Center(
+                          child: InkWell(
+                            onTap: () => setState(() => _isResearchExpanded = !_isResearchExpanded),
+                            borderRadius: BorderRadius.circular(10),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.science_rounded, size: 14, color: colors.cyanAccent),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Scientific Research & Citation',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: colors.cyanAccent,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 4),
+                                  Icon(
+                                    _isResearchExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                                    size: 16,
+                                    color: colors.cyanAccent,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
+
+                        if (_isResearchExpanded) ...[
+                          const SizedBox(height: 8),
+                          InkWell(
+                            onTap: _launchScienceReferenceUrl,
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: colors.cardBgAlt,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: colors.cyanAccent.withValues(alpha: 0.3)),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(Icons.science_rounded, size: 16, color: colors.cyanAccent),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Based on the human water turnover model published in Science (Yamada et al., 2022). Calculates direct drinking water intake, subtracting ~20% food moisture. Clamped to safe 1,500 – 4,000 mL bounds. Calibrated for adults (18+); pregnant or nursing individuals should consult a physician.',
+                                          style: GoogleFonts.poppins(fontSize: 10, color: colors.textMuted, height: 1.35),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              'Tap to view research article & details',
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                color: colors.cyanAccent,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Icon(Icons.open_in_new_rounded, size: 11, color: colors.cyanAccent),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -1245,7 +1280,11 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                     const SizedBox(height: 2),
                                     Text(
                                       'Enter roughly when you finish eating for 30-min reminders',
-                                      style: GoogleFonts.poppins(fontSize: 11, color: colors.textSecondary),
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: colors.isDark ? Colors.white : Colors.black,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -1284,7 +1323,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                                         style: GoogleFonts.poppins(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF00E5FF),
+                                          color: colors.isDark ? Colors.white : Colors.black,
                                         ),
                                       ),
                                       const SizedBox(height: 3),

@@ -87,7 +87,7 @@ class AboutScreen extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  'Version 2.0 • Community Edition',
+                                  'Version 2.2.5 • Community Edition',
                                   style: GoogleFonts.poppins(
                                     fontSize: 12,
                                     color: Colors.white70,
@@ -168,6 +168,8 @@ class AboutScreen extends StatelessWidget {
                     _buildSubHeading('3.1 Live Standings & Olympic Podium', colors),
                     _buildParagraph(
                       'Participate in friendly community competition in the Leaderboard tab:\n\n'
+                      '• Real-Time Firestore Stream: Standings update dynamically in live real-time. When any hydrator logs water, ranks and volumes re-order immediately across all devices without restarting.\n'
+                      '• 0ms Active Re-Sorting: The moment you log water locally, your ranking and total volume reflect instantly in memory before network requests finish.\n'
                       '• #1 Gold Champion: Decorated with celebratory crown, shimmering gold border, and leading streak days.\n'
                       '• #2 Silver & #3 Bronze: Olympic podium showcasing the top three daily streak hydrators.\n'
                       '• Challengers (#4+): Ranked community list with avatars, current streak, and total volume logged.',
@@ -200,11 +202,12 @@ class AboutScreen extends StatelessWidget {
                       colors,
                     ),
                     const SizedBox(height: 12),
-                    _buildSubHeading('4.2 Smart Quick-Log Buttons', colors),
+                    _buildSubHeading('4.2 Smart Quick-Log Buttons & Notification Sync', colors),
                     _buildParagraph(
                       'The widget displays two primary capsule buttons:\n\n'
                       '1. Button 1: "Glass" Button: Records your configured glass capacity in the background with zero latency. If you haven\'t configured a glass size yet, tapping "Glass" automatically opens the Glass Setup Sheet inside the app so you can set your capacity.\n'
-                      '2. Button 2: "250 ml" Button: Instantly logs 250 mL directly to your daily intake and synchronizes across all devices.',
+                      '2. Button 2: "250 ml" Button: Instantly logs 250 mL directly to your daily intake and synchronizes across all devices.\n'
+                      '3. Notification Action Sync: Tapping "+250 ml" or "+Glass" on reminder notifications instantly refreshes your Home Screen widget via the native background hydro_widget engine without opening the app.',
                       colors,
                     ),
                     const SizedBox(height: 12),
@@ -217,7 +220,7 @@ class AboutScreen extends StatelessWidget {
                   const SizedBox(height: 20),
 
                   // Section 5
-                  _buildSectionHeader('5. AUTOMATED GOOGLE CLOUD SYNC', colors),
+                  _buildSectionHeader('5. AUTOMATED GOOGLE CLOUD SYNC & SETTINGS', colors),
                   _buildContentCard([
                     _buildSubHeading('5.1 Zero-Touch Real-Time Backup', colors),
                     _buildParagraph(
@@ -225,9 +228,16 @@ class AboutScreen extends StatelessWidget {
                       colors,
                     ),
                     const SizedBox(height: 12),
-                    _buildSubHeading('5.2 Multi-Device & Account Restoration', colors),
+                    _buildSubHeading('5.2 Unified Account & Profile Container', colors),
                     _buildParagraph(
-                      'Upgraded phones or reinstalled the app? Simply sign in with your Google Account during onboarding to restore your streak, goals, and history instantly.',
+                      'In Settings, your display name editor and Google Cloud sync credentials are now unified into a single streamlined card container for effortless management and account switching.',
+                      colors,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildSubHeading('5.3 Collapsible Controls & Scientific Calculator', colors),
+                    _buildParagraph(
+                      '• Collapsible Controls: Glass Capacity and Appearance & Theme sections default to sleek collapsed rows so settings remain clean and readable.\n'
+                      '• Scientific Goal Calculator: Located under Trends & Insights, calculates your ideal intake based on the Science landmark study (Yamada et al., 2022) with collapsible research citation notes.',
                       colors,
                     ),
                   ], colors),
