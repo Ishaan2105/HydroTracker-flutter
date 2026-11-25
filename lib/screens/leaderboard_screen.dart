@@ -21,23 +21,42 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   final ScrollController _scrollController = ScrollController();
   List<LeaderboardEntry> _entries = [];
   bool _isLoading = true;
+  bool _isSigningIn = false;
   String? _errorMessage;
+  String? _signInError;
   StreamSubscription<List<LeaderboardEntry>>? _streamSub;
   StreamSubscription? _authSub;
 
   @override
   void initState() {
     super.initState();
-    _loadLeaderboard();
-    _subscribeToLiveStream();
-    _authSub = CloudSyncService.instance.auth.authStateChanges().listen((_) {
+    if (CloudSyncService.instance.isSignedIn) {
+      _loadLeaderboard();
+      _subscribeToLiveStream();
+    } else {
+      _isLoading = false;
+    }
+    _authSub = CloudSyncService.instance.auth.authStateChanges().listen((user) {
       if (mounted) {
-        _subscribeToLiveStream();
+        if (user != null) {
+          _subscribeToLiveStream();
+          _loadLeaderboard();
+        } else {
+          _streamSub?.cancel();
+          setState(() {
+            _entries = [];
+            _isLoading = false;
+          });
+        }
       }
     });
   }
 
   void _subscribeToLiveStream() {
+    if (!CloudSyncService.instance.isSignedIn) {
+      _streamSub?.cancel();
+      return;
+    }
     final provider = Provider.of<HydrationProvider>(context, listen: false);
     _streamSub?.cancel();
     _streamSub = CloudSyncService.instance
@@ -64,6 +83,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   }
 
   Future<void> _loadLeaderboard({bool isUserRefresh = false}) async {
+    if (!CloudSyncService.instance.isSignedIn) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _entries = [];
+        });
+      }
+      return;
+    }
     if (isUserRefresh) {
       HapticFeedback.mediumImpact();
     }
@@ -197,6 +225,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     final provider = context.watch<HydrationProvider>();
     final isDark = provider.isDarkMode;
     final colors = AppColors(isDark: isDark);
+    final isSignedIn = CloudSyncService.instance.isSignedIn;
+
+    if (!isSignedIn) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: const HydroTopBar(),
+        body: SafeArea(
+          top: false,
+          bottom: false,
+          child: _buildGuestPrompt(provider, colors),
+        ),
+      );
+    }
 
     final activeList = _computeActiveEntries(provider);
     final top3 = activeList.take(3).toList();
@@ -1058,6 +1099,373 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Guest Sign-In Gate & Benefit Rows
+  // ---------------------------------------------------------------------------
+  Future<void> _handleGoogleSignIn(HydrationProvider provider) async {
+    setState(() {
+      _isSigningIn = true;
+      _signInError = null;
+    });
+
+    try {
+      final cred = await CloudSyncService.instance.signInWithGoogle();
+      if (cred != null && cred.user != null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFF0284C7),
+            content: Row(
+              children: [
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Welcome, ${cred.user?.displayName ?? "HydroBuddy"}! Loading standings...',
+                    style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        await CloudSyncService.instance.performFullTwoWaySync(provider);
+        if (mounted) {
+          await _loadLeaderboard();
+          _subscribeToLiveStream();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _signInError = 'Sign-in failed. Please check your connection and try again.';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSigningIn = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildBenefitRow({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required AppColors colors,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.15),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 16, color: iconColor),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 1),
+              Text(
+                subtitle,
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: colors.textSecondary,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGuestPrompt(HydrationProvider provider, AppColors colors) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+      children: [
+        // Page Header
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Community Leaderboard',
+              style: GoogleFonts.poppins(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: colors.textPrimary,
+              ),
+            ),
+            Text(
+              'Live hydration ranks & community champions',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: colors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        // Main Guest Gate Card
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 26),
+          decoration: BoxDecoration(
+            color: colors.cardBg,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: colors.surfaceBorder),
+            boxShadow: [
+              BoxShadow(
+                color: colors.shadowColor,
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Trophy Badge Icon
+              Container(
+                width: 76,
+                height: 76,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0284C7), Color(0xFF06B6D4)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF06B6D4).withValues(alpha: 0.35),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.emoji_events_rounded,
+                  size: 42,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // Title
+              Text(
+                'Join the Global Leaderboard',
+                style: GoogleFonts.poppins(
+                  fontSize: 18.5,
+                  fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+
+              // Subtitle
+              Text(
+                'Sign in with your Google account to view live community standings, climb the Olympic podium, and celebrate streak milestones with hydrators worldwide.',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: colors.textSecondary,
+                  height: 1.45,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 22),
+
+              // Benefits Card Container
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colors.cardBgAlt,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: colors.surfaceBorderSubtle),
+                ),
+                child: Column(
+                  children: [
+                    _buildBenefitRow(
+                      icon: Icons.military_tech_rounded,
+                      iconColor: const Color(0xFFFFB300),
+                      title: 'Live Olympic Podium',
+                      subtitle: 'Ranked globally by consistency streaks and lifetime volume.',
+                      colors: colors,
+                    ),
+                    const SizedBox(height: 14),
+                    _buildBenefitRow(
+                      icon: Icons.bolt_rounded,
+                      iconColor: const Color(0xFF00E5FF),
+                      title: 'Instant Real-Time Updates',
+                      subtitle: 'Your rank and stats update instantly as you log water.',
+                      colors: colors,
+                    ),
+                    const SizedBox(height: 14),
+                    _buildBenefitRow(
+                      icon: Icons.cloud_done_rounded,
+                      iconColor: const Color(0xFF10B981),
+                      title: 'Permanent Streak Protection',
+                      subtitle: 'Never lose your streak when updating or switching devices.',
+                      colors: colors,
+                    ),
+                    const SizedBox(height: 14),
+                    _buildBenefitRow(
+                      icon: Icons.visibility_off_outlined,
+                      iconColor: const Color(0xFFA855F7),
+                      title: 'Incognito Controls Anytime',
+                      subtitle: 'Set a custom display name or go incognito via Settings.',
+                      colors: colors,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+
+              // Error banner if sign-in fails
+              if (_signInError != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  margin: const EdgeInsets.only(bottom: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _signInError!,
+                          style: GoogleFonts.poppins(fontSize: 11.5, color: Colors.redAccent),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              // Google Sign-In Button
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isSigningIn ? null : () => _handleGoogleSignIn(provider),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF1F2937),
+                    elevation: 2,
+                    shadowColor: const Color(0xFF00E5FF).withValues(alpha: 0.25),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      side: const BorderSide(color: Color(0xFFE5E7EB), width: 1.1),
+                    ),
+                  ),
+                  child: _isSigningIn
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1565C0)),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Signing in with Google...',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF1F2937),
+                              ),
+                            ),
+                          ],
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 22,
+                              height: 22,
+                              alignment: Alignment.center,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFF4285F4),
+                              ),
+                              child: Text(
+                                'G',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Sign in with Google',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF1F2937),
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Offline preservation reassurance
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.shield_outlined, size: 13, color: colors.textMuted),
+                  const SizedBox(width: 5),
+                  Flexible(
+                    child: Text(
+                      'Your local logs and current streak will sync automatically.',
+                      style: GoogleFonts.poppins(fontSize: 10.5, color: colors.textMuted),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
