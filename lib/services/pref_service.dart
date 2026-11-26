@@ -21,6 +21,19 @@ class PrefService {
   static const String keyHasPromptedUsername = 'has_prompted_username_setup';
   static const String keyLastSyncedUid = 'last_synced_user_uid';
   static const String keyNotificationPromptIndex = 'notification_prompt_index';
+  static const String keyDefaultAlarmsV2Added = 'default_alarms_v2_added';
+
+  static const List<String> kDefaultReminderTimes = [
+    '08:00 AM',
+    '11:00 AM',
+    '12:00 PM',
+    '02:00 PM',
+    '04:00 PM',
+    '06:00 PM',
+    '07:00 PM',
+    '08:00 PM',
+    '10:00 PM',
+  ];
 
   static String formatTo12H(String timeStr) {
     try {
@@ -154,9 +167,30 @@ class PrefService {
 
   static Future<List<String>> getReminderTimes() async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getStringList(keyReminderTimes) ?? ['08:00 AM', '12:00 PM', '04:00 PM', '08:00 PM'];
-    final formatted = raw.map(formatTo12H).toList();
-    return sortTimesChronologically(formatted);
+    final raw = prefs.getStringList(keyReminderTimes);
+    if (raw == null) {
+      await prefs.setBool(keyDefaultAlarmsV2Added, true);
+      await prefs.setStringList(keyReminderTimes, kDefaultReminderTimes);
+      return kDefaultReminderTimes;
+    }
+
+    final hasAddedV2 = prefs.getBool(keyDefaultAlarmsV2Added) ?? false;
+    List<String> list = raw.map(formatTo12H).toList();
+    if (!hasAddedV2) {
+      // Auto-merge new requested default alarm times for existing users: 11am, 2pm, 6pm, 7pm, 10pm
+      const newTimes = ['11:00 AM', '02:00 PM', '06:00 PM', '07:00 PM', '10:00 PM'];
+      for (final t in newTimes) {
+        if (!list.contains(t)) {
+          list.add(t);
+        }
+      }
+      list = sortTimesChronologically(list);
+      await prefs.setStringList(keyReminderTimes, list);
+      await prefs.setBool(keyDefaultAlarmsV2Added, true);
+      return list;
+    }
+
+    return sortTimesChronologically(list);
   }
 
   static Future<void> setReminderTimes(List<String> times) async {

@@ -38,7 +38,7 @@ class NotificationService {
 
   static bool _initialized = false;
   static String _activeIcon = '@mipmap/ic_launcher';
-  static const String channelId = 'hydro_tracker_reminders';
+  static const String channelId = 'hydro_tracker_reminders_v4';
   static const String channelName = 'Hydration Reminders';
   static final StreamController<int> notificationIntakeStream = StreamController<int>.broadcast();
 
@@ -257,6 +257,9 @@ class NotificationService {
       final androidImplementation = _notificationsPlugin
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       if (androidImplementation != null) {
+        try {
+          await androidImplementation.deleteNotificationChannel('hydro_tracker_reminders');
+        } catch (_) {}
         const AndroidNotificationChannel channel = AndroidNotificationChannel(
           channelId,
           channelName,
@@ -582,12 +585,14 @@ class NotificationService {
       channelName,
       channelDescription: 'Scheduled alarms and daily water intake reminders',
       importance: Importance.max,
-      priority: Priority.high,
+      priority: Priority.max,
       playSound: true,
       enableVibration: true,
       icon: customIcon ?? _activeIcon,
       color: const Color(0xFF00E5FF),
-      category: AndroidNotificationCategory.reminder,
+      category: AndroidNotificationCategory.alarm,
+      subText: 'Hydro Tracker',
+      colorized: true,
       visibility: NotificationVisibility.public,
       showWhen: true,
       actions: actions,

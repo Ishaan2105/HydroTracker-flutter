@@ -68,7 +68,7 @@ class HydrationProvider extends ChangeNotifier {
   // Settings State
   bool _isNotifEnabled = true;
   bool _isPostMealNotifEnabled = true;
-  List<String> _reminderTimes = ['08:00 AM', '12:00 PM', '04:00 PM', '08:00 PM'];
+  List<String> _reminderTimes = List.from(PrefService.kDefaultReminderTimes);
   List<String> _disabledReminderTimes = [];
   /// Times that should fire only ONCE (not repeat daily). Default = empty → all daily.
   List<String> _oneTimeReminderTimes = [];
@@ -866,7 +866,7 @@ class HydrationProvider extends ChangeNotifier {
 
     _isNotifEnabled = true;
     _isPostMealNotifEnabled = true;
-    _reminderTimes = ['08:00 AM', '12:00 PM', '04:00 PM', '08:00 PM'];
+    _reminderTimes = List.from(PrefService.kDefaultReminderTimes);
     _disabledReminderTimes = [];
     _oneTimeReminderTimes = []; // reset: all reminders back to daily by default
     _isSoloOptIn = true;

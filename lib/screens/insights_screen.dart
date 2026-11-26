@@ -464,6 +464,70 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
                   const SizedBox(height: 20),
 
+                  // Meal Times Schedule (Collapsible Accordion)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: Column(
+                      children: [
+                        InkWell(
+                          onTap: () => setState(() => _isMealsExpanded = !_isMealsExpanded),
+                          child: Row(
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Meal Times Schedule',
+                                    style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                                  Text(
+                                    'Set times to receive post-meal reminders',
+                                    style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF94A3B8)),
+                                  ),
+                                ],
+                              ),
+                              const Spacer(),
+                              Icon(
+                                _isMealsExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                color: Colors.white70,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        if (_isMealsExpanded) ...[
+                          const SizedBox(height: 16),
+                          _buildMealRow(context, 'Breakfast', 'bfast', _bfastTime),
+                          _buildMealRow(context, 'Lunch', 'lunch', _lunchTime),
+                          _buildMealRow(context, 'Dinner', 'dinner', _dinnerTime),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () => _saveMeals(provider),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1565C0),
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              child: Text(
+                                'Save Schedule',
+                                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
                   // 3. Rank Roadmap & Next Tier Progress Card
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -898,70 +962,6 @@ class _InsightsScreenState extends State<InsightsScreen> {
                         ),
                       ),
                     ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // 6. Meal Times Schedule (Collapsible Accordion)
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Column(
-                      children: [
-                        InkWell(
-                          onTap: () => setState(() => _isMealsExpanded = !_isMealsExpanded),
-                          child: Row(
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Meal Times Schedule',
-                                    style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
-                                  ),
-                                  Text(
-                                    'Set times to receive post-meal reminders',
-                                    style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF94A3B8)),
-                                  ),
-                                ],
-                              ),
-                              const Spacer(),
-                              Icon(
-                                _isMealsExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                                color: Colors.white70,
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        if (_isMealsExpanded) ...[
-                          const SizedBox(height: 16),
-                          _buildMealRow(context, 'Breakfast', 'bfast', _bfastTime),
-                          _buildMealRow(context, 'Lunch', 'lunch', _lunchTime),
-                          _buildMealRow(context, 'Dinner', 'dinner', _dinnerTime),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () => _saveMeals(provider),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1565C0),
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              child: Text(
-                                'Save Schedule',
-                                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
                   ),
                 ],
               ),
