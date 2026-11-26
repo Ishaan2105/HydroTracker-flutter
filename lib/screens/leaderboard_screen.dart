@@ -626,27 +626,23 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
         const SizedBox(height: 2),
 
-        // Streak Pill
+        // Rank Tier Pill
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
           decoration: BoxDecoration(
-            color: const Color(0xFFFF9800).withValues(alpha: 0.16),
+            color: entry.rankColor.withValues(alpha: 0.16),
             borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: entry.rankColor.withValues(alpha: 0.35), width: 0.8),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('🔥', style: TextStyle(fontSize: 10)),
-              const SizedBox(width: 3),
-              Text(
-                '${entry.currentStreak}d',
-                style: GoogleFonts.poppins(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFFFF9800),
-                ),
-              ),
-            ],
+          child: Text(
+            entry.rankTitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: entry.rankColor,
+            ),
           ),
         ),
 
@@ -686,16 +682,16 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               ),
               Container(
                 margin: const EdgeInsets.only(top: 2),
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1.5),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  '${entry.todayPercentage}% Goal',
+                  '${entry.todayPercentage}%',
                   style: GoogleFonts.poppins(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
                     color: Colors.white,
                   ),
                 ),
@@ -882,10 +878,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                       decoration: BoxDecoration(
-                        color: (entry.todayPercentage >= 100
-                                ? const Color(0xFF10B981)
-                                : colors.cyanAccent)
-                            .withValues(alpha: 0.15),
+                        color: entry.rankColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -893,19 +886,18 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                         style: GoogleFonts.poppins(
                           fontSize: 10.5,
                           fontWeight: FontWeight.bold,
-                          color: entry.todayPercentage >= 100
-                              ? const Color(0xFF10B981)
-                              : colors.cyanAccent,
+                          color: entry.rankColor,
                         ),
                       ),
                     ),
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
-                        'goal achieved today',
+                        entry.rankTitle,
                         style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          color: colors.textSecondary,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: entry.rankColor,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1017,33 +1009,28 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 children: [
                   Row(
                     children: [
-                      Text(
-                        'Your Standing',
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
-                          color: colors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                         decoration: BoxDecoration(
-                          color: (userEntry.todayPercentage >= 100
-                                  ? const Color(0xFF10B981)
-                                  : colors.cyanAccent)
-                              .withValues(alpha: 0.2),
+                          color: userEntry.rankColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          '${userEntry.todayPercentage}% Today',
+                          '${userEntry.todayPercentage}%',
                           style: GoogleFonts.poppins(
-                            fontSize: 9,
+                            fontSize: 9.5,
                             fontWeight: FontWeight.w700,
-                            color: userEntry.todayPercentage >= 100
-                                ? const Color(0xFF10B981)
-                                : colors.cyanAccent,
+                            color: userEntry.rankColor,
                           ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        userEntry.rankTitle,
+                        style: GoogleFonts.poppins(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: userEntry.rankColor,
                         ),
                       ),
                     ],
