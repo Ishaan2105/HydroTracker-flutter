@@ -841,7 +841,7 @@ class _TrendsInsightsScreenState extends State<TrendsInsightsScreen> {
                     decoration: BoxDecoration(
                       color: colors.cardBg,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: colors.surfaceBorder),
+                      border: Border.all(color: const Color(0xFF1565C0), width: 1.5),
                     ),
                     child: Column(
                       children: [

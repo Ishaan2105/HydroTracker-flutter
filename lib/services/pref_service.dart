@@ -22,6 +22,8 @@ class PrefService {
   static const String keyLastSyncedUid = 'last_synced_user_uid';
   static const String keyNotificationPromptIndex = 'notification_prompt_index';
   static const String keyDefaultAlarmsV2Added = 'default_alarms_v2_added';
+  static const String keyDefaultAlarmsVersion = 'default_alarms_version';
+  static const int _currentDefaultAlarmsVersion = 2;
 
   static const List<String> kDefaultReminderTimes = [
     '08:00 AM',
@@ -169,23 +171,27 @@ class PrefService {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getStringList(keyReminderTimes);
     if (raw == null) {
+      // Brand-new user — give them the full default set
+      await prefs.setInt(keyDefaultAlarmsVersion, _currentDefaultAlarmsVersion);
       await prefs.setBool(keyDefaultAlarmsV2Added, true);
       await prefs.setStringList(keyReminderTimes, kDefaultReminderTimes);
-      return kDefaultReminderTimes;
+      return List<String>.from(kDefaultReminderTimes);
     }
 
-    final hasAddedV2 = prefs.getBool(keyDefaultAlarmsV2Added) ?? false;
+    // --- Migration for existing users ---
+    final storedVersion = prefs.getInt(keyDefaultAlarmsVersion) ?? 0;
     List<String> list = raw.map(formatTo12H).toList();
-    if (!hasAddedV2) {
-      // Auto-merge new requested default alarm times for existing users: 11am, 2pm, 6pm, 7pm, 10pm
-      const newTimes = ['11:00 AM', '02:00 PM', '06:00 PM', '07:00 PM', '10:00 PM'];
-      for (final t in newTimes) {
+
+    if (storedVersion < _currentDefaultAlarmsVersion) {
+      // Merge any missing default times into the user's current list
+      for (final t in kDefaultReminderTimes) {
         if (!list.contains(t)) {
           list.add(t);
         }
       }
       list = sortTimesChronologically(list);
       await prefs.setStringList(keyReminderTimes, list);
+      await prefs.setInt(keyDefaultAlarmsVersion, _currentDefaultAlarmsVersion);
       await prefs.setBool(keyDefaultAlarmsV2Added, true);
       return list;
     }

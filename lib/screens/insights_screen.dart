@@ -470,7 +470,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                     decoration: BoxDecoration(
                       color: const Color(0xFF1E293B),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white10),
+                      border: Border.all(color: const Color(0xFF1565C0), width: 1.5),
                     ),
                     child: Column(
                       children: [
