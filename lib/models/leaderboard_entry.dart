@@ -7,6 +7,9 @@ class LeaderboardEntry {
   final int currentStreak;
   final int bestStreak;
   final int lifetimeVolumeMl;
+  final int todayIntakeMl;
+  final int dailyGoalMl;
+  final String? todayDate;
   final DateTime? updatedAt;
   int rank;
 
@@ -17,9 +20,28 @@ class LeaderboardEntry {
     required this.currentStreak,
     required this.bestStreak,
     required this.lifetimeVolumeMl,
+    this.todayIntakeMl = 0,
+    this.dailyGoalMl = 2500,
+    this.todayDate,
     this.updatedAt,
     this.rank = 0,
   });
+
+  /// Current day's effective intake in ml.
+  /// If the record was saved on a previous day, today's intake is 0 until water is logged today.
+  int get effectiveTodayIntakeMl {
+    final todayStr = DateTime.now().toIso8601String().substring(0, 10);
+    if (todayDate != null && todayDate!.isNotEmpty && todayDate != todayStr) {
+      return 0;
+    }
+    return todayIntakeMl;
+  }
+
+  /// Current day's percentage of goal achieved
+  int get todayPercentage {
+    if (dailyGoalMl <= 0) return 0;
+    return ((effectiveTodayIntakeMl / dailyGoalMl) * 100).round();
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -29,6 +51,10 @@ class LeaderboardEntry {
       'currentStreak': currentStreak,
       'bestStreak': bestStreak,
       'lifetimeVolumeMl': lifetimeVolumeMl,
+      'todayIntakeMl': todayIntakeMl,
+      'dailyGoalMl': dailyGoalMl,
+      if (todayDate != null) 'todayDate': todayDate,
+      'todayPercentage': todayPercentage,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -53,6 +79,9 @@ class LeaderboardEntry {
       currentStreak: (map['currentStreak'] as num?)?.toInt() ?? 0,
       bestStreak: (map['bestStreak'] as num?)?.toInt() ?? 0,
       lifetimeVolumeMl: (map['lifetimeVolumeMl'] as num?)?.toInt() ?? 0,
+      todayIntakeMl: (map['todayIntakeMl'] as num?)?.toInt() ?? (map['today_intake_ml'] as num?)?.toInt() ?? 0,
+      dailyGoalMl: (map['dailyGoalMl'] as num?)?.toInt() ?? (map['daily_goal_ml'] as num?)?.toInt() ?? 2500,
+      todayDate: map['todayDate']?.toString() ?? map['today_date']?.toString(),
       updatedAt: dt,
     );
   }

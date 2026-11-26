@@ -151,6 +151,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           currentStreak: provider.currentStreak,
           bestStreak: provider.bestStreak,
           lifetimeVolumeMl: provider.lifetimeVolumeMl,
+          todayIntakeMl: provider.todayIntakeMl,
+          dailyGoalMl: provider.dailyGoalMl,
+          todayDate: provider.todayDateString,
           updatedAt: DateTime.now(),
         );
       }
@@ -170,13 +173,27 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         currentStreak: provider.currentStreak,
         bestStreak: provider.bestStreak,
         lifetimeVolumeMl: provider.lifetimeVolumeMl,
+        todayIntakeMl: provider.todayIntakeMl,
+        dailyGoalMl: provider.dailyGoalMl,
+        todayDate: provider.todayDateString,
         updatedAt: DateTime.now(),
       ));
     }
 
     activeEntries.sort((a, b) {
+      // 1. Primary: currentStreak DESC
       final streakCmp = b.currentStreak.compareTo(a.currentStreak);
       if (streakCmp != 0) return streakCmp;
+
+      // 2. Secondary: If all users have 0 streak (or streaks equal), rank by today's / current day's intake DESC
+      final todayCmp = b.effectiveTodayIntakeMl.compareTo(a.effectiveTodayIntakeMl);
+      if (todayCmp != 0) return todayCmp;
+
+      // 3. Tertiary: Percentage of goal achieved today DESC
+      final percentCmp = b.todayPercentage.compareTo(a.todayPercentage);
+      if (percentCmp != 0) return percentCmp;
+
+      // 4. Quaternary: Lifetime volume fallback
       return b.lifetimeVolumeMl.compareTo(a.lifetimeVolumeMl);
     });
 
@@ -663,16 +680,24 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: isChampion ? 34 : 26,
                   fontWeight: FontWeight.w900,
-                  color: Colors.white.withValues(alpha: 0.85),
+                  color: Colors.white.withValues(alpha: 0.9),
                   letterSpacing: -1,
                 ),
               ),
-              Text(
-                '${(entry.lifetimeVolumeMl / 1000).toStringAsFixed(1)}L',
-                style: GoogleFonts.poppins(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white70,
+              Container(
+                margin: const EdgeInsets.only(top: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '${entry.todayPercentage}% Goal',
+                  style: GoogleFonts.poppins(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
@@ -851,13 +876,41 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     ],
                   ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '${(entry.lifetimeVolumeMl / 1000).toStringAsFixed(1)} L lifetime volume',
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    color: colors.textSecondary,
-                  ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                      decoration: BoxDecoration(
+                        color: (entry.todayPercentage >= 100
+                                ? const Color(0xFF10B981)
+                                : colors.cyanAccent)
+                            .withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${entry.todayPercentage}%',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                          color: entry.todayPercentage >= 100
+                              ? const Color(0xFF10B981)
+                              : colors.cyanAccent,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        'goal achieved today',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: colors.textSecondary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -962,13 +1015,38 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'Your Standing',
-                    style: GoogleFonts.poppins(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                      color: colors.textSecondary,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        'Your Standing',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: (userEntry.todayPercentage >= 100
+                                  ? const Color(0xFF10B981)
+                                  : colors.cyanAccent)
+                              .withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${userEntry.todayPercentage}% Today',
+                          style: GoogleFonts.poppins(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: userEntry.todayPercentage >= 100
+                                ? const Color(0xFF10B981)
+                                : colors.cyanAccent,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   Text(
                     userEntry.displayName,
@@ -1315,7 +1393,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       icon: Icons.military_tech_rounded,
                       iconColor: const Color(0xFFFFB300),
                       title: 'Live Olympic Podium',
-                      subtitle: 'Ranked globally by consistency streaks and lifetime volume.',
+                      subtitle: 'Ranked globally by consistency streaks and today\'s water intake.',
                       colors: colors,
                     ),
                     const SizedBox(height: 14),

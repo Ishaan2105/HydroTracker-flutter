@@ -363,6 +363,12 @@ class CloudSyncService {
         'currentStreak': provider.currentStreak,
         'bestStreak': provider.bestStreak,
         'lifetimeVolumeMl': provider.lifetimeVolumeMl,
+        'todayIntakeMl': provider.todayIntakeMl,
+        'dailyGoalMl': provider.dailyGoalMl,
+        'todayDate': provider.todayDateString,
+        'todayPercentage': provider.dailyGoalMl > 0
+            ? ((provider.todayIntakeMl / provider.dailyGoalMl) * 100).round()
+            : 0,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true)).timeout(const Duration(seconds: 3));
     } catch (e, st) {
@@ -466,6 +472,9 @@ class CloudSyncService {
         currentStreak: provider.currentStreak,
         bestStreak: provider.bestStreak,
         lifetimeVolumeMl: provider.lifetimeVolumeMl,
+        todayIntakeMl: provider.todayIntakeMl,
+        dailyGoalMl: provider.dailyGoalMl,
+        todayDate: provider.todayDateString,
         updatedAt: DateTime.now(),
       );
     } else if (user != null && !provider.isLeaderboardOptIn) {
@@ -474,12 +483,18 @@ class CloudSyncService {
     }
 
     // Sort strictly:
-    // Primary: currentStreak DESC
-    // Secondary Tie-Breaker: lifetimeVolumeMl DESC
+    // 1. Primary: currentStreak DESC
+    // 2. Secondary Tie-Breaker: today's / current day's water intake DESC (when streaks are equal or 0)
+    // 3. Tertiary Tie-Breaker: today's goal percentage achieved DESC
+    // 4. Quaternary: lifetimeVolumeMl DESC
     final list = entryMap.values.toList();
     list.sort((a, b) {
       final streakCmp = b.currentStreak.compareTo(a.currentStreak);
       if (streakCmp != 0) return streakCmp;
+      final todayCmp = b.effectiveTodayIntakeMl.compareTo(a.effectiveTodayIntakeMl);
+      if (todayCmp != 0) return todayCmp;
+      final percentCmp = b.todayPercentage.compareTo(a.todayPercentage);
+      if (percentCmp != 0) return percentCmp;
       return b.lifetimeVolumeMl.compareTo(a.lifetimeVolumeMl);
     });
 
@@ -532,6 +547,9 @@ class CloudSyncService {
           currentStreak: provider.currentStreak,
           bestStreak: provider.bestStreak,
           lifetimeVolumeMl: provider.lifetimeVolumeMl,
+          todayIntakeMl: provider.todayIntakeMl,
+          dailyGoalMl: provider.dailyGoalMl,
+          todayDate: provider.todayDateString,
           updatedAt: DateTime.now(),
         );
       } else if (user != null && !provider.isLeaderboardOptIn) {
@@ -542,6 +560,10 @@ class CloudSyncService {
       list.sort((a, b) {
         final streakCmp = b.currentStreak.compareTo(a.currentStreak);
         if (streakCmp != 0) return streakCmp;
+        final todayCmp = b.effectiveTodayIntakeMl.compareTo(a.effectiveTodayIntakeMl);
+        if (todayCmp != 0) return todayCmp;
+        final percentCmp = b.todayPercentage.compareTo(a.todayPercentage);
+        if (percentCmp != 0) return percentCmp;
         return b.lifetimeVolumeMl.compareTo(a.lifetimeVolumeMl);
       });
 

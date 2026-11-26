@@ -1109,6 +1109,9 @@ class HydrationProvider extends ChangeNotifier {
       );
     }
     WidgetService.updateWidgetData(_todayIntakeMl, _dailyGoalMl);
+    if (_isLeaderboardOptIn) {
+      CloudSyncService.instance.syncLeaderboardEntry(this);
+    }
     notifyListeners(); // Notify instantly so UI updates in 0ms!
     await loadHistoryStats();
     await loadInsightsData();
@@ -1130,6 +1133,9 @@ class HydrationProvider extends ChangeNotifier {
       userName: _userName,
       themeMode: _themeMode,
     );
+    if (_isLeaderboardOptIn) {
+      CloudSyncService.instance.syncLeaderboardEntry(this);
+    }
     notifyListeners();
     await loadHistoryStats();
     await loadInsightsData();
