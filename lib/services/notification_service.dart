@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -7,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:intl/intl.dart';
+import '../data/hydration_reminders_data.dart';
 import '../models/water_log.dart';
 import 'app_logger.dart';
 import 'cloud_sync_service.dart';
@@ -17,6 +19,7 @@ import 'widget_service.dart';
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse response) async {
   WidgetsFlutterBinding.ensureInitialized();
+  DartPluginRegistrant.ensureInitialized();
   final actionId = response.actionId;
   if (actionId == 'ACTION_LOG_GLASS') {
     final hasGlass = await PrefService.hasConfiguredGlass();
@@ -147,6 +150,8 @@ class NotificationService {
   static Future<void> showConfirmationNotification(int addedMl, int totalMl, int goalMl) async {
     try {
       final pct = goalMl > 0 ? ((totalMl / goalMl) * 100).toInt() : 0;
+      final title = '💧 Logged +$addedMl ml!';
+      final body = 'Today’s Total: $totalMl / $goalMl ml ($pct%)';
       final details = NotificationDetails(
         android: AndroidNotificationDetails(
           'hydro_confirmations',
@@ -159,13 +164,17 @@ class NotificationService {
           icon: _activeIcon,
           color: const Color(0xFF00E5FF),
           timeoutAfter: 4000,
+          styleInformation: BigTextStyleInformation(
+            body,
+            contentTitle: title,
+          ),
         ),
         iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: false),
       );
       await _notificationsPlugin.show(
         998,
-        '💧 Logged +$addedMl ml!',
-        'Today’s Total: $totalMl / $goalMl ml ($pct%)',
+        title,
+        body,
         details,
       );
     } catch (e) {
@@ -483,19 +492,23 @@ class NotificationService {
       final actions = await getNotificationActions();
 
       int id = 100;
+      int promptOffset = await PrefService.getNotificationPromptIndex();
       for (String timeStr in reminderTimes) {
         final target = calculateNextTzOccurrence(timeStr);
         final isDaily = dailyTimes.contains(timeStr);
+        final prompt = kHydrationReminderPrompts[promptOffset % kHydrationReminderPrompts.length];
+        promptOffset++;
         await _schedulePointInTimeAlarm(
           id: id++,
           target: target,
           timeStr: timeStr,
-          title: 'Time to Hydrate!',
-          body: 'Stay on top of your goal with a fresh glass of water.',
+          title: prompt.title,
+          body: prompt.body,
           isDaily: isDaily,
           actions: actions,
         );
       }
+      await PrefService.setNotificationPromptIndex(promptOffset % kHydrationReminderPrompts.length);
       AppLogger.info('NotificationService', 'Successfully scheduled ${reminderTimes.length} reminder alarms.');
     } catch (e, st) {
       AppLogger.error('NotificationService', 'Error scheduling reminders', e, st);
@@ -557,10 +570,12 @@ class NotificationService {
   }
 
 
-  /// Helper to build Android notification details with fallback icon support
+  /// Helper to build Android notification details with fallback icon support and BigTextStyle for visible action buttons
   static AndroidNotificationDetails _buildAndroidNotificationDetails({
     String? customIcon,
     List<AndroidNotificationAction>? actions,
+    String? title,
+    String? body,
   }) {
     return AndroidNotificationDetails(
       channelId,
@@ -576,6 +591,15 @@ class NotificationService {
       visibility: NotificationVisibility.public,
       showWhen: true,
       actions: actions,
+      styleInformation: body != null && body.isNotEmpty
+          ? BigTextStyleInformation(
+              body,
+              contentTitle: title,
+              htmlFormatBigText: true,
+              htmlFormatContentTitle: true,
+              summaryText: 'Hydration Reminder',
+            )
+          : null,
     );
   }
 
@@ -593,7 +617,11 @@ class NotificationService {
     List<AndroidNotificationAction>? actions,
   }) async {
     final notificationDetails = NotificationDetails(
-      android: _buildAndroidNotificationDetails(actions: actions),
+      android: _buildAndroidNotificationDetails(
+        actions: actions,
+        title: title,
+        body: body,
+      ),
       iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
     );
 
@@ -631,7 +659,12 @@ class NotificationService {
           AppLogger.warn('NotificationService', 'Daily alarm alarmClock failed: $e2. Trying inexact fallback...');
           try {
             final fallbackDetails = NotificationDetails(
-              android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher', actions: actions),
+              android: _buildAndroidNotificationDetails(
+                customIcon: '@mipmap/ic_launcher',
+                actions: actions,
+                title: title,
+                body: body,
+              ),
               iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
             );
             await _notificationsPlugin.zonedSchedule(
@@ -683,7 +716,12 @@ class NotificationService {
           AppLogger.warn('NotificationService', 'One-time alarm alarmClock failed: $e2. Trying inexact fallback...');
           try {
             final fallbackDetails = NotificationDetails(
-              android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher', actions: actions),
+              android: _buildAndroidNotificationDetails(
+                customIcon: '@mipmap/ic_launcher',
+                actions: actions,
+                title: title,
+                body: body,
+              ),
               iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
             );
             await _notificationsPlugin.zonedSchedule(
@@ -705,6 +743,15 @@ class NotificationService {
     }
   }
 
+  /// Returns the next innovative/funny hydration prompt in sequence from [kHydrationReminderPrompts]
+  /// and updates the rotation index in [PrefService].
+  static Future<HydrationNotificationPrompt> getNextNotificationPrompt() async {
+    final index = await PrefService.getNotificationPromptIndex();
+    final prompt = kHydrationReminderPrompts[index % kHydrationReminderPrompts.length];
+    await PrefService.setNotificationPromptIndex((index + 1) % kHydrationReminderPrompts.length);
+    return prompt;
+  }
+
   /// Schedule a 1-minute test alarm for instant verification
   static Future<DateTime> scheduleOneMinuteTest() async {
     await init();
@@ -715,17 +762,23 @@ class NotificationService {
     final now = tz.TZDateTime.now(tz.local);
     final target = now.add(const Duration(seconds: 60));
     final actions = await getNotificationActions();
+    const testTitle = '⏰ Hydro Tracker 1-Min Test Alarm!';
+    const testBody = 'Scheduled alarm test succeeded! Background notification working.';
 
     final notificationDetails = NotificationDetails(
-      android: _buildAndroidNotificationDetails(actions: actions),
+      android: _buildAndroidNotificationDetails(
+        actions: actions,
+        title: testTitle,
+        body: testBody,
+      ),
       iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
     );
 
     try {
       await _notificationsPlugin.zonedSchedule(
         999,
-        '⏰ Hydro Tracker 1-Min Test Alarm!',
-        'Scheduled alarm test succeeded! Background notification working.',
+        testTitle,
+        testBody,
         target,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -738,8 +791,8 @@ class NotificationService {
       try {
         await _notificationsPlugin.zonedSchedule(
           999,
-          '⏰ Hydro Tracker 1-Min Test Alarm!',
-          'Scheduled alarm test succeeded! Background notification working.',
+          testTitle,
+          testBody,
           target,
           notificationDetails,
           androidScheduleMode: AndroidScheduleMode.alarmClock,
@@ -750,13 +803,18 @@ class NotificationService {
       } catch (e2) {
         AppLogger.warn('NotificationService', '1-min test alarmClock failed: $e2. Trying inexact fallback...');
         final fallbackDetails = NotificationDetails(
-          android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher', actions: actions),
+          android: _buildAndroidNotificationDetails(
+            customIcon: '@mipmap/ic_launcher',
+            actions: actions,
+            title: testTitle,
+            body: testBody,
+          ),
           iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
         );
         await _notificationsPlugin.zonedSchedule(
           999,
-          '⏰ Hydro Tracker 1-Min Test Alarm!',
-          'Scheduled alarm test succeeded! Background notification working.',
+          testTitle,
+          testBody,
           target,
           fallbackDetails,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -780,17 +838,23 @@ class NotificationService {
     final now = tz.TZDateTime.now(tz.local);
     final target = now.add(const Duration(seconds: 60));
     final actions = await getNotificationActions();
+    const postMealTitle = 'Post-Meal Hydration 🍽️💧';
+    const postMealBody = 'It’s been 30 minutes since your meal. Drink a fresh glass of water for optimal digestion!';
 
     final notificationDetails = NotificationDetails(
-      android: _buildAndroidNotificationDetails(actions: actions),
+      android: _buildAndroidNotificationDetails(
+        actions: actions,
+        title: postMealTitle,
+        body: postMealBody,
+      ),
       iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
     );
 
     try {
       await _notificationsPlugin.zonedSchedule(
         398,
-        'Post-Meal Hydration 🍽️💧',
-        'It’s been 30 minutes since your meal. Drink a fresh glass of water for optimal digestion!',
+        postMealTitle,
+        postMealBody,
         target,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -803,8 +867,8 @@ class NotificationService {
       try {
         await _notificationsPlugin.zonedSchedule(
           398,
-          'Post-Meal Hydration 🍽️💧',
-          'It’s been 30 minutes since your meal. Drink a fresh glass of water for optimal digestion!',
+          postMealTitle,
+          postMealBody,
           target,
           notificationDetails,
           androidScheduleMode: AndroidScheduleMode.alarmClock,
@@ -815,13 +879,18 @@ class NotificationService {
       } catch (e2) {
         AppLogger.warn('NotificationService', '1-min post-meal test alarmClock failed: $e2. Trying inexact fallback...');
         final fallbackDetails = NotificationDetails(
-          android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher', actions: actions),
+          android: _buildAndroidNotificationDetails(
+            customIcon: '@mipmap/ic_launcher',
+            actions: actions,
+            title: postMealTitle,
+            body: postMealBody,
+          ),
           iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
         );
         await _notificationsPlugin.zonedSchedule(
           398,
-          'Post-Meal Hydration 🍽️💧',
-          'It’s been 30 minutes since your meal. Drink a fresh glass of water for optimal digestion!',
+          postMealTitle,
+          postMealBody,
           target,
           fallbackDetails,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -872,29 +941,40 @@ class NotificationService {
       }
 
       final actions = await getNotificationActions();
+      const testTitle = 'Hydro Tracker Alarm Active! 💧';
+      const testBody = 'Your scheduled hydration reminders are configured and working smoothly.';
       final notificationDetails = NotificationDetails(
-        android: _buildAndroidNotificationDetails(actions: actions),
+        android: _buildAndroidNotificationDetails(
+          actions: actions,
+          title: testTitle,
+          body: testBody,
+        ),
         iOS: const DarwinNotificationDetails(),
       );
 
       try {
         await _notificationsPlugin.show(
           0,
-          'Hydro Tracker Alarm Active! 💧',
-          'Your scheduled hydration reminders are configured and working smoothly.',
+          testTitle,
+          testBody,
           notificationDetails,
         );
         return true;
       } catch (iconErr) {
         // Fallback to mipmap/ic_launcher if custom drawable lookup encounters an issue
         final fallbackDetails = NotificationDetails(
-          android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher', actions: actions),
+          android: _buildAndroidNotificationDetails(
+            customIcon: '@mipmap/ic_launcher',
+            actions: actions,
+            title: testTitle,
+            body: testBody,
+          ),
           iOS: const DarwinNotificationDetails(),
         );
         await _notificationsPlugin.show(
           0,
-          'Hydro Tracker Alarm Active! 💧',
-          'Your scheduled hydration reminders are configured and working smoothly.',
+          testTitle,
+          testBody,
           fallbackDetails,
         );
         return true;
@@ -916,28 +996,38 @@ class NotificationService {
       }
 
       final actions = await getNotificationActions();
+      final title = 'Post-$mealName Hydration 🍽️💧';
+      const body = 'It’s been 30 minutes since your meal. Drink a fresh glass of water for optimal digestion!';
       final notificationDetails = NotificationDetails(
-        android: _buildAndroidNotificationDetails(actions: actions),
+        android: _buildAndroidNotificationDetails(
+          actions: actions,
+          title: title,
+          body: body,
+        ),
         iOS: const DarwinNotificationDetails(),
       );
 
       try {
         await _notificationsPlugin.show(
           399,
-          'Post-$mealName Hydration 🍽️💧',
-          'It’s been 30 minutes since $mealName. Drink a fresh glass of water for optimal digestion!',
+          title,
+          body,
           notificationDetails,
         );
         return true;
       } catch (_) {
         final fallbackDetails = NotificationDetails(
-          android: _buildAndroidNotificationDetails(customIcon: '@mipmap/ic_launcher'),
+          android: _buildAndroidNotificationDetails(
+            customIcon: '@mipmap/ic_launcher',
+            title: title,
+            body: body,
+          ),
           iOS: const DarwinNotificationDetails(),
         );
         await _notificationsPlugin.show(
           399,
-          'Post-$mealName Hydration 🍽️💧',
-          'It’s been 30 minutes since $mealName. Drink a fresh glass of water for optimal digestion!',
+          title,
+          body,
           fallbackDetails,
         );
         return true;

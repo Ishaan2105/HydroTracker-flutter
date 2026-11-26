@@ -24,8 +24,8 @@ class UpdateGateResult {
 }
 
 class AppUpdateService {
-  static const int currentVersionCode = 23;
-  static const String currentVersionName = '2.2.8';
+  static const int currentVersionCode = 24;
+  static const String currentVersionName = '2.2.9';
 
   /// Publishes or updates the server-side version gate document in Cloud Firestore.
   static Future<bool> publishVersionGate({

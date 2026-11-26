@@ -20,6 +20,7 @@ class PrefService {
   static const String keyHasConfiguredGlass = 'has_configured_glass';
   static const String keyHasPromptedUsername = 'has_prompted_username_setup';
   static const String keyLastSyncedUid = 'last_synced_user_uid';
+  static const String keyNotificationPromptIndex = 'notification_prompt_index';
 
   static String formatTo12H(String timeStr) {
     try {
@@ -365,5 +366,15 @@ class PrefService {
     } else {
       await prefs.setString(keyLastSyncedUid, uid);
     }
+  }
+
+  static Future<int> getNotificationPromptIndex() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(keyNotificationPromptIndex) ?? 0;
+  }
+
+  static Future<void> setNotificationPromptIndex(int index) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(keyNotificationPromptIndex, index);
   }
 }

@@ -263,7 +263,11 @@ class HydroWidgetProvider : AppWidgetProvider() {
                 val intake = intent.getIntExtra("todayIntake", 0)
                 val goal = intent.getIntExtra("dailyGoal", 2500)
                 val customGlass = if (intent.hasExtra("customGlass")) intent.getIntExtra("customGlass", 200) else null
-                val hasGlass = if (intent.hasExtra("hasGlass")) intent.getBooleanExtra("hasGlass", false) else null
+                val hasGlass = if (intent.hasExtra("hasConfiguredGlass")) {
+                    intent.getBooleanExtra("hasConfiguredGlass", false)
+                } else if (intent.hasExtra("hasGlass")) {
+                    intent.getBooleanExtra("hasGlass", false)
+                } else null
                 updateAllWidgets(context, intake, goal, customGlass, hasGlass)
             } catch (e: Exception) {
                 Log.e(TAG, "Error in onReceive ACTION_UPDATE_WIDGET", e)

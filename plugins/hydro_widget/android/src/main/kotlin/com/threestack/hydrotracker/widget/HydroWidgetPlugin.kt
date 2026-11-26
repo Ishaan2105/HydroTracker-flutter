@@ -64,11 +64,14 @@ class HydroWidgetPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activi
                     val hasConfiguredGlass = call.argument<Boolean>("hasConfiguredGlass")
 
                     val intent = Intent(ACTION_UPDATE_WIDGET).apply {
-                        setPackage(ctx.packageName)
+                        component = android.content.ComponentName(ctx, "com.threestack.hydrotracker.HydroWidgetProvider")
                         putExtra("todayIntake", intake)
                         putExtra("dailyGoal", goal)
                         if (customGlass != null) putExtra("customGlass", customGlass)
-                        if (hasConfiguredGlass != null) putExtra("hasConfiguredGlass", hasConfiguredGlass)
+                        if (hasConfiguredGlass != null) {
+                            putExtra("hasConfiguredGlass", hasConfiguredGlass)
+                            putExtra("hasGlass", hasConfiguredGlass)
+                        }
                     }
                     ctx.sendBroadcast(intent)
                     result.success(true)
